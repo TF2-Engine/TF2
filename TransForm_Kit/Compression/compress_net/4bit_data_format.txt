@@ -1,0 +1,44 @@
+1, each layer storage format:
+Data type: char, char, short, short, short, short, short (or float), short (or float), ...:
+Data name: minimum exponential, datatype (0: short 1: float), N, C, H, W, filtervalue, filtervalue, ..... filtervalue
+a、minimum expoential: represents the power of the minimum value of the current layer data;
+b、datatype: indicates the data type, 0 means short (convolution layer and full connection layer parameter type), 
+                                      1 means float (non-convolution and full connection layer parameter type);
+c、N/C/H/W: represents the size of the data dimension;
+d、filtervalue: represents each data value of the model,
+                the convolution layer and the fully connected layer parameters are represented by short, 
+				and the short representation method is as follows;
+2, short means:
+Each float data, storing its power, is represented by 4bit data, and a short data can represent 4 4bits of data (64-bit system).
+Therefore, 1 short data can store 4 weight data;
+Code book example: 
+4-bit code:           0000   0001   0010   0011   0100   0101   0110  0111
+corresponding param: -2^-6  -2^-5  -2^-4  -2^-3  -2^-2  -2^-1  -2^-0  0.0
+
+4-bit code:           1000   1001   1010   1011   1100   1101   1110  1111
+corresponding param:  2^-6   2^-5   2^-4   2^-3   2^-2   2^-1   2^-0  N/A
+
+Correspondence:
+  0, -0.015625 -2^-6
+  1, -0.031250 -2^-5
+  2, -0.062500 -2^-4
+  3, -0.125000 -2^-3
+  4, -0.250000 -2^-2
+  5, -0.500000 -2^-1
+  6, -1.000000 -2^-0
+  7,  0.000000 0.0
+  8,  0.015625 2^-6
+  9,  0.031250 2^-5
+  a,  0.062500 2^-4
+  b,  0.125000 2^-3
+  c,  0.250000 2^-2
+  d,  0.500000 2^-1
+  e,  1.000000 2^-0
+  f,  N/A 
+3. For different convolution kernel sizes, the data storage format is as follows:
+1*1 convolution kernel: 4 weights make up a short
+2*2 convolution kernel: 2 weights form a short
+3*3 convolution kernel: 3 weights form a short
+n*n Convolution kernel: n>3 n/3=a...b 3 weights composed of 1 short (with a group) The remaining b weights form a short
+For example: 5*5 convolution kernel: 5/3=1...2 then 3 weights are composed of 1 short (with 1 group) and 2 weights are left to form a short (high-order invalid).
+             7*7 convolution kernel: 7/3=2...1 then 3 weights are composed of 1 short (with 2 groups) and 1 weight is left to form a short (high position is invalid)

@@ -1,0 +1,7 @@
+The model files are too large to be uploaded to Github. Hence we uploaded it to OneDrive.
+You can download it from the link https://1drv.ms/u/s!Am9Mk04MA_K1bJK7Kqt16UdiLu0?e=t90cnc. 
+The folder named models contains three folders which are googlenet, resnet50 and resnet50_pruning. 
+These are the corresponding model files of each network. 
+param.bin, data.bin, fc1000.bin and other feature map binary files of middle layers are included in each network folder. 
+param.bin and data.bin can be used with quantization files as model inputs. 
+fc1000.bin and other feature map binary files can be used as inference verification files which needs to be refered by the verify() function in the cnn/host/src/network_helper.cpp.
