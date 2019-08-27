@@ -2,19 +2,20 @@
 
 ## TF2
 
-TF2 is a deep learning inference accelerator based on FPGA computing platform and developed by Inspur AI & HPC. It is suitable for general deep learning neural network. TF2 can parse models form deep learning frameworks such as Pytorch, TensorFLow, and Caffe. Users can adapt the trained deep learning model to FPGA through compiling without any FPGA development work, so it can help users quickly implement  AI applications on FPGA. See the link for the paper A Deep Learning Inference Accelerator Based on Model Compression on FPGA.
+TF2 is a deep learning inference accelerator based on FPGA computing platform, developed by Inspur AI & HPC. A wide range of general purpose deep neural networks can be supported. Models from popular deep learning frameworks such as Pytorch, TensorFLow, and Caffe can be loaded into TF2 easily by toolkits we supplied. The pretrained deep learning model can be compiled into FPGA without any code level FPGA development work, which can be an agile solution for AI inference applications on FPGA. See the link https://1drv.ms/b/s!Am9Mk04MA_K1bpXjzmHS8U04PSI?e=LaSgjb for our paper:
+A Deep Learning Inference Accelerator Based on Model Compression on FPGA
 
-The TF2 acceleration engine consists of two parts: Transforme Kit and Runtime Engine. The Transform Kit is a model optimization conversion tool, which has the functions of model compression, pruning and quantification, etc., which can minimize the size of the model and reduce the amount of calculation. Transform Kit can also perform computational node fusion, and integrate multiple computing nodes into one node to reduce the impact of data access bandwidth on computing performance. Runtime Engine can automatically convert the previously optimized model file into FPGA target running file by compiling.
+The TF2 accelerator is composed of two parts: Transform Kit and Runtime Engine. 
 
 ![top](./imgs/top.png)
 
 ## TransForm Kit
 
-The TransForm Kit mainly includes four parts: model compression, cropping, quantization, and operation node fusion. It can receive model training by frameworks such as Pytorch, TensorFlow, Caffe, etc. After compression, cropping, quantification and operation node fusion, an intermediate representation computing graph file is generated for use in TF2 Runtime Engine calculation. The compression and cropping algorithms can be selected according to the actual application.
+Transform Kit is a tool for model optimization and conversion with modules of model compression, pruning and quantification, etc. Transform Kit aims to reduce model data size and simplify mathmatical calculation. Additionally, computational node fusion can also be done in transform kit to relax the data access bandwidth limitation on computing performance by integrating multiple computing nodes into one. Runtime Engine can automatically convert the previously optimized model file into FPGA targeting file by compiling. The compression and pruning operation are optional.
 
 ### Compression
 
-Model compression uses Inspur optimized Incremental Network Quantization(INQ) compression method to compress the deep neural network model data trained by Pytorch and other frameworks. It can compress 32-bit floating-point model data into 4-bit integer data model, making the actual model data size is reduced to 1/8 of the original, and the storage structure of the original model data is basically maintained. The real data of the compressed model is the power of 2 of the 4-bit data or 0. Four 4-bit data is stored as 1 short type data. See link for detailed data formats. (After the reference paper)  The accuracy of the typical CNN neural network before and after compression is shown in the following table.
+Model compression is based on Inspur optimized Incremental Network Quantization(INQ) compression method. Deep neural network model data trained by Pytorch and other frameworks can be used as input. It can compress 32-bit floating-point model data into 4-bit integers, making the actual model data size 1/8 of the original with original data structure maintained. The represented value of the compressed model is 4-bit integeral power of 2 or 0. Four 4-bit data is stored as 1 short type data. The accuracy of the typical CNN with or without compression is shown in the following table.
 
 | NetWork    | Top1   | Top5   | Top1(Compressed) | Top5 (Compressed) |
 | ---------- | ------ | ------ | ---------------- | ----------------- |
@@ -30,7 +31,7 @@ Model compression uses Inspur optimized Incremental Network Quantization(INQ) co
 
 ### Pruning
 
-TF2 Prune unit includes random pruning and channel pruning(code will be published later). The random pruning algorithm randomly prune the model data, the prune rate is high, but the model after pruning is a sparse model. Channel pruning is a kind of structured pruning, which can dynamically prune the channel. This method can directly reduce the number of channels and reduce the amount of calculation. The advantage of this method is that after the channel is pruned, the original precision is restored and the number of training times is small; the pruned model can be directly calculated based on the existing architecture TF2 architecture. The pruning rate of ResNet50 and the precision before and after pruning are shown in the table below. See the link for the pruned model. Pruning the model allows for a 1.6x speedup on the FPGA.
+TF2 Pruning unit includes random pruning and channel pruning modules ( code will be published later ). The random pruning algorithm is a high pruning rate method, but the pruned model is a sparse model. Channel pruning is a kind of structuralized pruning, which is a dynamic pruning method. This method can directly reduce the channels to lower the computational cost. The advantages of this method are 1. the pruned model can be re-trained to the original accuracy with limited training iterations 2. the pruned model can be directly loaded into TF2 Runtime Engine. The pruning rate and the accuracy with or without pruning of ResNet50 are shown in the table below. Model pruning can realize 1.6x speedup on FPGA.
 
 | Pruned Ratio | Top1   | Top5   | Top1-gap | Top5-gap |
 | ------------ | ------ | ------ | -------- | -------- |
@@ -40,15 +41,15 @@ TF2 Prune unit includes random pruning and channel pruning(code will be publishe
 
 ### Quantization
 
-Since the model is already 4-bit data after compressed in TF2, the quantization in TF2 is only the quantization of the feature map data. TF2 quantization tool can quantize normalized 32-bit single-precision floating-point feature map data to 8-bit integer, that is, quantized to -128 to 127. The main advantage of feature graph data quantization is that it can reduce the storage resource requirement of on-chip feature data by a quarter, and can reduce the logic calculation required for data processing, greatly improving the computing power of FPGA. The algorithm is described as follows:
+Since the model is innately 4-bit data after compression, the quantization of TF2 is only for feature map data. TF2 quantization tool can quantize normalized 32-bit single-precision floating-point feature map data to 8-bit integer, that is, quantized to -128 to 127. The main advantage of feature map data quantization is that it can reduce the storage resource requirement of on-chip feature data by a quarter, and can reduce the logic calculation required for data processing, greatly improving the computing power of FPGA. The algorithm is described as follows:
 
 1) Calculating the maximum value fmax of the absolute value of the feature map data of each channel of each convolution layer of the neural network;
 
 2) Find Q according to the equation: 128 = power(2, Q) * fmax;
 
-3) According to the above equation, the quantized data V = power(2, Q) * fv, where fv is the original single-precision floating-point data.
+3) According to the equation above, the quantized data V = power(2, Q) * fv, where fv is the original single-precision floating-point data.
 
-The calculation accuracy of deep learning neural network SqueezeNet and ResNet50 before and after quantization is shown in the following table.
+The calculation accuracy of deep learning neural network SqueezeNet and ResNet50 with or without quantization is shown in the following table.
 
 | NetWork    | Top1   | Top5   | Top1(Quantized) | Top5(Quantized) |
 | ---------- | ------ | ------ | --------------- | --------------- |
@@ -57,15 +58,15 @@ The calculation accuracy of deep learning neural network SqueezeNet and ResNet50
 
 ## RunTime Engine
 
-The TF2 Runtime Engine is an FPGA intelligent runtime accelerator that automatically generates FPGA running files. It first parse the network structure file and generates the running parameter file required by the Runtinme Engine, and then recompiles FPGA code, which can automatically generates FPGA running file.
+The TF2 Runtime Engine is an intelligent runtime FPGA accelerator which can automatically generate FPGA executive files. It first parses the network structure file and generates the network configuration file required by the Runtinme Engine, and then recompiles FPGA code, which can automatically generates the FPGA executive file.
 
-Since the Transform Kit compresses the model data into 4-bit data and the real model data is the power of 2 of the 4-bit data, the feature map data has also been quantized into 8-bit integers, so in the Runtime Engine, the multiplication of model data and the feature map data can be converted to shift and calculation, which eliminates the dependence of deep neural networks such as CNN on the DSP floating-point computing power of FPGA, greatly improves the performance of FPGA inference calculation and effectively reduces its actual running power consumption.
+With the 4-bit integeral power of 2 compressed model data and the 8-bit integeral feature map data in Runtime Engine, the multiplication of model data and feature map data can be converted to shift operation, which eliminates the dependency for DSP floating-point computing resources on FPGA, greatly improves the performance of deep neural network inference on FPGA and effectively reduces its operating power consumption.
 
-The Transform Kit FPGA top-level computing architecture is shown below. Multiple convolutional layers are executed serially on the FPGA. In order to reduce the impact of storage access on computing performance, the intermediate feature map data is stored on the chip as much as possible. The model data is read from the external DDR to the FPGA in real time during the calculation process, but its reading can be performed simultaneously with the calculation, that is, the reading time can be hidden by the calculation time. The TransForm Kit FPGA core computing architecture is shown below.
+The TF2 Runtime Engine top-level computing architecture is shown below. Multiple convolutional layers are executed serially on the FPGA. In order to reduce the storage access limitation on computing performance, the intermediate feature map data is preferentially stored on the chip as much as possible. The model data is read from the external DDR to the FPGA in real time during the calculation process, but reading operation can be performed simultaneously with the calculation, that is, the reading time can be "hidden" under the calculation time. The core computing architecture of TF2 Runtime Engine is shown below.
 
 ![block.png](./imgs/block.png)
 
-Among them, the Filter Loader reads model data from the DDR to the chip. The Feature Loader reads the input picture and feature map data from the DDR to the on-chip. The Controller generates a control signal for the Scheduler. The Scheduler reads the Feature data according to the control signal, and sends data such as Feature, Filter, timing signal, and control signal to the PE for calculation. PE Array is the core computation unit of the entire computing architecture, performing Shift Accumulate (SAC) or Multiply Accumulate(MAC) calculations . The current version is SAC, which will be followed by MAC computing. There is a Filter Cache in the PE, which is used to store the Filter data to calculate the current output channel. The Adder adds the partial results of the MAC/SAC calculations to generate the final convolution calculation results. The number of PEs in a PE Array can be configured according to the structure of the neural network and the amount of FPGA resources. MAC/SAC can be calculated in 1D, 2D, or 3D, and can be configured according to actual conditions. The current version has 2D and 3D calculations. The vector length calculated by each MAC/SAC dimension can also be configured according to the specific application and FPGA computing resources. Networks such as ResNet50/SqueezeNet computiing performance list as follows.
+The Filter Loader reads model data from the DDR to the chip. The Feature Loader reads the input picture and feature map data from the DDR to the on-chip cache. The Controller generates a control signal for the Scheduler. The Scheduler reads the Feature data according to the control signal, and sends data such as Feature, Filter, timing signal, and control signal to the PE for calculation. PE Array is the core computation unit of the entire computing architecture, performing Shift Accumulate (SAC) or Multiply Accumulate(MAC) calculations . The current version is SAC, which will be updated by MAC computing. There is a Filter Cache in PE, which is used to store the Filter data for calculating current output channel. The Adder adds the partial results of the MAC/SAC calculations to generate the final convolution results. The number of PEs in a PE Array can be configured according to the structure of the neural network and the amount of FPGA resources. MAC/SAC can be calculated in 1D, 2D, or 3D, and can be configured according to field application. The current version has 2D and 3D calculations. The vector length calculated by each MAC/SAC dimension can also be configured according to the specific application and FPGA computing resources. Networks such as ResNet50/SqueezeNet computiing performance is listed as follows.
 
 | NetWork                   | Throughput(fps) |
 | ------------------------- | --------------- |
@@ -75,7 +76,7 @@ Among them, the Filter Loader reads model data from the DDR to the chip. The Fea
 
 
 
-## 开源RoadMap
+## RoadMap
 
 #### 2019-Q2
 
