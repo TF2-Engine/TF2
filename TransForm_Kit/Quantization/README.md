@@ -26,7 +26,7 @@ For now, this implementation supports resnet50, googlenet, squeezenet, ssd and i
 
 2. VOC2007.
 
-3. LFW
+3. LFW.
 
 4. Your own dataset.
 
