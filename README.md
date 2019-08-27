@@ -11,7 +11,7 @@ The TF2 accelerator is composed of two parts: Transform Kit and Runtime Engine.
 
 ## TransForm Kit
 
-Transform Kit is a tool for model optimization and conversion with modules of model compression, pruning and quantification, etc. Transform Kit aims to reduce model data size and simplify mathmatical calculation. Additionally, computational node fusion can also be done in transform kit to relax the data access bandwidth limitation on computing performance by integrating multiple computing nodes into one. Runtime Engine can automatically convert the previously optimized model file into FPGA targeting file by compiling. The compression and pruning operation are optional.
+Transform Kit is a tool for model optimization and conversion with modules of model compression, pruning and quantification, etc. Transform Kit aims to reduce model data size and simplify mathmatical calculation. Additionally, computational node fusion can also be done in transform kit to relax the data access bandwidth limitation on computing performance by integrating multiple computing nodes into one. Runtime Engine can automatically convert the previously optimized model file into FPGA targeting file by compiling. The compression and pruning operations are optional.
 
 ### Compression
 
