@@ -1,34 +1,18 @@
-# Brief Introduction
+# Installation
 
-TF2 is the first FPGA compute acceleration engine by the world's first DNN shifting technology on FPGAs. It's an end-to-end full stack solution for the deployment of machine learning model, which consists of following two parts, TF2 Transform Kit and TF2 Runtime Engine. Firstly the Transform Kit takes charge of compressing DNN models trained by frameworks such as PyTorch, TensorFlow, Caffe, etc. Then TF2 Runtime Engine converts the compressed and optimized model file into FPGA target runing file automatically. Four-bit Network Model compression and eight-bit feature data compression are implemented by TF2 Transform Kit and TF2 Runtime Engine seperately.
+##OpenCL SDK Version
 
-
-
-![Runtime_Engine_1](../imgs/Runtime_Engine_1.png)
-
-
-
-# TF2 Installation
-
-##Quartus SDK installation
-
-Software Download link
-
-http://fpgasoftware.intel.com/16.1/?edition=pro
-
-Intel FPGA Software Installation and Licensing Quick Start
-
-https://www.intel.com/content/www/us/en/programmable/documentation/esc1425943996095.html#esc1426014513666
+Intel® SDK for OpenCL™ 16.1.  
 
 ## BSP installation
 
-###Inspur F10A BSP download link
+1. Inspur F10A BSP download
 
 Please contact Inspur agent to get the BSP installation package.
 
-###Installation steps:
+2. Installation steps:
 
-After burning Inspur FPGA board drivers, install BSP as following steps,
+After install Intel® SDK for OpenCL™ 16.1, install BSP as following steps:
 
  ```shell
 yum install gcc gcc-c++
@@ -48,7 +32,7 @@ Check installation result use
 aocl diagnose
 ```
 
-If you get below result, congratulations for the successul installation
+If you get below result, congratulations for the successul installation.
 
 ![Runtime_Engine_2](../imgs/Runtime_Engine_2.png)
 
@@ -60,7 +44,7 @@ If you get below result, congratulations for the successul installation
 aoc -march=emulator src/cnn.cl -v
 ```
 
-### Actual FPGA running mode
+### FPGA running mode
 
 ```shell
 aoc src/cnn.cl -v
@@ -84,7 +68,7 @@ for example:
 ### Actual FPGA running mode
 
 The precompiled rpd files are stored in ./cnn/device/rpd/. 
-Please make sure .rpd file has been burned sucessfully with following command, before running program in FPGA
+Please make sure .rpd file has been programed sucessfully with following command, before running program in FPGA.
 
 ```
 remote_update aclf10a_sr2x8g0 -l f
