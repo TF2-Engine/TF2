@@ -1,6 +1,6 @@
-# Installation
+# OpenCL Installation
 
-##OpenCL SDK Version
+OpenCL SDK Version
 
 Intel® SDK for OpenCL™ 16.1.  
 
