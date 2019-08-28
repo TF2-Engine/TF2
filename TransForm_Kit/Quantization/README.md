@@ -2,7 +2,7 @@
 
 ## Introduction
 
-A pytorch implementation of CAQ method that used for shift based FPGA CNN inference. The CAQ algorithm could be simply described as: 
+A Pytorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ algorithm could be simply described as: 
 
 1. Prepare the quantization dataset: random sampling from the validation dataset and try to make the number of samples equal to the classes number. For the imagenet, 1000 pictures should be selected. If you are not sure about the classes number, then the slected quantization dataset should not be less than 2% of the original dataset. 
 
@@ -16,7 +16,7 @@ For now, this implementation supports resnet50, googlenet, squeezenet, ssd and i
 
 1. Python version shuold be 3+. 
 
-2. Follow the instructions on the official website to install pytorch.
+2. Follow the instructions on the official website to install Pytorch.
 
 3. Clone this repository. 
 
