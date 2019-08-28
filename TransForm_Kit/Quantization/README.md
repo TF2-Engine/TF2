@@ -30,7 +30,7 @@ For now, this implementation supports resnet50, googlenet, squeezenet, ssd and i
 
 4. Your own dataset.
 
-Note: the LFW dataset should be aligned to (1,3,160,160) by alignment CNN like as MTCNN.
+Note: the LFW dataset should be aligned to 3 x 160 x 160 (channel x height x weight) by alignment CNN like as MTCNN.
 
 ## Run
 
