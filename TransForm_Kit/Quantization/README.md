@@ -8,7 +8,7 @@ A PyTorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ
 
 2. FP32 inference with the given weights: traverse the quantization dataset and get the maximum values of the activations. 
 
-3. Quantize the activations by channel: calculate the mean value of the tensors of each channel. If the activations absolute value is greater than the mean, then the values will be forced to be equal to the mean. The other values remain unchanged. 
+3. Quantize the activations by channel: calculate the means of the tensors of each channel. If the absolute values of activations are greater than the means, then the values will be forced to be equal to the means. The other values remain unchanged. 
 
 For now, this implementation supports resnet50, googlenet, squeezenet, ssd and it's easy to modify for other CNN.
 
