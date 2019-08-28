@@ -52,7 +52,7 @@ python quantization.py 'net_name'
 
 (2) Add your dataset preprocess and data loading method in model_loader.py and data_loader.py respectively.
 
-(3)Assuming the coresponding dataset is ready, then repeat 1 and 2.
+(3) Assuming the coresponding dataset is ready, then repeat 1 and 2.
 
 Note: for 1 and 2, the followed argument 'net_name' is 'resnet50' or 'googlenet' or 'ssd' or 'squeezenet'.
 
