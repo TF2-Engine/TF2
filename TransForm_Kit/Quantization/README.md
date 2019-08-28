@@ -4,7 +4,7 @@
 
 A Pytorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ algorithm could be simply described as: 
 
-1. Prepare the quantization dataset: random sampling from the validation dataset and try to make the number of samples equal to the classes number. For the imagenet, 1000 pictures should be selected. If you are not sure about the classes number, then the slected quantization dataset should not be less than 2% of the original dataset. 
+1. Prepare the quantization dataset: random sampling from the validation dataset and try to make the number of samples equal to the classes number. For the ImageNet, 1000 pictures should be selected. If you are not sure about the classes number, then the slected quantization dataset should not be less than 2% of the original dataset. 
 
 2. FP32 inference with the given weights: traverse the quantization dataset and get the maximum value of the activations. 
 
