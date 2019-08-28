@@ -29,11 +29,11 @@ $/models/part2_model_best.pth.tar
 $/models/part5_model_best.pth.tar
 ```
 ## Test
-You can run these models ( The parameters of the convolution and fully connected layers are all powers of 2 ) on caffe and download these models from https://1drv.ms/u/s!Am9Mk04MA_K1aVMJj0sTWk0x7Bw?e=KHYmfy.
+You can run these models ( The parameters of the convolution and fully connected layers are all powers of 2 ) on caffe or download these models from https://1drv.ms/u/s!Am9Mk04MA_K1aVMJj0sTWk0x7Bw?e=KHYmfy.
 
 ## Usage
 
-According to the range of parameters of each layer, the parameters of the power of 2 can be saved in the form of 4 bits. Here is a way to save the model compression. (code will be available soon)
+According to the range of parameters of each layer, the parameters of the power of 2 can be saved in the form of 4 bits. Here is a way to save the compressed model. (code will be available soon)
 
 See 4bit_data_format.txt for model data storage format .
 
