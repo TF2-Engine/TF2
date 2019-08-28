@@ -10,7 +10,7 @@ A PyTorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ
 
 3. Quantize the activations by channel: Calculate the means of the tensors of each channel. If the absolute values of activations are greater than the means, then the values will be forced to be equal to the means. The other values remain unchanged. 
 
-Currently, this implementation supports ResNet50, GoogLeNet, SqueezeNet, SSD and it's easy to modify for other CNN.
+Currently, this implementation supports ResNet50, GoogLeNet (Inception V1), SqueezeNet, SSD and it's easy to modify for other CNN.
 
 ## Installation
 
