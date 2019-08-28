@@ -2,21 +2,21 @@
 
 ## Introduction
 
-A Pytorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ algorithm could be simply described as: 
+A PyTorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ algorithm could be simply described as: 
 
-1. Prepare the quantization dataset: random sampling from the validation dataset and try to make the number of samples equal to the classes number. For the ImageNet, 1000 pictures should be selected. If you are not sure about the classes number, then the slected quantization dataset should not be less than 2% of the original dataset. 
+1. Prepare the quantization dataset: random sampling from the validation dataset and try to make the samples size equal to the amount of  classes number. For the ImageNet, 1000 pictures should be selected. If you are not sure about the amount of classes, then the selected quantization dataset size should not be less than 2% of the original dataset. 
 
-2. FP32 inference with the given weights: traverse the quantization dataset and get the maximum value of the activations. 
+2. FP32 inference with the given weights: traverse the quantization dataset and get the maximum values of the activations. 
 
-3. Quantize the activations by channel: caculate the mean value of each channel, if the activations absolute value is greater than the mean , then the values will be forced equal to the mean. The others values remain unchanged. 
+3. Quantize the activations by channel: calculate the mean value of the tensors of each channel. If the activations absolute value is greater than the mean, then the values will be forced to be equal to the mean. The other values remain unchanged. 
 
 For now, this implementation supports resnet50, googlenet, squeezenet, ssd and it's easy to modify for other CNN.
 
 ## Installation
 
-1. Python version shuold be 3+. 
+1. Python version should be 3+. 
 
-2. Follow the instructions on the official website to install Pytorch.
+2. Follow the instructions on the official website to install PyTorch.
 
 3. Clone this repository. 
 
