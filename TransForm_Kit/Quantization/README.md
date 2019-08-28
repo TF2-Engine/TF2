@@ -16,7 +16,7 @@ For now, this implementation supports resnet50, googlenet, squeezenet, ssd and i
 
 1. Python version shuold be 3+. 
 
-2. Install pytorch follows the instructions on the official website.
+2. Follow the instructions on the official website to install pytorch.
 
 3. Clone this repository. 
 
