@@ -20,6 +20,8 @@ Currently, this implementation supports ResNet50, GoogLeNet (Inception V1), Sque
 
 3. Clone this repository. 
 
+4. Download the net weights: https://1drv.ms/u/s!Am9Mk04MA_K1akWOEe6IRlw_ons?e=02ApjG
+
 ## Datasets
 
 1. ImageNet.
