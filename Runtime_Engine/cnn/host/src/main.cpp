@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
   char *model_file = argv[1];
   char *q_file = argv[2];
   char *image_file = argv[3];
-  int num_images = (int)*argv[4];
+  int num_images = atoi( argv[4] );
 
   OpenCLFPGA platform;
   if(!platform.init()) {
@@ -43,8 +43,10 @@ int main(int argc, char **argv) {
     
   // verification
 
-  //verify(0, verify_file_name, network.q, network.output);
-  evaluation(0, network.q, network.output, network.top_labels);
+  for( int i = 0; i < num_images; i++ ) {
+    //verify(0, verify_file_name, network.q, network.output);
+    evaluation(i, network.q, network.output, network.top_labels);
+  }
 
   // cleanup
   network.cleanup();

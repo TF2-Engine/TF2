@@ -118,31 +118,34 @@ void load_input_image(char *image_name, float *input_raw, float *raw_images, int
 // input_raw[C][H][W]
 // to
 // input[CEIL(C, C_VECTOR)][H][CEIL(W, W_VECTOR)][W_VECTOR][C_VECTOR]
-void input_convert(float *input_raw, float *input)
+void input_convert(float *input_raw, float *input, int num_images)
 {
   int C = input_channels[0];
   int H = input_image_height[0];
   int W = input_image_width[0];
 
-  for (int cvec = 0; cvec < CEIL(C, C_VECTOR); cvec++) {
-      for (int h = 0; h < H; h++) {
-        for (int ww = 0; ww < CEIL(W, W_VECTOR); ww++) {
-          for (int wvec = 0; wvec < W_VECTOR; wvec++) {
-            for (int c = 0; c < C_VECTOR; c++) {
-              unsigned long long int addr = (unsigned long long int)
-                                            cvec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
-                                            h * CEIL(W, W_VECTOR) *NEXT_POWER_OF_2 (W_VECTOR * C_VECTOR) +
-                                            ww * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
-                                            wvec * C_VECTOR +
-                                            c;
+  for( int n = 0; n < num_images; n++ ) {
+    for (int cvec = 0; cvec < CEIL(C, C_VECTOR); cvec++) {
+        for (int h = 0; h < H; h++) {
+          for (int ww = 0; ww < CEIL(W, W_VECTOR); ww++) {
+            for (int wvec = 0; wvec < W_VECTOR; wvec++) {
+              for (int c = 0; c < C_VECTOR; c++) {
+                unsigned long long int addr = (unsigned long long int)
+                                              n * CEIL(C, C_VECTOR) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                                              cvec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                                              h * CEIL(W, W_VECTOR) *NEXT_POWER_OF_2 (W_VECTOR * C_VECTOR) +
+                                              ww * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                                              wvec * C_VECTOR +
+                                              c;
 
-             int linear_c = cvec * C_VECTOR + c;
-             int linear_w = ww * W_VECTOR + wvec;
+               int linear_c = cvec * C_VECTOR + c;
+               int linear_w = ww * W_VECTOR + wvec;
 
-             bool not_out_of_bounds = (linear_c < C && linear_w < W);
-             unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
+               bool not_out_of_bounds = (linear_c < C && linear_w < W);
+               unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
 
-             input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
+               input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
+             }
            }
          }
        }

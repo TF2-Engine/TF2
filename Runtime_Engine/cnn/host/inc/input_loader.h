@@ -19,6 +19,6 @@ limitations under the License.
 #include "includes.h"
 
 void load_input_image(char *image_file, float *input_raw, float *raw_images, int iter);
-void input_convert(float *input_raw, float *input);
+void input_convert(float *input_raw, float *input, int num_images);
 
 #endif

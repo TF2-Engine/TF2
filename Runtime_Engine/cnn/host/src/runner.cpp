@@ -156,7 +156,7 @@ void Runner::run()
     load_input_image(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
   }
 
-  input_convert(network.input_raw, network.input);
+  input_convert(network.input_raw, network.input, num_images);
 
   float trans = 1.0f / ( 1 << network.q[0]);
   for(int i = 0; i < input_device_size; i++){
