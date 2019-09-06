@@ -119,7 +119,7 @@ If you plan to update computing architecture of FPGA, please first open an issue
 ## Reference
 
 1. Utku Aydonat, Shane O’Connell, Davor Capalija, Andrew C Ling, and Gordon RChiu. 2017. An Open deep learning accelerator on arria 10. In Proceedings of the 2017 ACM/SIGDA International Symposium on Field-Programmable Gate Arrays. ACM, 55–64.
-2. Aojun Zhou, Anbang Yao, Yiwen Guo, Lin Xu, and Yurong Chen. 2017. Incre-mental network quantization: Towards lossless cnns with low-precision weights.arXiv preprint arXiv:1702.03044 (2017).
+2. Aojun Zhou, Anbang Yao, Yiwen Guo, Lin Xu, and Yurong Chen. 2017. Incremental network quantization: Towards lossless cnns with low-precision weights.arXiv preprint arXiv:1702.03044 (2017).
 
 
 ## License
