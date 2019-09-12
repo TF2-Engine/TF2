@@ -15,22 +15,20 @@ limitations under the License.
 
 #include "includes.h"
 
-OpenCLFPGA::OpenCLFPGA()
-{
+OpenCLFPGA::OpenCLFPGA() {
 
 }
 
-bool OpenCLFPGA::init()
-{
+bool OpenCLFPGA::Init() {
   cl_int status;
 
-  if(!setCwdToExeDir()) {
+  if (!setCwdToExeDir()) {
     return false;
   }
 
   // Get the OpenCL platform.
   platform = findPlatform("Intel");
-  if(platform == NULL) {
+  if (platform == NULL) {
     ERROR("Unable to find Intel(R) FPGA OpenCL platform.\n");
     return false;
   }
@@ -45,7 +43,7 @@ bool OpenCLFPGA::init()
   device = devices[0];
 
   // Display some device information.
-  display_device_info(device);
+  DisplayDeviceInfo(device);
 
   // Create the context.
   context = clCreateContext(NULL, 1, &device, &oclContextCallback, NULL, &status);
@@ -63,7 +61,7 @@ bool OpenCLFPGA::init()
   create_kernel("retriever", /* has_infinite_loop */ false);
   create_kernel("filter_reader", /* has_infinite_loop */ false);
 
-  for(int i = 0; i < K_VECTOR; i++) {
+  for (int i = 0; i < N_VECTOR; i++) {
     char kernel_name[1024];
     sprintf(kernel_name,"%s%d", "pe_kernel_", i);
     create_kernel(kernel_name, /* has_infinite_loop */ enable_infinite_loops);
@@ -73,7 +71,7 @@ bool OpenCLFPGA::init()
   create_kernel("relu", /* has_infinite_loop */ enable_infinite_loops);
   create_kernel("pool", /* has_infinite_loop */ enable_infinite_loops);
   create_kernel("pool_tail", /* has_infinite_loop */ false);
-  create_kernel("end_pool", /* has_infinite_loop */ true);
+  create_kernel("full_size_pool", /* has_infinite_loop */ true);
   create_kernel("feature_writer", /* has_infinite_loop */ false);
 
   // Create the command queue.
@@ -122,7 +120,7 @@ bool OpenCLFPGA::init()
 }
 
 void OpenCLFPGA::create_kernel(std::string name, bool has_infinite_loop) {
-  kernel_info_t kernel_info;
+  KernelInfo kernel_info;
   kernel_info.name = name;
   kernel_info.has_infinite_loop = has_infinite_loop;
   kernel_info.queue = NULL;
@@ -131,7 +129,7 @@ void OpenCLFPGA::create_kernel(std::string name, bool has_infinite_loop) {
   kernels.push_back(kernel_info);
 }
 
-kernel_info_t OpenCLFPGA::find_kernel(std::string name) {
+KernelInfo OpenCLFPGA::find_kernel(std::string name) {
   for (int i = 0; i < kernels.size(); i++) {
     if (kernels[i].name == name) return kernels[i];
   }
@@ -139,7 +137,7 @@ kernel_info_t OpenCLFPGA::find_kernel(std::string name) {
   exit(1);
 }
 
-void OpenCLFPGA::cleanup()
+void OpenCLFPGA::CleanUp()
 {
   for (int i = 0; i < kernels.size(); i++) {
     if (kernels[i].queue) clReleaseCommandQueue(kernels[i].queue);
@@ -147,13 +145,13 @@ void OpenCLFPGA::cleanup()
   }
   
   // free command queue
-  if(input_queue) clReleaseCommandQueue(input_queue);
-  if(filter_queue) clReleaseCommandQueue(filter_queue);
-  if(bias_bn_queue) clReleaseCommandQueue(bias_bn_queue);
-  if(wait_after_conv_queue) clReleaseCommandQueue(wait_after_conv_queue);
-  if(output_queue) clReleaseCommandQueue(output_queue);
+  if (input_queue) clReleaseCommandQueue(input_queue);
+  if (filter_queue) clReleaseCommandQueue(filter_queue);
+  if (bias_bn_queue) clReleaseCommandQueue(bias_bn_queue);
+  if (wait_after_conv_queue) clReleaseCommandQueue(wait_after_conv_queue);
+  if (output_queue) clReleaseCommandQueue(output_queue);
 
   // program and context
-  if(context) clReleaseContext(context);
-  if(program) clReleaseProgram(program);
+  if (context) clReleaseContext(context);
+  if (program) clReleaseProgram(program);
 }

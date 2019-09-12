@@ -16,28 +16,39 @@ limitations under the License.
 #ifndef __ARCHS_H__
 #define __ARCHS_H__
 
-// -------------------------------------------------------------------------- //
-// archs.h:
-//
-// This file contains all configurable architecture related options.
-// -------------------------------------------------------------------------- //
+//------------------------------------------------------------------------------------//
+// archs.h                                                                            //
+// Scope: Used by device code                                                         //
+// Function: Configures all architecture related options.                             //
+//------------------------------------------------------------------------------------//
 
 #define IMAGE_BATCH_SIZE 1
 
-// number of processing unit, parallel processing of different output channels
-#define K_VECTOR 16
+// the vector size of output channels
+#define N_VECTOR 16
 
-// parallel processing of different input channels
+// the vector size of input channels
 #define C_VECTOR 16
 
-#define Q_VECTOR 5
+// the vector size of output feature map width
+#define OW_VECTOR 5
 
-#define S_VECTOR 3
+// the vector size of filter width
+#define FW_VECTOR 3
 
-#define RELU_K_VECTOR 16
+// the vector size of output channels for relu, pool, etc.
+#define NARROW_N_VECTOR 16
 
-#define W_VECTOR ( S_VECTOR + Q_VECTOR - 1 )
+// the vector size of input feature map / image width
+#define W_VECTOR (FW_VECTOR + OW_VECTOR - 1)
 
+// controls whether kernels using the AUTORUN macro are actually autorun
+// default: enabled
+#ifndef DISABLE_AUTORUN_KERNELS
+#define USE_AUTORUN_KERNELS
+#endif
+
+// Controls whether kernels have an outer loop which is an infinite loop.
 // default: enabled
 #ifndef DISABLE_INFINITE_LOOPS
 #define ENABLE_INFINITE_LOOPS

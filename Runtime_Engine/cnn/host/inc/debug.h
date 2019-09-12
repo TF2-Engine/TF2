@@ -20,14 +20,11 @@ limitations under the License.
 
 #define PRINTF(fmt, ...) printf("%s:%d: " fmt, __FILE__, __LINE__, ##__VA_ARGS__);
 
-extern int common_printf(FILE * fp, const int level, const char * file,
-                  const int line, const char * func, const char * fmt, ...);
+extern int common_printf(FILE * fp, const int level, const char * file, const int line, 
+                         const char * func, const char * fmt, ...);
 
-
-/* 打印等级 0-4 */
 #define PRINT_LEVEL 4
 
-/* 提供4个打印接口 DEBUG, INFO, WARN, ERROR */
 #define LEVEL_DEBUG 4
 #define LEVEL_INFO 3
 #define LEVEL_WARN 2

@@ -13,12 +13,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef __INPUT_TRANSFORM_H__
-#define __INPUT_TRANSFORM_H__
+// Top level OpenCL code
 
-#include "includes.h"
+#include "cycle.cl"
 
-void LoadInputImage(char *image_file, float *input_raw, float *raw_images, int iter);
-void InputConvert(float *input_raw, float *input, int num_images);
+#include "sequencer.cl"
 
-#endif
+#include "input_reader.cl"
+
+#include "filter_reader.cl"
+
+#include "retriever.cl"
+
+#include "pe.cl"
+
+#include "relu.cl"
+
+#include "pool.cl"
+
+#include "full_size_pool.cl"
+
+#include "pool_tail.cl"
+
+#include "feature_writer.cl"

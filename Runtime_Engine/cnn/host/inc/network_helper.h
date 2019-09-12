@@ -18,13 +18,13 @@ limitations under the License.
 
 #include "includes.h"
 
-typedef struct{
+typedef struct {
   int label;
   float feature;
-}stat_item;
+} StatItem;
 
-//void verify(int n, std::string file_name, char *q, real *output);
-void evaluation(int n, char *q, real* output, int* top_labels);
-void load_label(int Num,int *labels);
+void Verify(int n, char *file_name, char *q, real *output);
+void Evaluation(int n, char *q, real* output, int* top_labels);
+void LoadLabel(int Num,int *labels);
 
 #endif

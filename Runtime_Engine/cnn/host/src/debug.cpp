@@ -19,25 +19,23 @@ limitations under the License.
 #include <stdarg.h>
 #include "debug.h"
 
-#define ANSI_COLOR_RED "\x1b[1;31m" 
-#define ANSI_COLOR_GREEN "\x1b[1;32m"
-#define ANSI_COLOR_YELLOW "\x1b[1;33m"
-#define ANSI_COLOR_PURPLE      "\x1b[1;35m"
-#define ANSI_COLOR_CYAN      "\x1b[29m"
-#define ANSI_COLOR_CYAN_LESS "\x1b[29m"
+#define ANSI_COLOR_RED        "\x1b[1;31m" 
+#define ANSI_COLOR_GREEN      "\x1b[1;32m"
+#define ANSI_COLOR_YELLOW     "\x1b[1;33m"
+#define ANSI_COLOR_PURPLE     "\x1b[1;35m"
+#define ANSI_COLOR_CYAN       "\x1b[29m"
+#define ANSI_COLOR_CYAN_LESS  "\x1b[29m"
 #define ANSI_COLOR_RESET      "\x1b[0m" 
 
-#define PRINT_DEBUG          "DEBUG"
-#define PRINT_INFO               "INFO"
-#define PRINT_WARN               "WARN"
-#define PRINT_ERROR          "ERROR"
+#define PRINT_DEBUG           "DEBUG"
+#define PRINT_INFO            "INFO"
+#define PRINT_WARN            "WARN"
+#define PRINT_ERROR           "ERROR"
 
-#define PRINT_LEN 10240
+#define PRINT_LEN             10240
 
-static void _common_printf(FILE * fp, const char * time_cl, const char * type_cl, 
-                                  const char * func_cl, const char * content_cl,
-                                   const char * level, const char * file,
-                                   const int line, const char * func, const char * fmt)
+static void _common_printf(FILE * fp, const char * time_cl, const char * type_cl, const char * func_cl, const char * content_cl,
+                           const char * level, const char * file, const int line, const char * func, const char * fmt)
 { 
     struct timeval tv; 
     gettimeofday(&tv, NULL);
@@ -57,8 +55,7 @@ static void _common_printf(FILE * fp, const char * time_cl, const char * type_cl
     fflush(fp); 
 }
 
-int common_printf(FILE * fp, const int level, const char * file,
-                         const int line, const char * func, const char * fmt, ...)
+int common_printf(FILE * fp, const int level, const char * file, const int line, const char * func, const char * fmt, ...)
 {
     int i;
     char buf[PRINT_LEN];

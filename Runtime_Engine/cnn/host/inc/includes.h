@@ -41,13 +41,13 @@ limitations under the License.
 
 #include "debug.h"
 
-struct kernel_info_t {
-  std::string      name;
-  bool             has_infinite_loop;
+struct KernelInfo {
+  std::string name;
+  bool has_infinite_loop;
 
   cl_command_queue queue;
-  cl_event         event;
-  cl_kernel        kernel;
+  cl_event event;
+  cl_kernel kernel;
 };
 
 // cnn includes

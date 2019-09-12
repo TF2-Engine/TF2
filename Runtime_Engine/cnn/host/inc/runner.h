@@ -22,14 +22,14 @@ class Runner {
 public:
   Runner(OpenCLFPGA &platform, NetWork &network);
 
-  void init();
+  void Init();
 
-  void run();
+  void Run();
 
 private:
-  void enqueue_kernels(bool create_events, bool enqueue_infinite_loop);
-  void wait_for_all_kernels();
-  void release_all_events();
+  void EnqueueKernels(bool create_events, bool enqueue_infinite_loop);
+  void WaitForAllKernels();
+  void ReleaseAllEvents();
   
   OpenCLFPGA platform;
   NetWork network;

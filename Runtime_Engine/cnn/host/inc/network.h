@@ -19,37 +19,20 @@ limitations under the License.
 #include "includes.h"
 
 // Image loading thread args
-struct img_load_args_t {
+struct ImageLoadArgs {
   char *path;
   int size;
   int raw_size;
   int num_images;
 };
 
-/*
-static int wait_after_conv[NUM_CONVOLUTIONS] = {
-  0,
-  0,
-  0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0
-};
-*/
 class NetWork {
 public:
   NetWork();
-  bool init(OpenCLFPGA &platform, char *model_file, char* q_file, char *image_file, int num_images);
-  bool init_network();
-  bool init_buffer();
-  void cleanup();
+  bool Init(OpenCLFPGA &platform, char *model_file, char* q_file, char *image_file, int num_images);
+  bool InitNetwork();
+  bool InitBuffer();
+  void CleanUp();
 
   OpenCLFPGA platform;
   char *model_file;
@@ -63,7 +46,7 @@ public:
   //real* filter = NULL;
   //real* filter_real = NULL;
   char* q = NULL;
-  //bias_bn_param_t *bias_bn = NULL;
+  //BiasBnParam *bias_bn = NULL;
   real* output = NULL;
   int top_labels[5];
 
@@ -79,7 +62,7 @@ private:
   real* filter_raw = NULL;
   real* filter = NULL;
   real* filter_real = NULL;
-  bias_bn_param_t *bias_bn = NULL;
+  BiasBnParam *bias_bn = NULL;
 };
 
 #endif

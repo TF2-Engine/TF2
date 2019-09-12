@@ -21,11 +21,11 @@ limitations under the License.
 class OpenCLFPGA {
 public:
   OpenCLFPGA();
-  bool init();
-  void cleanup();
+  bool Init();
+  void CleanUp();
 
   void create_kernel(std::string name, bool has_infinite_loop);
-  kernel_info_t find_kernel(std::string name);
+  KernelInfo find_kernel(std::string name);
 
   cl_command_queue input_queue;
   cl_command_queue filter_queue;
@@ -38,7 +38,7 @@ public:
   cl_platform_id platform;
   cl_context context;
   cl_device_id device;
-  std::vector<kernel_info_t> kernels;
+  std::vector<KernelInfo> kernels;
 };
 
 #endif

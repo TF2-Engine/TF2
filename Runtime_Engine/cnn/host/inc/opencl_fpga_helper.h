@@ -29,10 +29,10 @@ limitations under the License.
 
 #define STRING_BUFFER_LEN 1024
 
-void device_info_ulong( cl_device_id device, cl_device_info param, const char* name);
-void device_info_uint( cl_device_id device, cl_device_info param, const char* name);
-void device_info_bool( cl_device_id device, cl_device_info param, const char* name);
-void device_info_string( cl_device_id device, cl_device_info param, const char* name);
-void display_device_info(cl_device_id device);
+void DeviceInfoUlong(cl_device_id device, cl_device_info param, const char* name);
+void DeviceInfoUint(cl_device_id device, cl_device_info param, const char* name);
+void DeviceInfoBool(cl_device_id device, cl_device_info param, const char* name);
+void DeviceInfoString(cl_device_id device, cl_device_info param, const char* name);
+void DisplayDeviceInfo(cl_device_id device);
 
 #endif

@@ -16,16 +16,22 @@ limitations under the License.
 #ifndef __CNN_H__
 #define __CNN_H__
 
+//------------------------------------------------------------------------------------//
+// cnn.h                                                                              //
+// Scope: Used by device code                                                         //
+// Function: Device code top level header file.                                       //
+//------------------------------------------------------------------------------------//
+
 #include "archs.h"
 #include "defines.h"
 #include "types.h"
 
 #if defined RESNET50
-#include "cnn_resnet50.h"
+#include "resnet50.h"
 #elif defined RESNET50_PRUNED
-#include "cnn_resnet50_pruned.h"
+#include "resnet50_pruned.h"
 #else
-#include "cnn_googlenet.h"
+#include "googlenet.h"
 #endif
 
 #endif // __CNN_H__

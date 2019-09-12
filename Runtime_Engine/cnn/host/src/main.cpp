@@ -16,41 +16,46 @@ limitations under the License.
 #include "includes.h"
 
 int main(int argc, char **argv) {
-  if(argc != 5) {
-    INFO("USAGE:\n%s <model_file> <quantization_file> <image_file> <num_images>\n", argv[0]);
+  if (argc != 6) {
+    INFO("USAGE:\n%s <model_file> <quantization_file> <image_file> <verify_file> <num_images>\n", argv[0]);
     return 1;
   }
 
   char *model_file = argv[1];
   char *q_file = argv[2];
   char *image_file = argv[3];
-  int num_images = atoi( argv[4] );
+  char *verify_file_name = argv[4];
+  int num_images = atoi(argv[5]);
+
+  INFO("model_file = %s\n", model_file);
+  INFO("q_file = %s\n", q_file);
+  INFO("image_file  = %s\n", image_file);
+  INFO("verify_file_name = %s\n", verify_file_name);
+  INFO("num_images = %d\n", num_images);
 
   OpenCLFPGA platform;
-  if(!platform.init()) {
+  if (!platform.Init()) {
     return -1;
   }  
 
   NetWork network;
-  if(!network.init(platform, model_file, q_file, image_file, num_images)) {
+  if (!network.Init(platform, model_file, q_file, image_file, num_images)) {
     return -1;
   }
 
   Runner runner(platform, network);
-  runner.init();
-  runner.run();
+  runner.Init();
+  runner.Run();
 
-    
   // verification
-
-  for( int i = 0; i < num_images; i++ ) {
-    //verify(0, verify_file_name, network.q, network.output);
-    evaluation(i, network.q, network.output, network.top_labels);
+  for (int i = 0; i < num_images; i++) {
+    Verify(i, verify_file_name, network.q, network.output);
+    Evaluation(i, network.q, network.output, network.top_labels);
   }
 
-  // cleanup
-  network.cleanup();
-  platform.cleanup();
+  // CleanUp
+  network.CleanUp();
+  platform.CleanUp();
 
   return 0;
 }
