@@ -224,7 +224,7 @@ int FindFilterReaderConvCycles(int layer) {
   int N_VEC = kNvecEnd[layer];
   int FH = kFilterSize[layer];
   int C = kInputChannels[layer];
-  int C_VEC = FH == 1 ? CEIL(C, C_VECTOR * FW_VECTOR) : CEIL(C, C_VECTOR);
+  int C_VEC = kCvecEnd[layer];
   int FW_VEC = kFWvecEnd[layer];
   
   return kIpoolEnable[layer] ? 0 : N_VEC * C_VEC * FH * FW_VEC * N_VECTOR;

@@ -41,7 +41,6 @@ TASK kernel void sequencer(int frame_num) {
 
   int filter_read_page = 0; 
   int filter_read_addr = 0;
-  int filter_read_fw_vec = 0; 
   int filter_load_cycle = 0;
   int filter_load_cycle_end = 0;
   bool filter_loading_conv_idle = 0;
@@ -64,7 +63,6 @@ TASK kernel void sequencer(int frame_num) {
       //layer = 0;
       filter_read_page = 0; 
       filter_read_addr = 0; 
-      filter_read_fw_vec = 0;
       filter_load_cycle = 0;
       filter_load_cycle_end = 0;
       filter_loading_conv_idle = 0;
@@ -87,8 +85,8 @@ TASK kernel void sequencer(int frame_num) {
         new_layer = true;
       }
       conv_start_cycle += CONV_CYCLE(i);
-#ifdef PRINT_CYCLE
-      printf("CONV_CYCLE(%d)=\t%d\frame_index", i, CONV_CYCLE(i));
+#ifdef PRINT_CONV_CYCLE
+      printf("CONV_CYCLE(%d)=\t%d\n", i, CONV_CYCLE(i));
 #endif
     }
 
@@ -180,7 +178,6 @@ TASK kernel void sequencer(int frame_num) {
       feature_read_w_inc_from_ow_vec += WOW_VECTOR % W_VECTOR;
 	  
       filter_read_addr = 0;
-      filter_read_fw_vec = 0;
     }
     
     // start of each fh_vec
@@ -245,18 +242,8 @@ TASK kernel void sequencer(int frame_num) {
     // filter reading address
     sequencer_output.filter_read_page = filter_read_page;
     sequencer_output.filter_read_addr = filter_read_addr; 
-    sequencer_output.filter_read_fw_vec = filter_read_fw_vec;
 
-    if (FH == 1) {
-      if (filter_read_fw_vec == (FW_VECTOR - 1)) {
-        filter_read_fw_vec = 0;
-        filter_read_addr = (filter_read_addr + 1) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
-      } else {
-        filter_read_fw_vec++;
-      }
-    } else {
-      filter_read_addr = (filter_read_addr + 1) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
-    }
+    filter_read_addr = (filter_read_addr + 1) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
    
     sequencer_output.filter_loading = (filter_load_cycle < filter_load_cycle_end);
     filter_load_cycle++;
@@ -318,7 +305,7 @@ TASK kernel void sequencer(int frame_num) {
     }
 
     sequencer_output.filter_loading_conv_idle = filter_loading_conv_idle;
-    write_channel_altera(sequencer_output_channel, sequencer_output);
+    write_channel_intel(sequencer_output_channel, sequencer_output);
 
     if (!filter_loading_conv_idle) {
       INCREASE_COUNTER(fw_vec);

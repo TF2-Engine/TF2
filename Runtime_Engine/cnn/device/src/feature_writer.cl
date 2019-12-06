@@ -36,7 +36,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
   int layer = 0;
 
 #ifdef PRINT_CYCLE
-  printf("FEATURE_WRITER_TOTAL_CYCLE=%d\frame_index", FEATURE_WRITER_TOTAL_CYCLE);
+  printf("FEATURE_WRITER_TOTAL_CYCLE=%d\n", FEATURE_WRITER_TOTAL_CYCLE);
 #endif
 
   #pragma ivdep
@@ -53,8 +53,8 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
         new_layer = true;
       }
       feature_writer_start_cycle += FEATURE_WRITER_CYCLE(i);
-#ifdef PRINT_CYCLE
-      printf("FEATURE_WRITER_CYCLE(%d)=\t%d\frame_index", i, FEATURE_WRITER_CYCLE(i));
+#ifdef PRINT_FEATURE_CYCLE
+      printf("FEATURE_WRITER_CYCLE(%d)=\t%d\n", i, FEATURE_WRITER_CYCLE(i));
 #endif
     }
 
@@ -83,7 +83,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     }
     
     PoolTailOutput pool_tail_output;
-    pool_tail_output = read_channel_altera(feature_writer_input_channel);
+    pool_tail_output = read_channel_intel(feature_writer_input_channel);
    
     real res_data[W_VECTOR][NARROW_N_VECTOR] = {{0}};
 
@@ -143,11 +143,11 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     pool_tail_output.cache_write_addr = cache_write_addr;
      
     if (kCacheWriteEnable[layer] && !kEndPoolEnable[layer]) {
-      write_channel_altera(retriever_input_channel, pool_tail_output);
+      write_channel_intel(retriever_input_channel, pool_tail_output);
     }
 
     if (kEndPoolEnable[layer]) {
-      write_channel_altera(end_pool_input_channel, pool_tail_output);
+      write_channel_intel(end_pool_input_channel, pool_tail_output);
     } 
     
     INCREASE_COUNTER(w_vec);

@@ -31,30 +31,38 @@ TASK kernel void relu(int frame_num) {
   int cycle_end = CONV_TOTAL_WRITE_CACHE;
 
 #ifdef PRINT_CYCLE
-  printf("CONV_TOTAL_WRITE_CACHE=%d\frame_index", CONV_TOTAL_WRITE_CACHE);
+  printf("CONV_TOTAL_WRITE_CACHE=%d\n", CONV_TOTAL_WRITE_CACHE);
+#endif
+
+#ifdef PRINT_OUTPUT
+  int cnt = 0;
 #endif
 
   do {
+    //printf("Relu cycle = %d/%d\n", cycle, cycle_end);
+
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
 
     PeOutput pe_output[NARROW_N_VECTOR];
     #pragma unroll
     for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
-      pe_output[n_inc] = read_channel_altera(pe_output_channel[n_inc]);
+      pe_output[n_inc] = read_channel_intel(pe_output_channel[n_inc]);
     }
 	  
-    bool is_QVECTOR = pe_output[0].is_QVECTOR;
+    bool not_1x1_filter = pe_output[0].not_1x1_filter;
     
     ReluOutput relu_output;
-
+    
     #pragma unroll
-    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+    for(int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
+        if ( not_1x1_filter && w_inc >= OW_VECTOR ) continue;
+        relu_output.data[n_inc].v[w_inc] = ( !pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0 ) ? pe_output[n_inc].data.v[w_inc] : 0;
       }
     }
-    write_channel_altera(relu_output_channel, relu_output);
+
+    write_channel_intel(relu_output_channel, relu_output);
 
     INCREASE_COUNTER(cycle);
 #ifdef ENABLE_INFINITE_LOOPS

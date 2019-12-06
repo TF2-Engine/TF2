@@ -61,24 +61,23 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
         new_layer = true;
       }
       conv_start_cycle += FILTER_READER_CONV_CYCLE(i);
-#ifdef PRINT_CYCLE
+#ifdef PRINT_FILTER_CYCLE
       printf("FILTER_READER_CONV_CYCLE(%d)=\t%d\n", i, FILTER_READER_CONV_CYCLE(i));
 #endif
     }
 
     if(new_layer) layer = layer_temp;
 
-    int N =  kOutputChannels[layer]; 
+    int N = kOutputChannels[layer]; 
     int C = kInputChannels[layer];
     int FH = kFilterSize[layer];
-    int S = kFilterSize[layer];
  
     int N_VEC = kNvecEnd[layer];
-    int C_VEC = kFilterCvecEnd[layer];
+    int C_VEC = kCvecEnd[layer];
     int FW_VEC = kFWvecEnd[layer];
 
     SET_COUNTER(n_vec, kNvecEndMax, 0, N_VEC, 1);
-    SET_COUNTER(c_vec, kFilterCvecEndMax, 0, C_VEC, 1);
+    SET_COUNTER(c_vec, kCvecEndMax, 0, C_VEC, 1);
     SET_COUNTER(fh_vec, kFilterSizeMax, 0, FH, 1);
     SET_COUNTER(fw_vec, kFWvecEndMax, 0, FW_VEC, 1);
     SET_COUNTER(n_inc, N_VECTOR, 0, N_VECTOR, 1);
@@ -106,25 +105,46 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     int n = n_vec * N_VECTOR + n_inc;
     bool n_valid = n < N;
     
+    int FW1_VECTOR = FH == 1 ? 1 : FW_VECTOR;
+    
+    int filter_addr_offset =
+            layer * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) + // conv_filter_offset
+            n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+            c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+            fh_vec * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+            fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+            n_inc * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR);
+            
     #pragma unroll
-    for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
+    for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
+      int c = c_vec * C_VECTOR + c_inc;
+      bool valid = (n_valid && c < C);
+      
+      real filter_wng_in[WGD_5x3_FILTER_ROWS][WGD_5x3_FILTER_COLUMNS]; //WGD_4x3_FILTER_ROWS = 3, WGD_4x3_FILTER_COLUMNS = 1
+
+      // Winograd Transformation
       #pragma unroll
-      for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
-        int c = FH == 1 ? c_vec * FW_VECTOR * C_VECTOR + fw_inc * C_VECTOR + c_inc : c_vec * C_VECTOR + c_inc; 
-        bool valid = (n_valid && c < C);
+      for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
+        if (FH == 1 && fw_inc >= 1) continue;
+        filter_wng_in[fw_inc][0] = valid ? gl_filter[filter_addr_offset + fw_inc * C_VECTOR + c_inc] : 0;
+#ifdef PRINT_FILTER
+        if(layer == NUM_LAYER - 1) printf( "FILTER_BEFORE_WGD layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n=%d fw_inc=%d c_inc=%d addr=%d frame_cycle=%d filter_data=%d filter_wng_in=%d\n", layer, n_vec, c_vec, fh_vec, fw_vec, n, fw_inc, c_inc, filter_addr_offset + fw_inc * C_VECTOR + c_inc, frame_cycle, gl_filter[filter_addr_offset + fw_inc * C_VECTOR + c_inc], filter_wng_in[fw_inc][0] );
+#endif
+      }        
+     
+      Sreal filter_wng_out[WGD_5x3_G_ROWS][WGD_5x3_FILTER_COLUMNS]; //WGD_4x3_G_ROWS = 6, WGD_4x3_FILTER_COLUMNS = 1 xie rudao filter_wng_out
+      
+      if(FH != 1) {
+        wgd_5x3_transform_filter(filter_wng_in, filter_wng_out);
+      }
 
-        int filter_addr =
-                layer * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) + // conv_filter_offset
-                n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                fh_vec * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                n_inc * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                fw_inc * C_VECTOR + 
-                c_inc;
-
-        real filter_data = valid ? gl_filter[filter_addr] : 0;
-        filter_reader_output.filter_data.v[fw_inc].v[c_inc] = filter_data;
+      #pragma unroll
+      for(int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+        Sreal filter_data = valid ? ( FH == 1 ? filter_wng_in[0][0] : filter_wng_out[w_inc][0] ) : 0;
+        filter_reader_output.filter_data.v[w_inc].v[c_inc] = filter_data;
+#ifdef PRINT_FILTER
+        if(layer == NUM_LAYER - 1) printf( "FILTER_AFTER_WGD layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n=%d w_inc=%d c_inc=%d cycle=%d filter_data=%d\n", layer, n_vec, c_vec, fh_vec, fw_vec, n, w_inc, c_inc, frame_cycle, filter_data );
+#endif
       }
     }
 
@@ -133,7 +153,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     filter_reader_output.cache_addr = write_cache_addr;
     filter_reader_output.n_inc = n_inc;
    
-    write_channel_altera(filter_reader_output_channel, filter_reader_output);
+    write_channel_intel(filter_reader_output_channel, filter_reader_output);
     
     if (COUNTER_LAST(n_inc)) {
       write_cache_addr = (write_cache_addr + 1) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
@@ -151,5 +171,4 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
 
     INCREASE_COUNTER(cycle);
   } while (!COUNTER_DONE(cycle));
-  
 }

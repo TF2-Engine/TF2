@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "includes.h"
 
-void LoadModel(char* filename, real* filter_raw, BiasBnParam *bias_bn, char *q);
+void LoadModel(char* filename, real* filter_raw, BiasBnParam *bias_bn);
 void FilterConvert(real *filter, real *filter_raw,real *filter_real);
 
 #endif

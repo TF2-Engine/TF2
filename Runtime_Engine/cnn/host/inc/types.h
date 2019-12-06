@@ -30,15 +30,18 @@ typedef int Mreal;
 typedef short Sreal;
 #define REALMAX 127
 #define REALMIN -128
+#define SREALMAX 32767
+#define SREALMIN -32768
 #define ALPHA_INFLAT 20
-#define INFLAT 15
-#define LOWER  (INFLAT - 1)
-#define TRANS_INFLAT (1.0/(1<<INFLAT))
+//#define INFLAT 15
+//#define LOWER  (INFLAT - 1)
+//#define TRANS_INFLAT (1.0/(1<<INFLAT))
+#define TRANS_INFLAT 12
 
 // -------------------------------------------------------------------------- //
 typedef struct {
   Mreal bias;
-  Mreal alpha;
+  float scale;
   Mreal beta;
 } BiasBnParam;
 CONSTANT BiasBnParam BiasBnZero = {0};
@@ -50,10 +53,19 @@ typedef struct {
   real v[C_VECTOR];
 } DotVector;
 
+typedef struct {
+  Sreal v[C_VECTOR];
+} SrealDotVector;
+
 typedef struct { 
   real v[W_VECTOR];
 } OutputWidthVector;
 CONSTANT OutputWidthVector OutputWidthVectorZero = {{{0}}};
+
+typedef struct { 
+  real v[W_VECTOR];
+} PeOutputWidthVector;
+CONSTANT PeOutputWidthVector PeOutputWidthVectorZero = {{{0}}};
 
 typedef struct {
   uchar layer;
@@ -69,7 +81,6 @@ typedef struct {
 
   bool filter_loading;
   int filter_read_addr;
-  char filter_read_fw_vec;
   bool filter_read_page;
   bool filter_loading_conv_idle;
   
@@ -78,13 +89,13 @@ typedef struct {
 } SequencerOutput;
 
 typedef struct {
-  DotVector v[FW_VECTOR];
-} DotFilterVector;
+  SrealDotVector v[W_VECTOR];
+} FilterVector;
 
 typedef struct {
   //char pe_feature_scale[W_VECTOR][C_VECTOR_GROUP];
-  DotVector v[W_VECTOR];
-} DotFeatureVector;
+  SrealDotVector v[W_VECTOR];
+} FeatureVector;
 
 typedef struct {
   DotVector data[W_VECTOR];
@@ -92,9 +103,10 @@ typedef struct {
 CONSTANT InputReaderOutput InputReaderOutputZero = {{{{{0}}}}};
 
 typedef struct {
-  OutputWidthVector data;
+  PeOutputWidthVector data;
+  //BiasBnParam bias_bn_data;
   bool pe_output_relu;
-  bool is_QVECTOR;
+  bool not_1x1_filter;
 } PeOutput;
 
 typedef struct {
@@ -103,7 +115,7 @@ typedef struct {
 CONSTANT ReluChannelVector ReluChannelVectorZero = {{{0}}};
 
 typedef struct {
-  DotFilterVector filter_data;
+  FilterVector filter_data;
   BiasBnParam bias_bn_data;
   int cache_addr;
   int n_inc;
@@ -111,7 +123,7 @@ typedef struct {
 CONSTANT FilterReaderOutput FilterReaderOutputZero = {{{{{{0}}}}}};
 
 typedef struct {
-  bool is_QVECTOR;
+  bool not_1x1_filter;
   bool conv_start;
   bool conv_done[W_VECTOR];
   bool pe_output_relu;
@@ -119,19 +131,18 @@ typedef struct {
   // filter related signal
   int filter_read_addr;
   int filter_write_addr;
-  char filter_read_fw_vec;
   bool filter_bias_read_page;
 } PeControlSignal;
 CONSTANT PeControlSignal PeControlSignalZero = {{0}};
 
 typedef struct {
-  DotFeatureVector input_data;
+  FeatureVector input_data;
   bool input_data_valid;
 } PeInputData;
 CONSTANT PeInputData PeInputDataZero = {{{{{{0}}}}}};
 
 typedef struct {
-  DotFilterVector filter_data;
+  FilterVector filter_data;
   BiasBnParam bias_bn_data;
   int n_inc;
   bool data_valid;

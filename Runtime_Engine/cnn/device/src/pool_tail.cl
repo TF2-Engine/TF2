@@ -47,7 +47,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     int frame_cycle_end = POOL_TOTAL_CYCLE;  // * frame_num BUG
     SET_COUNTER(frame_cycle, frame_cycle_end, 0, frame_cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
-    
+
+    //printf("pool_tail - cycle=%d/%d\n", frame_cycle, frame_cycle_end);
+
     bool new_layer = false;
 
     int conv_start_cycle = 0;
@@ -115,7 +117,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     //
     
     // receive pool data
-    PoolOutput pool_output = read_channel_altera(pool_output_channel);
+    PoolOutput pool_output = read_channel_intel(pool_output_channel);
 
     int w_index_cache[W_VECTOR];
     int buffer_index_cache[W_VECTOR];
@@ -196,7 +198,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         }
       }
 
-      write_channel_altera(feature_writer_input_channel, pool_tail_output);
+      write_channel_intel(feature_writer_input_channel, pool_tail_output);
+
+      //printf("pool_tail write channel.\n");
     }
 
     INCREASE_COUNTER(frame_cycle);

@@ -68,7 +68,7 @@ bool NetWork::InitNetwork() {
   const int filter_raw_size =  NUM_CONVOLUTIONS * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
   filter_raw = (real*)alignedMalloc(sizeof(real) * filter_raw_size);
   if (filter_raw== NULL) ERROR("Cannot allocate enough space for filter_raw\n");
-  memset(filter_raw, 64, sizeof(real) * filter_raw_size);
+  memset(filter_raw, 0, sizeof(real) * filter_raw_size);
 
   const int bias_bn_size = NUM_CONVOLUTIONS * MAX_BIAS_SIZE;
   bias_bn = (BiasBnParam*)alignedMalloc(sizeof(BiasBnParam) * bias_bn_size);
@@ -79,12 +79,8 @@ bool NetWork::InitNetwork() {
   // it can compute only once
   float *input_raw_images = (float*)malloc(sizeof(float) * INPUT_IMAGE_C * INPUT_IMAGE_H * INPUT_IMAGE_W * 2);
 
-  q = (char *)alignedMalloc(sizeof(char) * NUM_Q_LAYERS * MAX_OUT_CHANNEL);
-  Quantization(q, input_raw_images, q_file);
-
   INFO("Loading convolutional layer params...\n");
-  //LoadModel(model_file, filter_raw, bias,alpha,beta, q);
-  LoadModel(model_file, filter_raw, bias_bn, q);
+  LoadModel(model_file, filter_raw, bias_bn);
 
   const int filter_device_size = NUM_CONVOLUTIONS * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
   filter = (real*)alignedMalloc(sizeof(real) * filter_device_size);
@@ -92,7 +88,7 @@ bool NetWork::InitNetwork() {
 
   filter_real = (real*)alignedMalloc(sizeof(real) * filter_device_size);
   if (filter_real == NULL) ERROR("Cannot allocate enough space for filter_real.\n");
-  memset(filter_real, 64, sizeof(real) * filter_device_size);
+  memset(filter_real, 0, sizeof(real) * filter_device_size);
 
   FilterConvert(filter, filter_raw, filter_real);
 }
@@ -161,7 +157,6 @@ void NetWork::CleanUp() {
   // host buffers
   if (input_raw) alignedFree(input_raw);
   if (input) alignedFree(input);
-  if (q) alignedFree(q);
   if (filter_raw) alignedFree(filter_raw);
   if (filter) alignedFree(filter);
   if (bias_bn) alignedFree(bias_bn);  

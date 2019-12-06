@@ -28,7 +28,7 @@ void filter_trans(real *filter_input, real *Transform_input) {
   for (int i = 0; i < CHAS * 2; i++) {
     for (int j = 0; j < FILTER_FIRST; j++) {
       for (int k = 0; k < FILTER_FIRST; k++) {
-        filter_media[i][j][k] = 0x40;
+        filter_media[i][j][k] = 0;
       }
     }
   }
@@ -39,7 +39,7 @@ void filter_trans(real *filter_input, real *Transform_input) {
   for (int i = 0; i < CHAS * 3; i++) {
     for (int j = 0; j < FILTER_FIRST; j++) {
       for (int k = 0; k < FILTER_FIRST; k++) {
-        filter_width[i][j][k] = 0x40;
+        filter_width[i][j][k] = 0;
       }
     }
   }
@@ -126,7 +126,7 @@ char Get_real(float data, char expand) {
 }
 
 // filter_raw[N][C][H][W]
-void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) {
+void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn) {
   FILE* infile;
   if ((infile = fopen(filename, "rb")) == NULL) {
     printf("Error in search of %s in LoadModel modulus\n",filename);
@@ -137,11 +137,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
   int bias_addr_offset = 0;
   
   // load whole model
-  int q_offset = 0;
   for (int layer = 0; layer < NUM_LAYER; layer++) {
-    float mean[MAX_OUTPUT_CHANNEL] = {0};
-    float variance[MAX_OUTPUT_CHANNEL] = {0};
-    float scale_factor = 0;
     float alpha[MAX_OUTPUT_CHANNEL] = {0};
     float beta[MAX_OUTPUT_CHANNEL] = {0};
     
@@ -151,56 +147,40 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     int W = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[layer];
     int N = kOutputChannels[layer];
     	  
+    float scale = 1.0f;
+    
     if (!kIpoolEnable[layer]) { 
       for (int n = 0; n < N; n++) {
-        for (int c = 0; c < C; c++) {
-          int q_fixed;
-            
-          q_fixed = q[kInputLayer[layer] * MAX_OUT_CHANNEL + c];
-          
-          int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n]; 
-          char expand = INFLAT + q_fixed - q_fixed_gap;
-          
+        for (int c = 0; c < C; c++) {         
           for (int h = 0; h < H; h++) {
             for (int w = 0; w < W; w++) {
               float filter_tems;
               fread(&filter_tems, sizeof(float), 1, infile);
-              filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
+              filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = filter_tems;
             }
           }
         }
       }
+      
+      fread( &scale, sizeof(float), 1, infile );
     }
 
     // bias
     if (kBiasEnable[layer]) {				  
       for (int n = 0; n < N; n++) {
-        int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
-        float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
-	float bias_data;
+        float bias_data;
         fread( &bias_data, sizeof(float), 1, infile );
-	bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;    
+        float tmp = bias_data * scale * TRANS_INFLAT;
+        int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);
+        bias_bn[bias_addr_offset + n].bias = tmp_int;    
       }
     } else {
       for (int n = 0; n < N; n++) {
-        bias_bn[bias_addr_offset + n].bias=0;
+        bias_bn[bias_addr_offset + n].bias = 0;
       }
-    }	
+    }
 
     if (kBnEnable[layer]) {
-      // mean
-      for (int n = 0; n < N; n++) {
-        fread(&mean[n], sizeof(float), 1, infile);
-      }
-
-      // variance
-      for (int n = 0; n < N; n++) {
-        fread( &variance[n], sizeof(float), 1, infile);
-      }
-
-      // scale_factor
-      fread(&scale_factor, sizeof(float), 1, infile);
-
       // alpha
       for (int n = 0; n < N; n++) {
         fread(&alpha[n], sizeof(float), 1, infile);
@@ -209,34 +189,33 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       // beta
       for (int n = 0; n < N; n++) {
         fread(&beta[n], sizeof(float), 1, infile);
+        if (layer == (NUM_LAYER - 1)) printf( "n=%d beta=%f\n", n, beta[n] );
       }
     }
 
     // alpha data
-    for (int n = 0; n < N; n++) {
-      float a;
-      float b;
-      float alpha_data;
-      float beta_data;
-      float eps = 0.00001;
+    for (int n = 0; n < N; n++) {   
+      float alpha_data = kBnEnable[layer] ? alpha[n]: 1.0;
+      float beta_data = kBnEnable[layer] ? beta[n] : 0;
       
-      a = mean[n] / scale_factor;
-      b = sqrt( variance[n] / scale_factor + eps );
-      alpha_data = kBnEnable[layer] ? alpha[n] / b : 1.0;
-      beta_data = kBnEnable[layer] ? - (alpha[n] / b * a) + beta[n] : 0.0;
+      float beta_inflat = beta_data * TRANS_INFLAT;
+
+      int beta_int = (int)(beta_inflat > 0 ? beta_inflat  + 0.5 : beta_inflat - 0.5);
+
+      if (layer == (NUM_LAYER - 1)) printf( "n=%d beta_int=%d\n", n, beta_int);
       
-      int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
-      float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
-      bias_bn[bias_addr_offset + n].alpha = alpha_data * pow(2, ALPHA_INFLAT);
-      bias_bn[bias_addr_offset + n].beta = beta_data > 0 ? (bias_trans_coe * beta_data + 0.5) : (bias_trans_coe * beta_data - 0.5);
+      float alpha_scale = kFilterSize[layer] == 1 ? alpha_data / scale : alpha_data / (scale * WINO_INFLAT);
+
+      bias_bn[bias_addr_offset + n].scale = alpha_scale; 
+      bias_bn[bias_addr_offset + n].beta = beta_int;
+      
+      if( layer == ( NUM_LAYER - 1 ) ) printf( "n=%d scale=%d beta=%d\n", n, bias_bn[bias_addr_offset + n].scale, bias_bn[bias_addr_offset + n].beta );
     }
 
     if (layer < ( NUM_LAYER - 1)) {
       filter_addr_offset += MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
       bias_addr_offset += MAX_BIAS_SIZE;
     }
-
-    q_offset += MAX_OUT_CHANNEL;
   }
 
   fclose(infile);
@@ -272,8 +251,10 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
     int FW = kFilterSize[layer];
     int FW_VEC = CEIL(FW, FW_VECTOR);
     int N = kOutputChannels[layer];
-    int C_VEC = FH == 1 ? CEIL(C, C_VECTOR * FW_VECTOR) : CEIL(C, C_VECTOR);
+    int C_VEC = CEIL(C, C_VECTOR);
     int N_VEC = CEIL(N, N_VECTOR);
+    
+    int FW1_VECTOR = FW == 1 ? 1 : FW_VECTOR;
 
     for (int n_vec = 0; n_vec < N_VEC; n_vec++) {
       for (int c_vec = 0; c_vec < C_VEC; c_vec++) {
@@ -284,22 +265,22 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
               // Following is for the storage of FW_VECTOR*C_VECTOR data in filter_buf;
               real filter_buf[FW_VECTOR][C_VECTOR] = {{0}};//FW_VECTOR*C_VECTOR 
               // for(int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) { 
-              for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
+              for (int fw_inc = 0; fw_inc < FW1_VECTOR; fw_inc++) {
                 for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
                   int n = n_vec * N_VECTOR + n_inc;
-                  int c = FH == 1 ? c_vec * C_VECTOR * FW_VECTOR + C_VECTOR * fw_inc + c_inc : c_vec * C_VECTOR + c_inc;
-                  int fw = FH == 1 ? 0 : fw_vec * FW_VECTOR + fw_inc;
+                  int c = c_vec * C_VECTOR + c_inc;
+                  int fw = fw_vec * FW_VECTOR + fw_inc;
                   bool not_out_of_bounds = ( n < N && c < C && fw < FW );
                   
                   unsigned long long int filter_raw_addr = conv_filter_raw_offset + n * (C * FH * FW) + c * FH * FW + fh * FW + fw;
  
                   unsigned long long int addr =
                       conv_filter_offset +
-                      n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                      c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                      fh * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                      fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
-                      n_inc * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+                      c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+                      fh * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+                      fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
+                      n_inc * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
                       fw_inc * C_VECTOR +
                       c_inc;
 

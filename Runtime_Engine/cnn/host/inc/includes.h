@@ -55,7 +55,6 @@ struct KernelInfo {
 
 #include "model_loader.h"
 #include "input_loader.h"
-#include "quantization.h"
 
 #include "opencl_fpga_helper.h"
 #include "network_helper.h"

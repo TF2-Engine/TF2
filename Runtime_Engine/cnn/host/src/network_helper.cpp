@@ -118,18 +118,12 @@ void Verify(int n, char *file_name, char *q, real *output) {
                     nn;;
         //int addr_exp = ( n + kNStart[ NUM_LAYER - 1 ] ) * H * W + h * W + w; // for concat layer splitted branch pool output debug
         int addr_exp = n * H * W + h * W + w;
-        float expect_val = expect[addr_exp];
-#ifdef CONCAT_LAYER_DEBUG
-       int current_q = q[(NUM_CONVOLUTIONS + 1 + kConcatLayer[NUM_LAYER - 1]) * MAX_OUT_CHANNEL + n];
-#else
-       int current_q = q[NUM_LAYER * MAX_OUT_CHANNEL + n];
-#endif
-        float trans = 1 << (-current_q); //take care of shortcut
-        float check_error=fabs(expect_val*trans-output[addr_out]);
+        float expect_val = expect[addr_exp] * TRANS_INFLAT;
+        float check_error=fabs(expect_val-output[addr_out]);
         total_error += check_error;
-        total_expect += fabs(expect_val*trans);
+        total_expect += fabs(expect_val);
         {
-          fprintf(fp_output,"error=%.6f expect1=%f q=%d expect_trans=%.6f output=%.6f addr=%d n=%d h=%d w=%d\n", check_error, expect_val, current_q, expect_val*trans, 1.0*output[addr_out], addr_out, n, h, w);
+          fprintf(fp_output,"error=%.6f expect=%f expect_trans=%.6f output=%.6f addr=%d n=%d h=%d w=%d\n", check_error, expect[addr_exp], expect_val, 1.0*output[addr_out], addr_out, n, h, w);
         }
       }
     }
@@ -199,7 +193,6 @@ void Evaluation(int n, char* q, real* output, int* top_labels) {
 
   for (int i = 0; i < 5; i++) {
     top_labels[i] = stat_array[output_channel - i - 1].label;
-    //INFO( "rank=%d\tlabel=%5d\tfeature=%f\n", i, top_labels[i], stat_array[ output_channel - i - 1 ].feature );
     INFO("rank=%d\tlabel=%5d\tprobability=%f\n", i, top_labels[i], exp(stat_array[output_channel - i - 1].feature) / sum_exp);
   }
 

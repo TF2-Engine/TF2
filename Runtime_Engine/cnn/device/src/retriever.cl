@@ -76,7 +76,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
   
   int cycle_end = input_reader_cycle_end + filter_preload_cycle_end + conv_cycle_end + sequencer_idle_cycle_end;
 #ifdef PRINT_CYCLE 
-  printf("INPUT_READER_CYCLE=%d FILTER_PRELOAD_CYCLE=%d CONV_TOTAL_CYCLE=%d\frame_index", INPUT_READER_CYCLE, FILTER_PRELOAD_CYCLE, CONV_TOTAL_CYCLE);
+  printf("INPUT_READER_CYCLE=%d FILTER_PRELOAD_CYCLE=%d CONV_TOTAL_CYCLE=%d\n", INPUT_READER_CYCLE, FILTER_PRELOAD_CYCLE, CONV_TOTAL_CYCLE);
 #endif
   int filter_ddr_read_cycle = 0;
 
@@ -84,7 +84,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
   INIT_COUNTER(frame_index);
 
   do {   
-    //printf("RETRIEVER frame_cycle=%d/%d\frame_index", frame_cycle, cycle_end);
+    //printf("RETRIEVER frame_cycle=%d/%d\n", frame_cycle, cycle_end);
 
     SET_COUNTER(frame_cycle, cycle_end, 0, cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
@@ -112,7 +112,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
     bool conving = (input_reading == false && filter_preloading == false && sequencer_idle == false);
     
     // reads sequencer output channel
-    SequencerOutput sequencer_output = conving ? read_channel_altera(sequencer_output_channel) : sequencer_output_zero;
+    SequencerOutput sequencer_output = conving ? read_channel_intel(sequencer_output_channel) : sequencer_output_zero;
     
     {
       int C = kInputChannels[sequencer_output.layer];
@@ -213,16 +213,42 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         }
       }
 
-      DotFeatureVector pe_input_data;
-      
+      FeatureVector pe_input_data;
+ 
+      // winograd transform
       #pragma unroll
-      for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
-        #pragma unroll
-        for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-          pe_input_data.v[w_inc].v[c_inc] = feature_ordered_buffer[w_inc].v[c_inc];
+      for(int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
+        if(FH != 1){
+          real input_wng_in[WGD_5x3_INPUT_ROWS][WGD_5x3_INPUT_COLUMNS]; //WGD_4x3_INPUT_ROWS = 6, WGD_4x3_INPUT_COLUMNS = 1
+          #pragma unroll
+          for(int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+            input_wng_in[w_inc][0] = feature_ordered_buffer[w_inc].v[c_inc];
+#ifdef PRINT_INPUT
+            if (sequencer_output.layer == NUM_LAYER - 1 && sequencer_output.h == 2) printf("retriever - cycle=%d/%d c_inc=%d w_inc=%d input_wng_in=%d\n", frame_cycle, cycle_end, c_inc, w_inc, input_wng_in[w_inc][0]);
+#endif
+          }
+
+          Sreal input_wng_out[WGD_5x3_BT_ROWS][WGD_5x3_INPUT_COLUMNS]; //WGD_4x3_B_COLUMNS = 6
+          wgd_5x3_transform_input(input_wng_in, input_wng_out);
+
+          #pragma unroll
+          for(int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+            pe_input_data.v[w_inc].v[c_inc] = input_wng_out[w_inc][0];
+#ifdef PRINT_INPUT
+            if (sequencer_output.layer == NUM_LAYER - 1 && sequencer_output.h == 2) printf("retriever - cycle=%d/%d c_inc=%d w_inc=%d input_wng_out=%d\n", frame_cycle, cycle_end, c_inc, w_inc, input_wng_out[w_inc][0]);
+#endif
+          }
+        } else { // FW = 1, no winograd transform
+          #pragma unroll
+          for(int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+            pe_input_data.v[w_inc].v[c_inc] = feature_ordered_buffer[w_inc].v[c_inc];
+#ifdef PRINT_INPUT
+            if (sequencer_output.layer == NUM_LAYER - 1) printf("retriever - cycle=%d/%d c_inc=%d w_inc=%d pe_input_data=%d\n", frame_cycle, cycle_end, c_inc, w_inc, pe_input_data.v[w_inc].v[c_inc]);
+#endif
+          }
         }
       }
-
+     
       if (input_reading == false && sequencer_idle == false) {
         PeInputData         pe_in       = PeInputDataZero;
         PeInputFilter       pe_filter   = PeInputFilterZero;
@@ -233,7 +259,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_in.input_data_valid = (!filter_preloading) && (!sequencer_output.filter_loading_conv_idle) && (!kIpoolEnable[sequencer_output.layer]);
 
         // adds PE control
-        pe_cont.is_QVECTOR = (FH != 1);
+        pe_cont.not_1x1_filter = (FH != 1);
         pe_cont.conv_start = sequencer_output.conv_start;
         pe_cont.conv_done[0] = sequencer_output.conv_done[0];
         pe_cont.pe_output_relu = kReluEnable[sequencer_output.layer];// && sequencer_output.layer != (NUM_LAYER - 1); // Only For Debug!!!
@@ -243,7 +269,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         if (filter_preloading || sequencer_output.filter_loading) {
           int FILTER_DDR_READ_STEP = FH != 1 ? FILTER_DDR_READ_STEP1 : FILTER_DDR_READ_STEP2;
           if (filter_ddr_read_cycle == (FILTER_DDR_READ_STEP - 1)) {
-            filter_data = read_channel_altera(filter_reader_output_channel);
+            filter_data = read_channel_intel(filter_reader_output_channel);
             pe_filter.data_valid = true;
 
             filter_ddr_read_cycle = 0;
@@ -265,8 +291,6 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
           ((filter_read_page == 0 ? 0 : FILTER_CACHE_PAGE_DEPTH) +
            sequencer_output.filter_read_addr) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
     
-        pe_cont.filter_read_fw_vec = sequencer_output.filter_read_fw_vec; 
-
         pe_cont.filter_write_addr =   
           ((filter_read_page == 1 ? 0 : FILTER_CACHE_PAGE_DEPTH) +
            filter_data.cache_addr) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));
@@ -277,9 +301,11 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_filter.filter_data = filter_data.filter_data;
         pe_filter.bias_bn_data = filter_data.bias_bn_data;
 
-        write_channel_altera(pe_control_channel_first,     pe_cont);
-        write_channel_altera(pe_input_filter_channel_first, pe_filter);
-        write_channel_altera(pe_input_data_channel_first,   pe_in);
+        //printf("retriever - cycle=%d/%d input_data_valid=%d conv_done=%d input_reading=%d sequencer_idle=%d filter_loading_conv_idle=%d\n", frame_cycle, cycle_end, pe_in.input_data_valid, pe_cont.conv_done[0], input_reading, sequencer_idle, sequencer_output.filter_loading_conv_idle);
+
+        write_channel_intel(pe_control_channel_first,     pe_cont);
+        write_channel_intel(pe_input_filter_channel_first, pe_filter);
+        write_channel_intel(pe_input_data_channel_first,   pe_in);
       }
 
       if (input_reading == false && sequencer_idle == false && sequencer_output.filter_loading_conv_idle == 
@@ -298,7 +324,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
           }
         }
 
-        write_channel_altera(ipool_channel, ipool_input);
+        write_channel_intel(ipool_channel, ipool_input);
       }
 
     } // read cache end
@@ -323,10 +349,10 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
       bool feature_writing = false;
       
       if (input_reading) {
-        input_reader_output = read_channel_altera(input_reader_output_channel);
+        input_reader_output = read_channel_intel(input_reader_output_channel);
       } else {
-        pool_tail_output = read_channel_nb_altera(retriever_input_channel, &pool_tail_data_received);
-        if(!pool_tail_data_received) pool_tail_output = read_channel_nb_altera(end_pool_output_channel, &pool_tail_data_received);
+        pool_tail_output = read_channel_nb_intel(retriever_input_channel, &pool_tail_data_received);
+        if(!pool_tail_data_received) pool_tail_output = read_channel_nb_intel(end_pool_output_channel, &pool_tail_data_received);
       } 
   
       //

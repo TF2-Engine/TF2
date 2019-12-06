@@ -45,7 +45,7 @@ TASK kernel void pool(int frame_num) {
 
 #ifdef PRINT_CYCLE
   int ipool_channel_cnt = 0;
-  printf("POOL_TOTAL_CYCLE=%d\frame_index", POOL_TOTAL_CYCLE);
+  printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
 #endif
 
   #pragma ivdep  
@@ -53,6 +53,8 @@ TASK kernel void pool(int frame_num) {
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
     
+    //printf("pool - cycle=%d/%d\n", cycle, cycle_end);
+
     bool new_layer = false;
     int start_cycle = 0;
     int layer_temp = 0;
@@ -64,8 +66,8 @@ TASK kernel void pool(int frame_num) {
         new_layer = true;
       }
       start_cycle += POOL_CYCLE(i);
-#ifdef PRINT_CYCLE
-      printf("POOL_CYCLE(%d)=\t%d\frame_index", i, POOL_CYCLE(i));
+#ifdef PRINT_POOL_CYCLE
+      printf("POOL_CYCLE(%d)=\t%d\n", i, POOL_CYCLE(i));
 #endif
     }
 
@@ -108,7 +110,7 @@ TASK kernel void pool(int frame_num) {
     if (valid_n && valid_h && valid_w) {
       ReluOutput relu_output;
       
-      relu_output = kIpoolEnable[layer] ? read_channel_altera(ipool_channel) : read_channel_altera(relu_output_channel);
+      relu_output = kIpoolEnable[layer] ? read_channel_intel(ipool_channel) : read_channel_intel(relu_output_channel);
 
       #pragma unroll
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
@@ -130,7 +132,7 @@ TASK kernel void pool(int frame_num) {
 #ifdef PRINT_POOL_INPUT
       if (kIpoolEnable[layer]) ipool_channel_cnt++;
 #endif
-      } else { 
+    } else { 
       #pragma unroll
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
         #pragma unroll
@@ -185,11 +187,13 @@ TASK kernel void pool(int frame_num) {
         // compute output value
         // If the pool window is not equal to 3, you need to modify the below code.
         if (compute_pool) {
-          pool_out = max(max(pool_in[0], pool_in[1]), pool_in[2]);
+          pool_out = kPoolWindow[layer] == 3 ? max(max(pool_in[0], pool_in[1]), pool_in[2]) : max(pool_in[0], pool_in[1]);
         } else {
           pool_out = pool_in[0];
         }
 
+        mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        
         h_buffer[EDGE_H][w_inc].v[n_inc] = pool_out;
       }
     }
@@ -239,7 +243,7 @@ TASK kernel void pool(int frame_num) {
         }
 
         if (compute_pool) {
-          output_value = max(max(pool_in[0], pool_in[1]), pool_in[2]);
+          output_value = kPoolWindow[layer] == 3 ? max(max(pool_in[0], pool_in[1]), pool_in[2]) : max(pool_in[0], pool_in[1]);
         } else {
           output_value = pool_in[0]; 
         }
@@ -251,8 +255,10 @@ TASK kernel void pool(int frame_num) {
       }
     }
     
-    write_channel_altera(pool_output_channel, pool_output);
+    write_channel_intel(pool_output_channel, pool_output);
 
+    //printf("pool write channel.\n");
+    
     edge_w_nnvec_addr = (COUNTER_LAST(nn_vec) ? 0 : edge_w_nnvec_addr + 1) & BIT_MASK(CLOG2(NNVEC_ITER));
 
     if (COUNTER_LAST(nn_vec)) {

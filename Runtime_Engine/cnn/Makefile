@@ -18,10 +18,10 @@ ECHO := @
 endif
 
 # Where is the Intel(R) FPGA SDK for OpenCL(TM) software?
-ifeq ($(wildcard $(ALTERAOCLSDKROOT)),)
+ifeq ($(wildcard $(INTELFPGAOCLSDKROOT)),)
 $(error Set ALTERAOCLSDKROOT to the root directory of the Intel(R) FPGA SDK for OpenCL(TM) software installation)
 endif
-ifeq ($(wildcard $(ALTERAOCLSDKROOT)/host/include/CL/opencl.h),)
+ifeq ($(wildcard $(INTELFPGAOCLSDKROOT)/host/include/CL/opencl.h),)
 $(error Set ALTERAOCLSDKROOT to the root directory of the Intel(R) FPGA SDK for OpenCL(TM) software installation.)
 endif
 

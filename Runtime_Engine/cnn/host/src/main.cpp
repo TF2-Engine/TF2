@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
   // verification
   for (int i = 0; i < num_images; i++) {
     Verify(i, verify_file_name, network.q, network.output);
-    Evaluation(i, network.q, network.output, network.top_labels);
   }
 
   // CleanUp

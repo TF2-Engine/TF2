@@ -29,16 +29,22 @@ limitations under the License.
 //
 
 //#define CONCAT_LAYER_DEBUG
-
-//#define STATIC_CYCLE
+#define STATIC_CYCLE
 //#define PRINT_N 1
 //#define PRINT_CYCLE
-#define PRINT_SEQUENCER_INDEX
+//#define PRINT_CONV_CYCLE
+//#define PRINT_POOL_CYCLE
+//#define PRINT_FEATURE_CYCLE
+//#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
 //#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
+//#define PRINT_FILTER
+//#define PRINT_INPUT
+//#define PRINT_OUTPUT
+//#define FIRST_LAYER_DEBUG
 
 //
 // Configuration Parameters
@@ -54,7 +60,6 @@ limitations under the License.
 #define FIRST_FILTER_SIZE 7
 
 #define MAX_OUT_CHANNEL 1024
-#define MAX_POOL_OUTPUT_WVEC CEIL(56, W_VECTOR)
 
 // the maximum pool window size
 #define POOL_WINDOW_MAX 3
@@ -65,12 +70,16 @@ limitations under the License.
 #define DDR_SIZE (DDR_PAGE_SIZE0 + DDR_PAGE_SIZE1)
 
 // set size of feature map cache
-#define CACHE_PAGE_SIZE (CEIL(27, C_VECTOR) * 114 * CEIL(114, W_VECTOR)) // single buffer size: be calculated from the layer of max slice size
+#ifdef FIRST_LAYER_DEBUG
+  #define CACHE_PAGE_SIZE (CEIL(64, C_VECTOR) * 114 * CEIL(114, W_VECTOR)) // single buffer size: be calculated from the layer of max slice size
+#else
+  #define CACHE_PAGE_SIZE (CEIL(27, C_VECTOR) * 114 * CEIL(114, W_VECTOR)) // single buffer size: be calculated from the layer of max slice size
+#endif
 #define CACHE_SIZE (CACHE_PAGE_SIZE * 3)
 
 // set size of filter buffer
 #define FILTER_CACHE_PAGE_SIZE1 (NEXT_DIVISIBLE(192, C_VECTOR) * 3 * CEIL(3, FW_VECTOR))
-#define FILTER_CACHE_PAGE_SIZE2 (NEXT_DIVISIBLE(1024, C_VECTOR * FW_VECTOR))
+#define FILTER_CACHE_PAGE_SIZE2 (NEXT_DIVISIBLE(1024, C_VECTOR))
 #define FILTER_CACHE_PAGE_SIZE  (MYMAX2(FILTER_CACHE_PAGE_SIZE1, FILTER_CACHE_PAGE_SIZE2))
 
 #define FILTER_CACHE_PAGE_DEPTH (NEXT_POWER_OF_2(CEIL(FILTER_CACHE_PAGE_SIZE, C_VECTOR))) // size of every cache is FW_VECTOR * C_VECTOR
@@ -202,7 +211,7 @@ CONSTANT bool kDDRWriteEnable[NUM_CONVOLUTIONS] = {
   0,       
   0,       
   0, 
-  0, 0, 0, 0, 0, 0, 0, 
+  1, 0, 1, 0, 1, 0, 1, 
   1, 0, 1, 0, 1, 0, 1, 
   1, 0, 1, 0, 1, 0, 1, 
   1, 0, 1, 0, 1, 0, 1, 
@@ -302,33 +311,33 @@ CONSTANT int kFilterSize[NUM_CONVOLUTIONS] = {
   3, 
   1, 
   3, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
-  1, 1, 3, 1, 5, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
+  1, 1, 3, 1, 3, 1, 1, 
   1
 };
-CONSTANT int kFilterSizeMax = 5;
+CONSTANT int kFilterSizeMax = 3;
 
 // Conv pad
 CONSTANT int kPadWidth[NUM_CONVOLUTIONS] = {
   0, 
   0, 
   1, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
   0
 };
 
@@ -337,15 +346,15 @@ CONSTANT int kPadHeight[NUM_CONVOLUTIONS] = {
   0, 
   0, 
   1, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
-  0, 0, 1, 0, 2, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
+  0, 0, 1, 0, 1, 0, 0, 
   0
 };
 
@@ -439,83 +448,83 @@ CONSTANT int kInputChannels[NUM_CONVOLUTIONS] = {
 // formula : kCvecEnd * R * kFWvecEnd
 CONSTANT int kFilterLoadSize[NUM_CONVOLUTIONS] = {
   CEIL(27,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR), 
-  CEIL(64,   C_VECTOR * FW_VECTOR) ,   
+  CEIL(64,   C_VECTOR) ,   
   CEIL(64,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   
-  CEIL(192,  C_VECTOR * FW_VECTOR),                 // inception3a_1x1
-  CEIL(192,  C_VECTOR * FW_VECTOR), 
+  CEIL(192,  C_VECTOR),                 // inception3a_1x1
+  CEIL(192,  C_VECTOR), 
   CEIL(96,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(192,  C_VECTOR * FW_VECTOR), 
-  CEIL(16,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(192,  C_VECTOR), 
+  CEIL(16,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(192,   C_VECTOR * FW_VECTOR), 
+  CEIL(192,   C_VECTOR), 
   
-  CEIL(256,  C_VECTOR * FW_VECTOR),                 // inception3b_1x1
-  CEIL(256,  C_VECTOR * FW_VECTOR), 
+  CEIL(256,  C_VECTOR),                 // inception3b_1x1
+  CEIL(256,  C_VECTOR), 
   CEIL(128,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(256,  C_VECTOR * FW_VECTOR), 
-  CEIL(32,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(256,  C_VECTOR), 
+  CEIL(32,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(256,   C_VECTOR * FW_VECTOR), 
+  CEIL(256,   C_VECTOR), 
   
-  CEIL(480,  C_VECTOR * FW_VECTOR),                 // inception4a_1x1
-  CEIL(480,  C_VECTOR * FW_VECTOR), 
+  CEIL(480,  C_VECTOR),                 // inception4a_1x1
+  CEIL(480,  C_VECTOR), 
   CEIL(96,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(480,  C_VECTOR * FW_VECTOR), 
-  CEIL(16,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(480,  C_VECTOR), 
+  CEIL(16,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(480,   C_VECTOR * FW_VECTOR), 
+  CEIL(480,   C_VECTOR), 
   
-  CEIL(512,  C_VECTOR * FW_VECTOR),                 // inception4b_1x1
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
+  CEIL(512,  C_VECTOR),                 // inception4b_1x1
+  CEIL(512,  C_VECTOR), 
   CEIL(112,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
-  CEIL(24,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(512,  C_VECTOR), 
+  CEIL(24,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(512,   C_VECTOR * FW_VECTOR), 
+  CEIL(512,   C_VECTOR), 
   
-  CEIL(512,  C_VECTOR * FW_VECTOR),                 // inception4c_1x1
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
+  CEIL(512,  C_VECTOR),                 // inception4c_1x1
+  CEIL(512,  C_VECTOR), 
   CEIL(128,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
-  CEIL(24,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(512,  C_VECTOR), 
+  CEIL(24,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(512,   C_VECTOR * FW_VECTOR), 
+  CEIL(512,   C_VECTOR), 
   
-  CEIL(512,  C_VECTOR * FW_VECTOR),                 // inception4d_1x1
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
+  CEIL(512,  C_VECTOR),                 // inception4d_1x1
+  CEIL(512,  C_VECTOR), 
   CEIL(144,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(512,  C_VECTOR * FW_VECTOR), 
-  CEIL(32,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(512,  C_VECTOR), 
+  CEIL(32,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(512,   C_VECTOR * FW_VECTOR), 
+  CEIL(512,   C_VECTOR), 
   
-  CEIL(528,  C_VECTOR * FW_VECTOR),                 // inception4e_1x1
-  CEIL(528,  C_VECTOR * FW_VECTOR), 
+  CEIL(528,  C_VECTOR),                 // inception4e_1x1
+  CEIL(528,  C_VECTOR), 
   CEIL(160,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(528,  C_VECTOR * FW_VECTOR), 
-  CEIL(32,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(528,  C_VECTOR), 
+  CEIL(32,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(528,   C_VECTOR * FW_VECTOR), 
+  CEIL(528,   C_VECTOR), 
   
-  CEIL(832,  C_VECTOR * FW_VECTOR),                 // inception5a_1x1
-  CEIL(832,  C_VECTOR * FW_VECTOR), 
+  CEIL(832,  C_VECTOR),                 // inception5a_1x1
+  CEIL(832,  C_VECTOR), 
   CEIL(160,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(832,  C_VECTOR * FW_VECTOR), 
-  CEIL(32,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(832,  C_VECTOR), 
+  CEIL(32,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(832,   C_VECTOR * FW_VECTOR), 
+  CEIL(832,   C_VECTOR), 
   
-  CEIL(832,  C_VECTOR * FW_VECTOR),                 // inception3b_1x1
-  CEIL(832,  C_VECTOR * FW_VECTOR), 
+  CEIL(832,  C_VECTOR),                 // inception3b_1x1
+  CEIL(832,  C_VECTOR), 
   CEIL(192,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
-  CEIL(832,  C_VECTOR * FW_VECTOR), 
-  CEIL(48,   C_VECTOR) * 5 * CEIL(5, FW_VECTOR),  
+  CEIL(832,  C_VECTOR), 
+  CEIL(48,   C_VECTOR) * 3 * CEIL(3, FW_VECTOR),  
   0,
-  CEIL(832,   C_VECTOR * FW_VECTOR), 
+  CEIL(832,   C_VECTOR), 
   
-  CEIL(1024,   C_VECTOR * FW_VECTOR), 
-  };
+  CEIL(1024,   C_VECTOR) 
+};
 
 CONSTANT int kOutputChannels[NUM_CONVOLUTIONS] = {
    64,  
@@ -572,7 +581,11 @@ CONSTANT int kConvStride[NUM_CONVOLUTIONS] = {
 //
 
 CONSTANT bool kPoolEnable[NUM_CONVOLUTIONS] = {
-   true,             
+#ifdef FIRST_LAYER_DEBUG
+  false,
+#else
+  true,
+#endif
   false,            
    true, 
   false, false, false, false, false, true, false, 
@@ -599,7 +612,7 @@ CONSTANT int kPoolWindow[NUM_CONVOLUTIONS] = {
   3, 3, 3, 3, 3, 3, 3, 
   3, 3, 3, 3, 3, 3, 3, 
   3, 3, 3, 3, 3, 3, 3, 
-  3, 3, 3, 3, 3, 3, 3, 
+  2, 2, 2, 2, 2, 3, 2, 
   3, 3, 3, 3, 3, 3, 3, 
   3, 3, 3, 3, 3, 3, 3, 
   3  // fc1000
@@ -624,7 +637,11 @@ CONSTANT int kPoolType[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT bool kPoolStride2[NUM_CONVOLUTIONS] = {
-  true,       
+#ifdef FIRST_LAYER_DEBUG
+  false,
+#else
+  true,
+#endif
   false,       
   true, 
   false, false, false, false, false, false, false, 
@@ -641,7 +658,11 @@ CONSTANT bool kPoolStride2[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int kPoolOutputWidth[NUM_CONVOLUTIONS] = {
+#ifdef FIRST_LAYER_DEBUG
+  112,
+#else
   56,
+#endif
   56,
   28, 
   28, 28, 28, 28, 28, 28, 28, 
@@ -651,16 +672,24 @@ CONSTANT int kPoolOutputWidth[NUM_CONVOLUTIONS] = {
   14, 14, 14, 14, 14, 14, 14,
   14, 14, 14, 14, 14, 14, 14,
   14, 14, 14, 14, 14, 14, 14,
-  // 14, 14, 14, 14, 14, 14, 14,
+  //14, 14, 14, 14, 14, 14, 14,
   7, 14,  7, 14,  7, 14,  7,
    7,  7,  7,  7,  7,  7,  7,
    7,  7,  7,  7,  7,  7,  7,
    1   // fc1000
 };
-CONSTANT int kPoolOutputWidthMax = 56;
+#ifdef FIRST_LAYER_DEBUG
+  CONSTANT int kPoolOutputWidthMax = 112;
+#else
+  CONSTANT int kPoolOutputWidthMax = 56;
+#endif
 
 CONSTANT int kPoolOutputHeight[NUM_CONVOLUTIONS] = {
+#ifdef FIRST_LAYER_DEBUG
+  112,
+#else
   56,
+#endif
   56,
   28, 
   28, 28, 28, 28, 28, 28, 28, 
@@ -670,16 +699,24 @@ CONSTANT int kPoolOutputHeight[NUM_CONVOLUTIONS] = {
   14, 14, 14, 14, 14, 14, 14,
   14, 14, 14, 14, 14, 14, 14,
   14, 14, 14, 14, 14, 14, 14,
- //14, 14, 14, 14, 14, 14, 14,
+  //14, 14, 14, 14, 14, 14, 14,
    7, 14,  7, 14,  7, 14,  7,
    7,  7,  7,  7,  7,  7,  7,
    7,  7,  7,  7,  7,  7,  7,
    1   // fc1000
 };
-CONSTANT int kPoolOutputHeightMax = 56;
+#ifdef FIRST_LAYER_DEBUG
+  CONSTANT int kPoolOutputHeightMax = 112;
+#else
+  CONSTANT int kPoolOutputHeightMax = 56;
+#endif
 
 CONSTANT int kPoolOutputWvecEnd[NUM_CONVOLUTIONS] = {
+#ifdef FIRST_LAYER_DEBUG
+  CEIL(112, W_VECTOR),
+#else
   CEIL(56, W_VECTOR),
+#endif
   CEIL(56, W_VECTOR), 
   CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), 
@@ -736,15 +773,15 @@ CONSTANT int kFWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(3, FW_VECTOR),
   CEIL(1, FW_VECTOR), 
   CEIL(3, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
-  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(5, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
+  CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR), CEIL(1, FW_VECTOR), 
   CEIL(1, FW_VECTOR)  // fc1000
 };
 CONSTANT int kFWvecEndMax = CEIL(5, FW_VECTOR);
@@ -855,34 +892,34 @@ CONSTANT int kNEnd[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT bool kBiasEnable[NUM_CONVOLUTIONS] = {
-  1,
-  1,
-  1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
-  1, 1, 1, 1, 1, 0, 1,
+  0,
+  0,
+  0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0,
   1
 };
 
 CONSTANT bool kBnEnable[NUM_CONVOLUTIONS] = {
   1,
-  0,
   1,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0,
+  1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
+  1, 1, 1, 1, 1, 0, 1,
   0
 };
 
@@ -974,15 +1011,15 @@ CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = {
   0,
   0,
   0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
-  0,    0,    0,    0,    0,    0,    0,
+  0,    0,       0,       0,    0,    0,    0,
+  0,    0,       0,       0,    0,    0,    5000,
+  0,    5000,    0,    5000,    0,    0,    0,
+  0,    5000,    0,    5000,    0,    0,    0,
+  0,    5000,    0,    5000,    0,    0,    5000,
+  0,    0,       0,    5000,    0,    0,    0,
+  0,    5000,    0,    5000,    0,    0,    5000,
+  0,    5000,    0,    5000,    0,    0,    0,
+  0,    5000,    0,    5000,    0,    0,    0,
   0
 };
 
@@ -991,6 +1028,7 @@ CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = {
 //
 
 #ifdef STATIC_CYCLE
+/*
 CONSTANT int feature_writer_cycles[NUM_CONVOLUTIONS] = {
   1792,
   1792,
@@ -1284,6 +1322,302 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 #define POOL_TOTAL_CYCLE 60389 
 #define FEATURE_WRITER_TOTAL_CYCLE 24192 
 #define END_POOL_TOTAL_CYCLE 448 
+*/
+
+CONSTANT int feature_writer_cycles[NUM_CONVOLUTIONS] = {
+1792, //7168,
+1792,
+1344,
+448 ,
+672 ,
+896 ,
+112 ,
+224 ,
+1344,
+224 ,
+224 ,
+896 ,
+336 ,
+224 ,
+168 ,
+1792,
+112 ,
+336 ,
+168 ,
+364 ,
+28  ,
+84  ,
+840 ,
+112 ,
+280 ,
+196 ,
+392 ,
+56  ,
+112 ,
+896 ,
+112 ,
+224 ,
+224 ,
+448 ,
+56  ,
+112 ,
+896 ,
+112 ,
+196 ,
+252 ,
+504 ,
+56  ,
+112 ,
+896 ,
+112 ,
+112 ,
+280 ,
+140 ,
+56  ,
+56  ,
+924 ,
+56  ,
+112 ,
+70  ,
+140 ,
+14  ,
+56  ,
+364 ,
+56  ,
+168 ,
+84  ,
+168 ,
+21  ,
+56  ,
+364 ,
+56  ,
+63
+};
+
+CONSTANT int filter_reader_conv_cycles[NUM_CONVOLUTIONS] = {
+384   ,
+256   ,
+2304  ,
+768   ,
+1152  ,
+2304  ,
+192   ,
+96    ,
+0     ,
+384   ,
+2048  ,
+2048  ,
+4608  ,
+512   ,
+576   ,
+0     ,
+1024  ,
+5760  ,
+2880  ,
+3744  ,
+480   ,
+144   ,
+0     ,
+1920  ,
+5120  ,
+3584  ,
+4704  ,
+1024  ,
+384   ,
+0     ,
+2048  ,
+4096  ,
+4096  ,
+6144  ,
+1024  ,
+384   ,
+0     ,
+2048  ,
+3584  ,
+4608  ,
+7776  ,
+1024  ,
+384   ,
+0     ,
+2048  ,
+8448  ,
+5280  ,
+9600  ,
+1056  ,
+768   ,
+0     ,
+4224  ,
+13312 ,
+8320  ,
+9600  ,
+1664  ,
+768   ,
+0     ,
+6656  ,
+19968 ,
+9984  ,
+13824 ,
+2496  ,
+1152  ,
+0     ,
+6656  ,
+64512 
+};
+
+CONSTANT int conv_cycles[NUM_CONVOLUTIONS] = {
+61824,
+7168 ,
+96768,
+5376 ,
+8064 ,
+24192,
+1344 ,
+1008 ,
+1424 ,
+2688 ,
+14336,
+14336,
+48384,
+3584 ,
+6048 ,
+1936 ,
+7168 ,
+10080,
+5040 ,
+9828 ,
+840  ,
+378  ,
+1292 ,
+3360 ,
+8960 ,
+6272 ,
+12348,
+1792 ,
+1008 ,
+1380 ,
+3584 ,
+7168 ,
+7168 ,
+16128,
+1792 ,
+1008 ,
+1380 ,
+3584 ,
+6272 ,
+8064 ,
+20412,
+1792 ,
+1008 ,
+1380 ,
+3584 ,
+14784,
+9240 ,
+25200,
+1848 ,
+2016 ,
+1424 ,
+7392 ,
+13312,
+7968 ,
+9952 ,
+1196 ,
+756  ,
+1189 ,
+6656 ,
+19968,
+9728 ,
+14080,
+2028 ,
+1134 ,
+1189 ,
+6848 ,
+63552
+};
+
+CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
+10488,
+2088 ,
+8352 ,
+600  ,
+900  ,
+1440 ,
+150  ,
+360  ,
+1800 ,
+300  ,
+1200 ,
+1200 ,
+2160 ,
+300  ,
+1080 ,
+2400 ,
+600  ,
+576  ,
+288  ,
+832  ,
+48   ,
+192  ,
+1440 ,
+192  ,
+480  ,
+336  ,
+896  ,
+96   ,
+256  ,
+1536 ,
+192  ,
+384  ,
+384  ,
+1024 ,
+96   ,
+256  ,
+1536 ,
+192  ,
+336  ,
+432  ,
+1152 ,
+96   ,
+256  ,
+1536 ,
+192  ,
+768  ,
+480  ,
+1280 ,
+96   ,
+512  ,
+1584 ,
+384  ,
+288  ,
+180  ,
+360  ,
+36   ,
+144  ,
+936  ,
+144  ,
+432  ,
+216  ,
+432  ,
+54   ,
+144  ,
+936  ,
+144  ,
+189
+};
+
+#define FEATURE_WRITER_CYCLE(i) feature_writer_cycles[i]
+#define FILTER_READER_CONV_CYCLE(i) filter_reader_conv_cycles[i] 
+#define CONV_CYCLE(i) conv_cycles[i]
+#define POOL_CYCLE(i) pool_cycles[i]
+
+#define CONV_TOTAL_CYCLE 674010 // 61824 
+#define INPUT_READER_CYCLE 3876 
+#define FILTER_PRELOAD_CYCLE 96 
+#define FILTER_READER_CONV_TOTAL_CYCLE 275952 // 384
+#define CONV_TOTAL_WRITE_CACHE 38164 // 10304
+#define POOL_TOTAL_CYCLE 60389 // 10488 
+#define FEATURE_WRITER_TOTAL_CYCLE 24192 // 1792 //7168 
+#define END_POOL_TOTAL_CYCLE 448 // 0
+
 
 #endif
 

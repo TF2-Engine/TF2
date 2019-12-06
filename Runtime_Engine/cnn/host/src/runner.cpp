@@ -28,7 +28,6 @@ void Runner::Init() {
 void Runner::EnqueueKernels(bool create_events, bool enqueue_infinite_loop) {
   for (int i = 0; i < platform.kernels.size(); i++) {
     if (platform.kernels[i].has_infinite_loop == enqueue_infinite_loop) {
-      //INFO("infinite_loop=%d kernel_name=%s\n", enqueue_infinite_loop, platform.kernels[i].name.c_str());
       cl_int status = clEnqueueTask(platform.kernels[i].queue, platform.kernels[i].kernel, 0, NULL,
           create_events ? &(platform.kernels[i]).event : NULL);
       std::string err_msg = platform.kernels[i].name + ": Failed to launch kernel.";
@@ -155,7 +154,7 @@ void Runner::Run() {
 
   InputConvert(network.input_raw, network.input, num_images);
 
-  float trans = 1.0f / ( 1 << network.q[0]);
+  float trans = TRANS_INFLAT;
   for (int i = 0; i < input_device_size; i++) {
     float tmp = network.input[i] * trans;
     int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);

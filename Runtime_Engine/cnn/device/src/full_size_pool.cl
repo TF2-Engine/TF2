@@ -36,7 +36,7 @@ TASK kernel void full_size_pool(int frame_num) {
   int frame_cycle_end = END_POOL_TOTAL_CYCLE;
 
 #ifdef PRINT_CYCLE
-  printf("END_POOL_TOTAL_CYCLE=%d\frame_index", END_POOL_TOTAL_CYCLE);
+  printf("END_POOL_TOTAL_CYCLE=%d\n", END_POOL_TOTAL_CYCLE);
 #endif
 
   Sreal result[N_VECTOR] = {0};
@@ -89,7 +89,7 @@ TASK kernel void full_size_pool(int frame_num) {
       new_layer = false;
     }  
   
-    PoolTailOutput end_pool_input = read_channel_altera(end_pool_input_channel);
+    PoolTailOutput end_pool_input = read_channel_intel(end_pool_input_channel);
     PoolTailOutput end_pool_output = PoolTailOutputZero;
 
     #pragma unroll
@@ -112,9 +112,6 @@ TASK kernel void full_size_pool(int frame_num) {
       for (int n_inc = 0; n_inc < N_VECTOR; n_inc++) {
         int n = n_vec * N_VECTOR + n_inc;
         if (n < N) {
-          // (1/(7*7))*power(2, 15) = 669
-          //float temp = (float)result[n_inc] * 0.02040816;
-          //Mreal Mtemp = temp > 0 ? (temp + 0.5) : (temp - 0.5);
           Mreal Mtemp = (((result[n_inc] * 669) >> 14) + 1) >> 1;
           end_pool_output.write_data[0][n_inc] = Mtemp > REALMAX ? REALMAX : Mtemp < REALMIN ? REALMIN : Mtemp;
           int cache_write_offset = kCacheWriteBase[layer];
@@ -124,7 +121,7 @@ TASK kernel void full_size_pool(int frame_num) {
         }
       }
       
-      write_channel_altera(end_pool_output_channel, end_pool_output);
+      write_channel_intel(end_pool_output_channel, end_pool_output);
     }
     
     INCREASE_COUNTER(w_vec);
