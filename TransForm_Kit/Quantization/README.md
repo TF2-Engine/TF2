@@ -10,6 +10,8 @@ A PyTorch implementation of CAQ method that used for TF2 FPGA inference. The CAQ
 
 3. Quantize the activations by channel: Calculate the means of the tensors of each channel. If the absolute values of activations are greater than the means, then the values will be forced to be equal to the means. The other values remain unchanged. 
 
+4. For the winograd algorithm, it's often used for convolution acceleration. The CNN wiht winograd could be quantizaed by a linear int8 quantization. This kit also supplies the filter, feature and the first layer(for filter is 7x7) transformation using in the winograd inference.
+
 Currently, this implementation supports ResNet50, GoogLeNet (Inception V1), SqueezeNet, SSD and it's easy to modify for other CNN.
 
 ## Installation
@@ -45,7 +47,9 @@ python feature_write.py 'net_name'
 2. Quantization:  
 
 ```
-python quantization.py 'net_name'
+python quantization.py shift 'net_name'
+python quantization.py general 'net_name'
+python quantization.py winograd 'net_name'
 ```
 
 3. Modify for your own CNN
