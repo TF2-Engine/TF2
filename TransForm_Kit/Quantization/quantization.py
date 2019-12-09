@@ -20,7 +20,16 @@ import math
 from net_structure import structure_hook
 from model_loader import load_model
 import sys, os
-def QuantizeLinear08(x):
+
+def QuantizeLinear(x):
+    Max = torch.max(abs(x))
+    Limiter = pow(2,n-1) - 1
+    scale = 1
+    if Max != 0:
+        scale = torch.round(Limiter/Max)
+    return (scale)
+
+def QuantizeForShift(x):
     Max = np.max(abs(x))
     Q = 0
     if Max > 0:
@@ -35,33 +44,48 @@ def QuantizeLinear08(x):
             out = x*pow(2,Q)
     return(Q)
 
-def QuantizeChannel(x):
-    power = []
+def QuantizeChannel(style, x):
     shape = x.shape
-    if len(shape) == 1:
-        for i in range(x.shape[0]):
-            Q = QuantizeLinear08(x[i])
-            power.append(Q)
-    else:
-        for i in range(x.shape[1]):
-            Q = QuantizeLinear08(x[:,i])
-            power.append(Q)
-    power = np.array(power)
-    mean = power.mean()
-    for i in range(power.shape[0]):
-        if power[i] > 0:
-            if power[i] > mean:
-                power[i] = math.floor(mean)
-        if power[i] < 0:
-            if power[i] < mean:
-                power[i] = math.ceil(mean)
-    return (power)
+    if style == 'shift':
+        power = []
+        if len(shape) == 1:
+            for i in range(x.shape[0]):
+                Q = QuantizeForShift(x[i])
+                power.append(Q)
+        else:
+            for i in range(x.shape[1]):
+                Q = QuantizeForShift(x[:,i])
+                power.append(Q)
+        power = np.array(power)
+        mean = power.mean()
+        for i in range(power.shape[0]):
+            if power[i] > 0:
+                if power[i] > mean:
+                    power[i] = math.floor(mean)
+            if power[i] < 0:
+                if power[i] < mean:
+                    power[i] = math.ceil(mean)
+        return (power)
+    if style == 'simple' or 'winograd':
+        scale_list = []
+        if len(shape) == 1:
+            for i in range(x.shape[0]):
+                scale = LinearQuantization(x[i], n)
+                scale_list.append(scale)
+        else:
+            for i in range(x.shape[1]):
+                scale = LinearQuantization(x[i], n)
+                scale_list.append(scale)
+        return (scale_list)
+
+    
 
 if __name__ == "__main__":
     
     batch_size = 1
     # set your network will be quantized: googlenet', 'resnet50', 'squeezenet', 'ssd' ...
-    net_name = sys.argv[1]
+    style = sys.argv[1]
+    net_name = sys.argv[2]
     q_path = 'channel_q/' + net_name
     model, layer_name, Features, feature_path = load_model(net_name)
     layer_num = len(layer_name)
@@ -103,7 +127,7 @@ if __name__ == "__main__":
                                 data = bin_reader.read(4)
                                 data_float = struct.unpack("f",data)[0]
                                 Features[m][i][j][k][l] = data_float
-        power = QuantizeChannel(Features[m])
+        power = QuantizeChannel(style, Features[m])
         if not os.path.exists(q_path):
             os.makedirs(q_path)
         with open(q_path + '/' + layer_name[m] + '.txt','w') as data:
