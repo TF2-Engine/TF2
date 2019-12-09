@@ -13,6 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
+import numpy as np
+
 def Conv1FeatureTransfer(feature):
     # the x is the feature after padding=3, 230x230 
     # the 4x4, 4x3, 3x4, 3x3 is the shape of the corresponding fitler
