@@ -15,7 +15,7 @@
 
 import numpy as np
 
-def Conv1FeatureTransfer(feature):
+def Conv1FeatureTransform(feature):
     # the x is the feature after padding=3, 230x230 
     # the 4x4, 4x3, 3x4, 3x3 is the shape of the corresponding fitler
     npd = ((0,0),(0,0),(3,3),(3,3))
@@ -65,7 +65,7 @@ def Conv1FeatureTransfer(feature):
     feature_list.append(mid_feature9)
     return feature_list
 
-def Conv1FilterTransfer(weight):
+def Conv1FilterTransform(weight):
     weight_list = []
     weight_4x4 = np.zeros((weight.shape[0],weight.shape[1],4,4))
     weight_4x3 = np.zeros((weight.shape[0],weight.shape[1],4,3))
@@ -134,7 +134,7 @@ def Conv1FilterTransfer(weight):
 
     return weight_list
 
-def Conv1_7x7_2_3x3_transfer(feature_raw, filter_raw):
+def Conv1_7x7_2_3x3_transform(feature_raw, filter_raw):
     feature_list = Conv1FeatureTransfer(feature_raw)
     weight_list = Conv1FilterTransfer(filter_raw)
 
