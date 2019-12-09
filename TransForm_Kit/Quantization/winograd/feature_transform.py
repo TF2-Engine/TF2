@@ -16,11 +16,11 @@
 import numpy as np
 from numpy import mat
 
-""" 1D Winograd, the input or the feature from bottom layer should be transfered by the winograd feature transfer matrix. 1D winograd math:: A^T[(Gg)*(B^Td)], the feature transfer is 'B^Td', where 'd' is the feature and the B is the transfer matrix, the '^T' means the transpose of the matrix. The 1D feature transfer implementation includes F(2,3), F(4,3), F(5,3), for the F(a,b), where the first number 'a' called 'trans_size'.
+""" 1D Winograd, the input or the feature from bottom layer should be transformed by the winograd feature transformation matrix. 1D winograd math:: A^T[(Gg)*(B^Td)], the feature transformation is 'B^Td', where 'd' is the feature and the B is the transformation matrix, the '^T' means the transpose of the matrix. The 1D feature transformation implementation includes F(2,3), F(4,3), F(5,3), for the F(a,b), where the first number 'a' called 'trans_size'.
 
-  2D Winograd, the feature should be transfered by the winograd feature transfer matrix. 2D winograd math:: A^T[(GgG^T)*(B^TdB)]A, the feature transfer is 'B^dB', where 'd' is the feature and the B and B^T is the feature transfer matrix and its transpose, respectively.The 2D feature transfer implementation includes F(2x2,3x3), F(4x4,3x3), F(5x5,3x3), for the F(axa,bxb), where the first number 'a' called 'trans_size'. """
+  2D Winograd, the feature should be transformed by the winograd feature transformation matrix. 2D winograd math:: A^T[(GgG^T)*(B^TdB)]A, the feature transformation is 'B^dB', where 'd' is the feature and the B and B^T is the feature transformation matrix and its transpose, respectively.The 2D feature transformation implementation includes F(2x2,3x3), F(4x4,3x3), F(5x5,3x3), for the F(axa,bxb), where the first number 'a' called 'trans_size'. """
 
-def FeatureTransfer(feature_shape,feature_raw, feature_trans, trans_size, trans_dim):
+def FeatureTransform(feature_shape,feature_raw, feature_trans, trans_size, trans_dim):
     
     k = 0
     """ F(2,3) or F(2x2,3x3) """
@@ -44,14 +44,14 @@ def FeatureTransfer(feature_shape,feature_raw, feature_trans, trans_size, trans_
     BT = mat(BT)
     feature_trans = feature_raw.copy()
 
-    """1D transfer"""
+    """1D transform"""
     if trans_dim = 1:
         for i in range(feature_shape[0]):
             for j in range(feature_shape[1]):
                 feature_raw[i,j] = mat(feature_raw[i,j])
                 feature_mid = BT*(feature_raw[i,j].T)
                 feature_trans[i,j] = feature_mid.T
-    """2D transfer"""
+    """2D transform"""
     for i in range(feature_shape[0]):
         for j in range(feature_shape[1]):
             feature_raw[i,j] = mat(feature_raw[i,j])
