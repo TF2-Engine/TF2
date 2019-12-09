@@ -6,7 +6,7 @@
 1. To get the quantized scale and weights for the TF2 FPGA inference engine, the weights can be quantized and written by the weight_write.py.
 2. Using 'python quantization.py winograd 'net name'' to quantize the features and get the quantized scale 
 ## Winograd transformation
-The winograd transformation is different for the F(2,3), F(4,3) and F(5,3) implementation. The filter and feature could be transformed by filter_transfer.py and feature_transfer.py, respectively.
+The winograd transformation is different between the F(2,3), F(4,3) and F(5,3) implementation. The filter and feature could be transformed by filter_transfer.py and feature_transfer.py, respectively.
 ## The first layer
 For some CNN model, for example the ResNet50 and GoogleNet, the first layer filter is 7x7 and it is not suitable for the winograd. One can  convert the 7x7 convolution to 3x3 convolution using the algorigthm as shown in conv7x7_2_3x3.py.
 ## Example
