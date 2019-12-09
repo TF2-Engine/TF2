@@ -10,4 +10,4 @@ The winograd transformation is different for the F(2,3), F(4,3) and F(5,3) imple
 ## The first layer
 For some CNN model, for example the ResNet50 and GoogleNet, the first layer filter is 7x7 and it is not suitable for the winograd. One can  convert the 7x7 convolution to 3x3 convolution using the algorigthm as shown in conv7x7_2_3x3.py.
 ## Example
-The example is a int8 winograd inference simulation that implemented by python, it shows how to implement a inference with int8 winograd algorithm completely, one can easily modify it to implement your own CNN.  
+The example is a 1D int8 winograd inference simulation that implemented by python, it shows how to implement a inference with int8 winograd algorithm completely and one can easily modify it to implement your own CNN model.  
