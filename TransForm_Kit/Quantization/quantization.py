@@ -83,7 +83,7 @@ def QuantizeChannel(style, x):
 if __name__ == "__main__":
     
     batch_size = 1
-    # set your network will be quantized: googlenet', 'resnet50', 'squeezenet', 'ssd' ...
+    # set your network that will be quantized: 'googlenet', 'resnet50', 'squeezenet', 'ssd' ...
     style = sys.argv[1]
     net_name = sys.argv[2]
     q_path = 'channel_q/' + net_name
