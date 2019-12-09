@@ -16,11 +16,11 @@
 import numpy as np
 from numpy import mat
 
-""" 1D Winograd, the filter should be transfered by the winograd filter transfer matrix. 1D winograd math:: A^T[(Gg)*(B^Td)], the filter transfer is 'Gg', where 'g' is the filter and the G is the transfer matrix, the '^T' means the transpose of the matrix. The 1D filter transfer implementation includes F(2,3), F(4,3), F(5,3), for the F(a,b), where the first number 'a' called 'trans_size'.
+""" 1D Winograd, the filter should be transformed by the winograd filter transformation matrix. 1D winograd math:: A^T[(Gg)*(B^Td)], the filter transformation is 'Gg', where 'g' is the filter and the G is the filter transformation matrix, the '^T' means the transpose of the matrix. The 1D filter transformation implementation includes F(2,3), F(4,3), F(5,3), for the F(a,b), where the first number 'a' called 'trans_size'.
 
-  2D Winograd, the filter should be transfered by the winograd filter transfer matrix. 2D winograd math:: A^T[(GgG^T)*(B^TdB)]A, the filter transfer is 'GgG^T', where 'g' is the filter and the G and G^T is the filter transfer matrix and its transpose, respectively.The 2D filter transfer implementation includes F(2x2,3x3), F(4x4,3x3), F(5x5,3x3), for the F(axa,bxb), where the first number 'a' called 'trans_size'. """
+  2D Winograd, the filter should be transformed by the winograd filter transformation matrix. 2D winograd math:: A^T[(GgG^T)*(B^TdB)]A, the filter transformation is 'GgG^T', where 'g' is the filter and the G and G^T is the filter transformation matrix and its transpose, respectively.The 2D filter transformation implementation includes F(2x2,3x3), F(4x4,3x3), F(5x5,3x3), for the F(axa,bxb), where the first number 'a' called 'trans_size'. """
 
-def FilterTransfer(filter_shape,filter_raw, filter_trans, trans_size, trans_dim):
+def FilterTransform(filter_shape,filter_raw, filter_trans, trans_size, trans_dim):
     
     k = 0
     w = 3
@@ -44,14 +44,14 @@ def FilterTransfer(filter_shape,filter_raw, filter_trans, trans_size, trans_dim)
             k = k + 1 
     G = mat(G)
 
-    """1D transfer"""
+    """1D transform"""
     if trans_dim = 1:
         for i in range(filter_shape[0]):
             for j in range(filter_shape[1]):
                 filter_raw[i,j] = mat(filter_raw[i,j])
                 filter_mid = G*(filter_raw[i,j].T)
                 filter_trans[i,j] = filter_mid.T
-    """2D transfer"""
+    """2D transform"""
     if trans_dim = 2:
         for i in range(filter_shape[0]):
             for j in range(filter_shape[1]):
