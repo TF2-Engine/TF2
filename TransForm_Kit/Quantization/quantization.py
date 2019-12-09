@@ -70,11 +70,11 @@ def QuantizeChannel(style, x):
         scale_list = []
         if len(shape) == 1:
             for i in range(x.shape[0]):
-                scale = LinearQuantization(x[i], n)
+                scale = QuantizeLinear(x[i], n)
                 scale_list.append(scale)
         else:
             for i in range(x.shape[1]):
-                scale = LinearQuantization(x[i], n)
+                scale = QuantizeLinear(x[i], n)
                 scale_list.append(scale)
         return (scale_list)
 
