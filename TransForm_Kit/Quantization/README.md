@@ -48,7 +48,7 @@ python feature_write.py 'net_name'
 
 ```
 python quantization.py shift 'net_name'
-python quantization.py general 'net_name'
+python quantization.py simple 'net_name'
 python quantization.py winograd 'net_name'
 ```
 
