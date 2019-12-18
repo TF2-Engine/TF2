@@ -77,7 +77,6 @@ def Conv1_7x7_2_3x3(x, Filter):
 def Conv2dWinograd(x, weight):
     
     weight = np.array(weight)
-    print(type(weight[0,0,0,0]))
     shape = x.shape
     if shape[2] == 114:
         padding = 3
