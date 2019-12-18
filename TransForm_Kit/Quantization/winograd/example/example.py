@@ -19,8 +19,8 @@ import os
 import multiprocessing as mp
 import sys
 sys.path.append("..")
-from conv7x7_3x3_transform import Conv1FeatureTransform
-from conv7x7_3x3_transform import Conv1FilterTransform
+from conv7x7_2_3x3 import Conv1FeatureTransform
+from conv7x7_2_3x3 import Conv1FilterTransform
 from filter_transform import FilterTransform
 from feature_transform import FeatureTransform
 from weight_write import QuantizeChannel
