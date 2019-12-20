@@ -34,6 +34,13 @@ TASK kernel void pool(int frame_num) {
   INIT_COUNTER(nn_vec);
 
   int layer = 0;
+
+  enum {EDGE_H = (POOL_WINDOW_MAX - 1)};
+  enum {EDGE_W = (POOL_WINDOW_MAX - 1)};
+  enum {WVEC_ITER = CEIL(kOwEndWithOffsetMax, OW_VECTOR)};
+  enum {NNVEC_ITER = CEIL(N_VECTOR, NARROW_N_VECTOR)};
+  enum {EDGE_H_BUFFER_SIZE = WVEC_ITER * NNVEC_ITER};
+  enum {EDGE_W_BUFFER_SIZE = NNVEC_ITER};
   
   ReluChannelVector edge_buffer[EDGE_W][EDGE_W_BUFFER_SIZE]; 
   ReluChannelVector line_buffer[EDGE_H][W_VECTOR][EDGE_H_BUFFER_SIZE]; 
@@ -95,6 +102,7 @@ TASK kernel void pool(int frame_num) {
       new_layer = false;
     }
 
+    	
     ReluChannelVector w_buffer[EDGE_W + W_VECTOR];
 
     // read data from relu channel
