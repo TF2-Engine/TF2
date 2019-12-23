@@ -29,7 +29,7 @@ $/models/part2_model_best.pth.tar
 $/models/part5_model_best.pth.tar
 ```
 ## Test
-You can run these models ( The parameters of the convolution and fully connected layers are all powers of 2 ) on caffe or download these models from https://1drv.ms/u/s!Am9Mk04MA_K1aVMJj0sTWk0x7Bw?e=KHYmfy.
+You can run these models ( The parameters of the convolution and fully connected layers are all powers of 2 ) on caffe or download these models from https://pan.baidu.com/s/1ptDhQ1sXJl8oXI2Nb6UXxQ.
 
 ## Usage
 
