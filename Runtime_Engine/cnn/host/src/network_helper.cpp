@@ -94,8 +94,9 @@ void Verify(int n, char *file_name, char *q, real *output) {
   int concat_offset = 0;
 #else
   int output_offset = OUTPUT_OFFSET + n * OUTPUT_OFFSET;
-  int concat_offset = kNStart[NUM_LAYER - 1] / NARROW_N_VECTOR * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
+  int concat_offset = kNStart[NUM_LAYER - 1] / NARROW_N_VECTOR * H * CEIL(W, W_VECTOR);
 #endif
+  int ddr_write_offset = (kDDRWriteBase[NUM_LAYER - 1] + concat_offset) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
 
   int pad = 0;
 
@@ -110,7 +111,7 @@ void Verify(int n, char *file_name, char *q, real *output) {
         int ww = w - w_vec * W_VECTOR;
         int nn = n - n_vec * N_VECTOR;
         int addr_out = 
-                    output_offset + concat_offset + 
+                    ddr_write_offset + output_offset + 
                     n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +

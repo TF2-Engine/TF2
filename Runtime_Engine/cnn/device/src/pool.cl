@@ -254,7 +254,7 @@ TASK kernel void pool(int frame_num) {
 
         pool_output.data[n_inc].v[w_inc] = output_value;
 #ifdef PRINT_POOL_OUTPUT
-        if (layer == NUM_LAYER - 1) printf("frame_index=%d oh=%d ow=%d k=%d w=%d data=%d\n", frame_index, oh, ow, k, w, output_value);
+        if (frame_index == 1 && layer == 0 && n == 0) printf("frame_index=%d oh=%d ow=%d n_inc=%d w_inc=%d data=%d\n", frame_index, oh, ow, n_inc, w_inc, output_value);
 #endif
       }
     }

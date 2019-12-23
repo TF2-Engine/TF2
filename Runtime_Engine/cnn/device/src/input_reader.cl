@@ -72,6 +72,7 @@ kernel void input_reader(int frame_num, global volatile const real* restrict inp
 
         // pad input data for quantization
         real conv_input_data = valid ? input_buffer[conv_input_addr] : 0;
+        //printf("cycle=%d frame_index=%d c_vec=%d h=%d w_vec=%d w_inc=%d c_inc=%d addr=%llu data=%d\n", cycle, frame_index, c_vec, h, w_vec, w_inc, c_inc, conv_input_addr, conv_input_data);
         input_reader_output.data[w_inc].v[c_inc] = conv_input_data;
       }
     }

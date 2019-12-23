@@ -61,9 +61,14 @@ void PeFunction(int n_inc) {
   Mreal result[W_VECTOR]={0};
   int cycle_end = FILTER_PRELOAD_CYCLE + CONV_TOTAL_CYCLE;
 
-#ifdef PRINT_PE_INPUT
-  int debug_cycle = FILTER_PRELOAD_CYCLE + find_conv_layer_cycles(NUM_LAYER - 1);
-  int debug_range = 100000;
+#ifdef PRINT_N
+  int H = 102;
+  int debug_layer = 0;
+  int OH = CEIL(H, kConvStride[debug_layer]);
+  int OW = kOutputWidth[debug_layer];
+  int WOW_VECTOR = kFilterSize[debug_layer] == 1 ? W_VECTOR : OW_VECTOR;
+  int debug_cycle = FILTER_PRELOAD_CYCLE + FindConvLayerCycles(debug_layer) + OH * CEIL(OW, WOW_VECTOR) * FindConvCvecCycles(debug_layer);
+  int debug_range = 1000;
 #endif
 
   #pragma ivdep
@@ -152,7 +157,7 @@ void PeFunction(int n_inc) {
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
-              printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\frame_index", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter.v[fw_inc].v[c_inc], cycle);
+              printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\n", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter.v[fw_inc].v[c_inc], cycle);
           }
 #endif
         }
@@ -162,9 +167,9 @@ void PeFunction(int n_inc) {
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
         dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec]);
 #ifdef PRINT_PE_INPUT
-        if (n == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
+        if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
           for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-            printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\frame_index", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter.v[filter_read_fw_vec].v[c_inc], cycle);
+            printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\n", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter.v[filter_read_fw_vec].v[c_inc], cycle);
         }
 #endif
       }
@@ -195,7 +200,7 @@ void PeFunction(int n_inc) {
         pe_output.pe_output_relu = cont.pe_output_relu;
 #ifdef PRINT_PE_OUTPUT
         if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) 
-          printf("PE cycle=%d w_inc=%d result=%d bias_bn.alpha=%d bias_bn.beta=%d pe_output.data.v=%d\frame_index", cycle, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, pe_output.data.v[w_inc]);
+          printf("PE cycle=%d w_inc=%d result=%d bias_bn.alpha=%d bias_bn.beta=%d pe_output.data.v=%d\n", cycle, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, pe_output.data.v[w_inc]);
 #endif
       }
 

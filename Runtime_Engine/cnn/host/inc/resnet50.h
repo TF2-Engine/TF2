@@ -29,7 +29,7 @@ limitations under the License.
 //#define CONCAT_LAYER_DEBUG
 
 //#define STATIC_CYCLE
-//#define PRINT_N 1
+#define PRINT_N 0
 //#define PRINT_CYCLE
 #define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
@@ -42,7 +42,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 54 
+#define NUM_LAYER 3
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -92,12 +92,14 @@ limitations under the License.
 #define MAX_BIAS_SIZE NEXT_DIVISIBLE(2048, N_VECTOR)
 
 // used by pool.cl
+/*
 #define EDGE_H (POOL_WINDOW_MAX - 1)
 #define EDGE_W (POOL_WINDOW_MAX - 1)
 #define WVEC_ITER (CEIL(kOwEndWithOffsetMax, OW_VECTOR))
 #define NNVEC_ITER (CEIL(N_VECTOR, NARROW_N_VECTOR))
 #define EDGE_H_BUFFER_SIZE (WVEC_ITER * NNVEC_ITER)
 #define EDGE_W_BUFFER_SIZE (NNVEC_ITER)
+*/
 
 #define DDR_BLOCK_SIZE DDR_PAGE_SIZE0
 #define D0 0
@@ -236,7 +238,7 @@ CONSTANT bool kCacheWriteEnable[NUM_CONVOLUTIONS] = {
   1, 1, 1, // res5a 
   1, 1, 1, // res5b
   1, 1, 0, // res5c 
-  1        // FC1000
+  0        // FC1000
 };
 
 CONSTANT bool kDDRWriteEnable[NUM_CONVOLUTIONS] = {
@@ -1315,23 +1317,23 @@ CONSTANT int kConcatLayer[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = { 
-  1000, 
+  0, 
   0, 
   0, 0, 0,
   0, 0, 0, 
-  0, 0, /*5000*/1000,
+  0, 0, 0,
   0,
   0, 0, 0, 
   0, 0, 0,
   0, 0, 0,
-  0, 0, /*5000*/1000,
+  0, 0, 0,
   0,
   0, 0, 0,
   0, 0, 0,
   0, 0, 0,
   0, 0, 0,
   0, 0, 0,
-  0, 0, /*5000*/1000,
+  0, 0, 0,
   0,
   0, 0, 0,
   0, 0, 0,

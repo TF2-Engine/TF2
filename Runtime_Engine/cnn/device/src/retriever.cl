@@ -100,6 +100,9 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
     // filter preload mode
     bool filter_preloading = !input_reading && cycle < (input_reader_cycle_end + filter_preload_cycle_end);
     
+    if (frame_cycle < 18200)
+      printf("frame_index=%d frame_cycle=%d, input_reading=%d filter_preloading=%d feature_cache[1786][0][0]=%d\n", frame_index, frame_cycle, input_reading, filter_preloading, feature_cache[1786][0][0]);
+    
     // sequencer idle mode
     bool sequencer_idle = false;
     #pragma unroll
@@ -185,6 +188,8 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
       
           if (conving && feature_read_addr_cursor != -1) {
             feature_disordered_buffer[w_inc].v[c_inc] = feature_cache[feature_read_addr_cursor][w_inc][c_inc];
+            //if (frame_index == 1 && sequencer_output.layer == 0 && frame_cycle >= INPUT_READER_CYCLE + FILTER_PRELOAD_CYCLE + 14222 && frame_cycle < INPUT_READER_CYCLE + FILTER_PRELOAD_CYCLE + 14222 + 1000)
+              //printf("frame_index=%d frame_cycle=%d w_inc=%d c_inc=%d addr=%d data=%d\n", frame_index, frame_cycle, w_inc, c_inc, feature_read_addr_cursor, feature_cache[feature_read_addr_cursor][w_inc][c_inc]);
           }
         }
       }
@@ -220,6 +225,8 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         #pragma unroll
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
           pe_input_data.v[w_inc].v[c_inc] = feature_ordered_buffer[w_inc].v[c_inc];
+          //if (frame_index == 1 && sequencer_output.layer == 0 && frame_cycle >= INPUT_READER_CYCLE + FILTER_PRELOAD_CYCLE + 14222 && frame_cycle < INPUT_READER_CYCLE + FILTER_PRELOAD_CYCLE + 14222 + 1000)
+            //printf("frame_index=%d frame_cycle=%d w_inc=%d c_inc=%d data=%d\n", frame_index, frame_cycle, w_inc, c_inc, pe_input_data.v[w_inc].v[c_inc]);
         }
       }
 
@@ -236,7 +243,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_cont.is_QVECTOR = (FH != 1);
         pe_cont.conv_start = sequencer_output.conv_start;
         pe_cont.conv_done[0] = sequencer_output.conv_done[0];
-        pe_cont.pe_output_relu = kReluEnable[sequencer_output.layer];// && sequencer_output.layer != (NUM_LAYER - 1); // Only For Debug!!!
+        pe_cont.pe_output_relu = kReluEnable[sequencer_output.layer] && sequencer_output.layer != (NUM_LAYER - 1); // Only For Debug!!!
 
         // add filter data
         FilterReaderOutput filter_data = FilterReaderOutputZero;
@@ -338,8 +345,9 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
           if (input_reading) {
             feature_write_addr = cycle;
-            feature_write_data = input_reader_output.data[w_inc].v[c_inc];
+            feature_write_data = input_reader_output.data[w_inc].v[c_inc];            
             feature_writing = true;
+            //printf("cycle=%d frame_index=%d c_inc=%d w_inc=%d addr=%d data=%d\n", cycle, frame_index, c_inc, w_inc, feature_write_addr, feature_write_data);
           } else {
             feature_write_addr = pool_tail_output.cache_write_addr;
             feature_write_data = pool_tail_output.write_data[w_inc][c_inc];
@@ -347,6 +355,8 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
           }
 
           if(feature_writing) {
+            if (frame_cycle < 18200)
+              printf("frame_index=%d frame_cycle=%d pool_tail_data_received=%d, feature_writing=%d addr=%d w_inc=%d c_inc=%d data=%d\n", frame_index, frame_cycle, pool_tail_data_received, feature_writing, feature_write_addr, w_inc, c_inc, feature_write_data);
             feature_cache[feature_write_addr][w_inc][c_inc] = feature_write_data;
           }
         }
