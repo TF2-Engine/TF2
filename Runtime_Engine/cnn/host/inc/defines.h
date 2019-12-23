@@ -22,7 +22,7 @@ limitations under the License.
 // Function: Defines all the macros and miscellaneous functions.                      //
 //------------------------------------------------------------------------------------//
 
-//#define EMULATOR
+#define EMULATOR
 
 #ifdef OPENCL
 #define STATIC
