@@ -26,7 +26,7 @@ After two steps, the pruned model will be generated, for example:
 $/pytorchmodel/finetune_best.pth.tar 
 ```
 ## Test
-You can run pruned resnet50 model on caffe or download these model from https://1drv.ms/u/s!Am9Mk04MA_K1aVMJj0sTWk0x7Bw?e=KHYmfy.
+You can run pruned resnet50 model on caffe or download these model from https://pan.baidu.com/s/1ptDhQ1sXJl8oXI2Nb6UXxQ.
 
 ## Reference
 
