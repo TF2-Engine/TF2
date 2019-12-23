@@ -24,5 +24,5 @@ to achieve face detection and star-like face matching on the FPGA F10 card.
 
 ## Tips:
 
-1. You can download required dataset from https://1drv.ms/u/s!Am9Mk04MA_K1a6Q6xVMafKXMOgU?e=gdUIdz.
+1. You can download required dataset from https://pan.baidu.com/s/13KVxnfwF9YDKpN5geMAcSQ.
 2. The compiled library is currently available and the code will be published later.
