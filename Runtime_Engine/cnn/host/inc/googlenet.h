@@ -193,7 +193,7 @@ CONSTANT bool kCacheWriteEnable[NUM_CONVOLUTIONS] = {
   1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1,
   1, 1, 1, 1, 1, 1, 1,
-  1
+  0
 };
 
 #ifdef CONCAT_LAYER_DEBUG
