@@ -14,6 +14,9 @@ limitations under the License.
 ==============================================================================*/
 
 #include "includes.h"
+#include "demo.h"
+
+#define IMGNETITEM_TEST_NUM 10
 
 int main(int argc, char **argv) {
   if (argc != 6) {
@@ -38,6 +41,12 @@ int main(int argc, char **argv) {
     return -1;
   }  
 
+  Demo demo;
+  if (!demo.Init())
+  {
+    return -1;
+  }
+
   NetWork network;
   if (!network.Init(platform, model_file, q_file, image_file, num_images)) {
     return -1;
@@ -45,13 +54,53 @@ int main(int argc, char **argv) {
 
   Runner runner(platform, network);
   runner.Init();
-  runner.Run();
+  //Runner.Run();
+
+  for(int test_index=0; test_index< IMGNETITEM_TEST_NUM; test_index++)
+  {
+    std::string line_addr_img = "../imagenet_test_images/"+demo.imagenet_labels[test_index].jpg_image_name;
+    std::ifstream fin_img_addr;
+    fin_img_addr.open(const_cast<char*>(line_addr_img.c_str()));
+
+    if(fin_img_addr)
+    {
+      char* image_file = const_cast<char*>(line_addr_img.c_str());
+
+      runner.Run(image_file);
+
+      demo.Softmax(runner.num_images - 1, network.q, network.output);
+      Evaluation(runner.num_images - 1, network.q, network.output, network.top_labels); 
+
+      runner.end_time = getCurrentTimestamp();
+      const double total_time = runner.end_time - runner.start_time;
+
+      demo.Result(runner.total_sequencer, runner.num_images, total_time);
+
+      std:: remove(const_cast<char*>(line_addr_img.c_str()));
+
+      demo.Evaluation(test_index);
+
+      demo.top1 +=demo.top1score;
+      demo.top5 +=demo.top5score;
+
+      printf("index is %d, imagenet_orl_label is %d, top1score is %d, top5score is %d, top1 is %d, top5 is %d\n", test_index, demo.imagenet_labels[test_index].label_index, demo.top1score, demo.top5score, demo.top1, demo.top5);
+    }
+  }
+
+  float accuracy_top1 = (1.0*demo.top1)/IMGNETITEM_TEST_NUM;
+  float accuracy_top5 = (1.0*demo.top5)/IMGNETITEM_TEST_NUM;
+
+  printf("top1 accuracy is %.3f\n", accuracy_top1);
+  printf("top5 accuracy is %.3f\n", accuracy_top5);
 
   // verification
+  /*
   for (int i = 0; i < num_images; i++) {
     Verify(i, verify_file_name, network.q, network.output);
     Evaluation(i, network.q, network.output, network.top_labels);
-  }
+  }*/
+
+  demo.CleanUp();
 
   // CleanUp
   network.CleanUp();

@@ -51,7 +51,7 @@ void Runner::ReleaseAllEvents() {
   }
 }
 
-void Runner::Run() {
+void Runner::Run(char *image_file) {
   cl_int status;
   
   //

@@ -24,7 +24,12 @@ public:
 
   void Init();
 
-  void Run();
+  void Run(char *image_file);
+  
+  double start_time;
+  double end_time;
+  cl_ulong total_sequencer;
+  int num_images;
 
 private:
   void EnqueueKernels(bool create_events, bool enqueue_infinite_loop);
@@ -34,7 +39,6 @@ private:
   OpenCLFPGA platform;
   NetWork network;
   char *image_file;
-  int num_images;
 };
 
 #endif
