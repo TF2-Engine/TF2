@@ -150,7 +150,8 @@ void Runner::Run() {
   float *input_raw_images = (float*)malloc(sizeof(float) * INPUT_IMAGE_C * INPUT_IMAGE_H * INPUT_IMAGE_W * 2);
  
   for (int i = 0; i < num_images; i++) {
-    LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+    //LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+    LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
   }
 
   InputConvert(network.input_raw, network.input, num_images);

@@ -50,7 +50,9 @@ LIB_DIRS :=
 # Files
 INCS := $(wildcard)
 SRCS := $(wildcard host/src/*.cpp ../common/src/AOCLUtils/*.cpp)
-LIBS := rt pthread
+INCLUDES += -I/usr/local/include/opencv
+LIBS := rt pthread opencv_core opencv_imgproc opencv_highgui opencv_ml opencv_imgcodecs
+LIBDIRS += -L/usr/local/lib
 
 # Make it all!
 all : $(TARGET_DIR)/$(TARGET)

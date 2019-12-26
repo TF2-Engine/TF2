@@ -39,6 +39,8 @@ limitations under the License.
 #include "AOCLUtils/aocl_utils.h"
 #include "AOCLUtils/ACLHostUtils.h"
 
+#include "opencv2/opencv.hpp"
+
 #include "debug.h"
 
 struct KernelInfo {

@@ -72,6 +72,79 @@ void feature_trans(float *Feas,float *finals_feas)
   }
 }
 
+void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int iter) {
+  printf("load_input_image image_name=%s\n", image_name);
+
+  std::vector<cv::Mat> channels;
+  cv::Mat src, dst1, dst2;
+
+  unsigned char C = 3;
+  unsigned char H = 224;
+  unsigned char W = 224;
+  
+  int  H_middle = 256;
+  int  W_middle = 256;
+
+  FILE *fp;
+  fp = fopen( "../host/model/mean.bin", "rb" );
+
+  // 256 * 256 preprocess
+  src = cv::imread( image_name );
+  //src.convertTo( dst1, CV_32FC3 );
+  //resize( dst1, dst2, cvSize( H_middle, W_middle ) );
+  resize( src, dst2, cvSize( H_middle, W_middle ) );
+  cv::split( dst2, channels ); 
+
+  float *middle_images = (float*)malloc( sizeof(float) * C * H_middle * W_middle ); 
+
+  for(int c = 0; c < C; c++) {
+    for(int h = 0; h < H_middle; h++) {
+      for(int w = 0; w < W_middle; w++) {
+        int addr = c * H_middle * W_middle + h * W_middle + w;
+        float mean;
+        fread( &mean, sizeof(float), 1, fp );
+        middle_images[addr] = channels[c].at<uchar>(h,w) - mean;
+        //printf( "c=%d h=%d w=%d middle_images[%d]=%f mean=%f\n", c, h, w, addr, middle_images[addr], mean );
+      }
+    }
+  }
+
+  // crop operation
+  int H_edge = ( H_middle - H ) / 2;
+  int W_edge = ( W_middle - W ) / 2;
+  
+  for(int c = 0; c < C; c++) {
+    for(int h = 0; h < H; h++) {
+      for(int w = 0; w < W; w++) {
+        int addr1 = c * H_middle * W_middle + ( h + H_edge ) * W_middle + ( w + W_edge);
+        int addr2 = c * H * W + h * W + w;
+        raw_images[addr2] = middle_images[addr1];
+        //printf( "c=%d h=%d w=%d addr1=%d raw_images[%d]=%f\n", c, h, w, addr1, addr2, raw_images[addr2] );
+      }
+    }
+  }
+
+  unsigned char CC = 27;
+  unsigned char HH = 115;
+  unsigned char WW = 115;
+  float *new_input=(float*)malloc(sizeof(float) * CC * HH * WW + 1000); 
+  for(int i = 0; i < 3; i++) {
+    feature_trans(raw_images + i * H * W, new_input + 9 * i * OUTPUT_HEIGHT * OUTPUT_WIDTH);
+  }
+
+  for(int i = 0; i < 27; i++) {
+    for(int j = 0; j < 114; j++) {
+      for(int k = 0; k < 114; k++) {
+        input_raw[i * 114 * 114 + j * 114 + k]=new_input[i * WW * HH + j * WW + k];  
+      }
+    }
+  }
+
+  fclose(fp);
+  free(middle_images);
+  free(new_input);
+}
+
 // load input raw image data:[C][H][W]
 void LoadInputImage(char *image_name, float *input_raw, float *raw_images, int iter) {
   INFO("LoadInputImage image_name=%s\n", image_name);
