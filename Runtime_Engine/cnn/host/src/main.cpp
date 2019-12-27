@@ -16,7 +16,7 @@ limitations under the License.
 #include "includes.h"
 #include "demo.h"
 
-#define IMGNETITEM_TEST_NUM 10
+#define IMGNETITEM_TEST_NUM 50000
 
 int main(int argc, char **argv) {
   if (argc != 6) {
