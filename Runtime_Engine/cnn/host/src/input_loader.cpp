@@ -85,6 +85,8 @@ void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int it
   int  H_middle = 256;
   int  W_middle = 256;
 
+  float googlenet_mean[3] = {104, 117, 123};
+
   FILE *fp;
   fp = fopen( "../host/model/mean.bin", "rb" );
 
@@ -102,7 +104,11 @@ void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int it
       for(int w = 0; w < W_middle; w++) {
         int addr = c * H_middle * W_middle + h * W_middle + w;
         float mean;
+#if (defined RESNET50) || (defined RESNET50_PRUNED)
         fread( &mean, sizeof(float), 1, fp );
+#else
+        mean = googlenet_mean[c];
+#endif
         middle_images[addr] = channels[c].at<uchar>(h,w) - mean;
         //printf( "c=%d h=%d w=%d middle_images[%d]=%f mean=%f\n", c, h, w, addr, middle_images[addr], mean );
       }
