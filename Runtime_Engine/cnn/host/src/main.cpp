@@ -76,7 +76,8 @@ int main(int argc, char **argv) {
 
       demo.Result(runner.total_sequencer, runner.num_images, total_time);
 
-      std:: remove(const_cast<char*>(line_addr_img.c_str()));
+      //std:: remove(const_cast<char*>(line_addr_img.c_str()));
+      fin_img_addr.close();
 
       demo.Evaluation(test_index);
 
