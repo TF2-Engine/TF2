@@ -16,8 +16,6 @@ limitations under the License.
 #include "includes.h"
 #include "demo.h"
 
-#define IMGNETITEM_TEST_NUM 50000
-
 int main(int argc, char **argv) {
   if (argc != 6) {
     INFO("USAGE:\n%s <model_file> <quantization_file> <image_file> <verify_file> <num_images>\n", argv[0]);
@@ -48,7 +46,7 @@ int main(int argc, char **argv) {
   }
 
   NetWork network;
-  if (!network.Init(platform, model_file, q_file, image_file, num_images)) {
+  if (!network.Init(platform, model_file, q_file, image_file, 1)) {
     return -1;
   }
 
@@ -56,9 +54,9 @@ int main(int argc, char **argv) {
   runner.Init();
   //Runner.Run();
 
-  for(int test_index=0; test_index< IMGNETITEM_TEST_NUM; test_index++)
+  for(int test_index=0; test_index< num_images; test_index++)
   {
-    std::string line_addr_img = "../imagenet_test_images/"+demo.imagenet_labels[test_index].jpg_image_name;
+    std::string line_addr_img = "../imagenet_test_images/" + demo.imagenet_labels[test_index].jpg_image_name;
     std::ifstream fin_img_addr;
     fin_img_addr.open(const_cast<char*>(line_addr_img.c_str()));
 
@@ -76,7 +74,6 @@ int main(int argc, char **argv) {
 
       demo.Result(runner.total_sequencer, runner.num_images, total_time);
 
-      //std:: remove(const_cast<char*>(line_addr_img.c_str()));
       fin_img_addr.close();
 
       demo.Evaluation(test_index);
@@ -88,8 +85,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  float accuracy_top1 = (1.0*demo.top1)/IMGNETITEM_TEST_NUM;
-  float accuracy_top5 = (1.0*demo.top5)/IMGNETITEM_TEST_NUM;
+  float accuracy_top1 = (1.0*demo.top1)/num_images;
+  float accuracy_top5 = (1.0*demo.top5)/num_images;
 
   printf("top1 accuracy is %.3f\n", accuracy_top1);
   printf("top5 accuracy is %.3f\n", accuracy_top5);

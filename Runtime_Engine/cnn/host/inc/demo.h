@@ -22,17 +22,17 @@ limitations under the License.
 typedef struct{
   int             index;
   std::string     label_name; 
-}imagenet_content;
+} imagenet_content;
 
 typedef struct{
   int             label_index;
   std::string     jpg_image_name;
-}imagenet_label;
+} imagenet_label;
 
 typedef struct{
   int label;
   float feature;
-}stat_item;
+} stat_item;
 
 // int top_labels[5] = { -1, -1, -1, -1, -1 };
 
