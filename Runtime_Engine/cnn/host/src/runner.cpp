@@ -21,14 +21,12 @@ Runner::Runner(OpenCLFPGA &platform, NetWork &network) {
 }
 
 void Runner::Init() {
-  this->image_file = network.image_file;
   this->num_images = network.num_images; 
 }
 
 void Runner::EnqueueKernels(bool create_events, bool enqueue_infinite_loop) {
   for (int i = 0; i < platform.kernels.size(); i++) {
     if (platform.kernels[i].has_infinite_loop == enqueue_infinite_loop) {
-      //INFO("infinite_loop=%d kernel_name=%s\n", enqueue_infinite_loop, platform.kernels[i].name.c_str());
       cl_int status = clEnqueueTask(platform.kernels[i].queue, platform.kernels[i].kernel, 0, NULL,
           create_events ? &(platform.kernels[i]).event : NULL);
       std::string err_msg = platform.kernels[i].name + ": Failed to launch kernel.";
@@ -150,8 +148,11 @@ void Runner::Run(char *image_file) {
   float *input_raw_images = (float*)malloc(sizeof(float) * INPUT_IMAGE_C * INPUT_IMAGE_H * INPUT_IMAGE_W * 2);
  
   for (int i = 0; i < num_images; i++) {
-    //LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#ifdef IMAGENET
     LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#else
+    LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#endif
   }
 
   InputConvert(network.input_raw, network.input, num_images);

@@ -17,8 +17,6 @@ limitations under the License.
 
 #include "includes.h"
 
-#define IMGNET_VERIFY_ENABLE
-
 typedef struct{
   int             index;
   std::string     label_name; 

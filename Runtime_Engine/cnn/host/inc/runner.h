@@ -38,7 +38,6 @@ private:
   
   OpenCLFPGA platform;
   NetWork network;
-  char *image_file;
 };
 
 #endif

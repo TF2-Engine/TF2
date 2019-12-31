@@ -40,28 +40,31 @@ int main(int argc, char **argv) {
   }  
 
   Demo demo;
-  if (!demo.Init())
-  {
+  if (!demo.Init()) {
     return -1;
   }
 
   NetWork network;
+#ifdef IMAGENET
   if (!network.Init(platform, model_file, q_file, image_file, 1)) {
     return -1;
   }
+#else
+  if (!network.Init(platform, model_file, q_file, image_file, num_images)) {
+    return -1;
+  }
+#endif
 
   Runner runner(platform, network);
   runner.Init();
-  //Runner.Run();
 
-  for(int test_index=0; test_index< num_images; test_index++)
-  {
+#ifdef IMAGENET
+  for(int test_index=0; test_index < num_images; test_index++) {
     std::string line_addr_img = "../imagenet_test_images/" + demo.imagenet_labels[test_index].jpg_image_name;
     std::ifstream fin_img_addr;
     fin_img_addr.open(const_cast<char*>(line_addr_img.c_str()));
 
-    if(fin_img_addr)
-    {
+    if(fin_img_addr) {
       char* image_file = const_cast<char*>(line_addr_img.c_str());
 
       runner.Run(image_file);
@@ -85,20 +88,22 @@ int main(int argc, char **argv) {
     }
   }
 
-  float accuracy_top1 = (1.0*demo.top1)/num_images;
-  float accuracy_top5 = (1.0*demo.top5)/num_images;
+  float accuracy_top1 = (1.0 * demo.top1) / num_images;
+  float accuracy_top5 = (1.0 * demo.top5) / num_images;
 
   printf("top1 accuracy is %.3f\n", accuracy_top1);
   printf("top5 accuracy is %.3f\n", accuracy_top5);
-
+  
+  demo.CleanUp();
+#else
+  runner.Run(image_file);
   // verification
-  /*
+  
   for (int i = 0; i < num_images; i++) {
     Verify(i, verify_file_name, network.q, network.output);
     Evaluation(i, network.q, network.output, network.top_labels);
-  }*/
-
-  demo.CleanUp();
+  }
+#endif
 
   // CleanUp
   network.CleanUp();

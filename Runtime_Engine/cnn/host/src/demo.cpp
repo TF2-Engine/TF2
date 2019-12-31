@@ -82,7 +82,6 @@ bool Demo::LoadLabel_Demo() {
   
   fin.close();
 
-  #ifdef IMGNET_VERIFY_ENABLE
   std::ifstream imagenet_img("../imagenet_test_images/val_map.txt");
   std::string line_addr_imagenet_img;
   int position_imagenet,  pos_s_m_start_imagenet, pos_d_m_start_imagenet, pos_m_end_imagenet, pos_q_end_imagenet;
@@ -104,7 +103,7 @@ bool Demo::LoadLabel_Demo() {
   }
 
   imagenet_img.close();
-  #endif
+  
   return true;
 }
 
@@ -195,9 +194,6 @@ void Demo::Result(cl_ulong total_sequencer, int num_images, double total_time) {
   float efficiency_tmp = throughput/45;
   fprintf(fp_info, "latency:%.3f\n", total_time);//?
   printf("latency:%.3f\n", total_time);//?
-  //double time = double(total_sequencer) - 100000;
-  //double time_d_s = double(total_sequencer) - 67500.0;
-  //float throughput = 1 * num_images / time_d_s / 1e-9;
   fprintf(fp_info, "throughput:%.1f\n", throughput);
   printf("throughput:%.1f\n", 1 * num_images / time_d_s / 1e-9);
   printf("total_sequencer value:%.5f\n",time_d_s);

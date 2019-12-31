@@ -3,6 +3,10 @@
 # See http://www.altera.com/literature/hb/opencl-sdk/aocl_getting_started.pdf 
 # for more information on installing and configuring the Intel(R) FPGA SDK for OpenCL(TM).
 
+ifneq ($(IMAGENET),)
+CPPFLAGS += -DIMAGENET
+endif
+
 ifneq ($(RESNET50),)
 CPPFLAGS += -DRESNET50
 endif
