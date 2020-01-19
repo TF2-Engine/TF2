@@ -28,10 +28,10 @@ limitations under the License.
 
 //#define CONCAT_LAYER_DEBUG
 
-#define STATIC_CYCLE
+//#define STATIC_CYCLE
 //#define PRINT_N 1
 //#define PRINT_CYCLE
-//#define PRINT_SEQUENCER_INDEX
+#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
 //#define PRINT_PE_OUTPUT
@@ -42,7 +42,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 54 
+#define NUM_LAYER 1 
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 

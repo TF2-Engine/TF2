@@ -133,7 +133,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     filter_reader_output.cache_addr = write_cache_addr;
     filter_reader_output.n_inc = n_inc;
    
-    write_channel_altera(filter_reader_output_channel, filter_reader_output);
+    write_channel_intel(filter_reader_output_channel, filter_reader_output);
     
     if (COUNTER_LAST(n_inc)) {
       write_cache_addr = (write_cache_addr + 1) & BIT_MASK(CLOG2(FILTER_CACHE_DEPTH));

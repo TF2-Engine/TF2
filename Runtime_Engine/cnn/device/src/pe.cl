@@ -76,18 +76,18 @@ void PeFunction(int n_inc) {
     PeControlSignal cont;
     
     if (n_inc == 0) {
-      cont      = read_channel_altera(pe_control_channel_first);
-      pe_filter = read_channel_altera(pe_input_filter_channel_first);
-      pe_in     = read_channel_altera(pe_input_data_channel_first);
+      cont      = read_channel_intel(pe_control_channel_first);
+      pe_filter = read_channel_intel(pe_input_filter_channel_first);
+      pe_in     = read_channel_intel(pe_input_data_channel_first);
     } else {                          
-      cont      = read_channel_altera(pe_control_channel[n_inc-1]);
-      pe_filter = read_channel_altera(pe_input_filter_channel[n_inc-1]);
-      pe_in     = read_channel_altera(pe_input_data_channel[n_inc-1]);
+      cont      = read_channel_intel(pe_control_channel[n_inc-1]);
+      pe_filter = read_channel_intel(pe_input_filter_channel[n_inc-1]);
+      pe_in     = read_channel_intel(pe_input_data_channel[n_inc-1]);
     }
     
-    write_channel_altera(pe_control_channel[n_inc],      cont);
-    write_channel_altera(pe_input_filter_channel[n_inc], pe_filter);
-    write_channel_altera(pe_input_data_channel[n_inc],   pe_in);    
+    write_channel_intel(pe_control_channel[n_inc],      cont);
+    write_channel_intel(pe_input_filter_channel[n_inc], pe_filter);
+    write_channel_intel(pe_input_data_channel[n_inc],   pe_in);    
 
     // input feature map data
     DotFeatureVector input_data = pe_in.input_data;
@@ -199,7 +199,7 @@ void PeFunction(int n_inc) {
 #endif
       }
 
-      write_channel_altera(pe_output_channel[n_inc], pe_output);
+      write_channel_intel(pe_output_channel[n_inc], pe_output);
     }
     
     INCREASE_COUNTER(cycle);
@@ -219,11 +219,11 @@ AUTORUN TASK kernel void pe_tail() {
   while (1) {
     bool valid = false;
 
-    PeInputData pe_input_data = read_channel_nb_altera(pe_input_data_channel[N_VECTOR-1], &valid);
+    PeInputData pe_input_data = read_channel_nb_intel(pe_input_data_channel[N_VECTOR-1], &valid);
 
-    PeInputFilter pe_input_filter = read_channel_nb_altera(pe_input_filter_channel[N_VECTOR-1], &valid);
+    PeInputFilter pe_input_filter = read_channel_nb_intel(pe_input_filter_channel[N_VECTOR-1], &valid);
 
-    PeControlSignal pe_control = read_channel_nb_altera(pe_control_channel[N_VECTOR-1], &valid);
+    PeControlSignal pe_control = read_channel_nb_intel(pe_control_channel[N_VECTOR-1], &valid);
   }
 }
 

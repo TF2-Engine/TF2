@@ -15,6 +15,8 @@ limitations under the License.
 
 // Top level OpenCL code
 
+#pragma OPENCL EXTENSION cl_intel_channels : enable
+
 #include "cycle.cl"
 
 #include "sequencer.cl"

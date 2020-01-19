@@ -115,7 +115,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     //
     
     // receive pool data
-    PoolOutput pool_output = read_channel_altera(pool_output_channel);
+    PoolOutput pool_output = read_channel_intel(pool_output_channel);
 
     int w_index_cache[W_VECTOR];
     int buffer_index_cache[W_VECTOR];
@@ -196,7 +196,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         }
       }
 
-      write_channel_altera(feature_writer_input_channel, pool_tail_output);
+      write_channel_intel(feature_writer_input_channel, pool_tail_output);
     }
 
     INCREASE_COUNTER(frame_cycle);

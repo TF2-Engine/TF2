@@ -318,7 +318,7 @@ TASK kernel void sequencer(int frame_num) {
     }
 
     sequencer_output.filter_loading_conv_idle = filter_loading_conv_idle;
-    write_channel_altera(sequencer_output_channel, sequencer_output);
+    write_channel_intel(sequencer_output_channel, sequencer_output);
 
     if (!filter_loading_conv_idle) {
       INCREASE_COUNTER(fw_vec);

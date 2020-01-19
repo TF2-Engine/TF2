@@ -75,7 +75,7 @@ kernel void input_reader(int frame_num, global volatile const real* restrict inp
         input_reader_output.data[w_inc].v[c_inc] = conv_input_data;
       }
     }
-    write_channel_altera(input_reader_output_channel, input_reader_output);
+    write_channel_intel(input_reader_output_channel, input_reader_output);
 
     INCREASE_COUNTER(w_vec);
     if (COUNTER_DONE(w_vec))  { RESET_COUNTER(w_vec); INCREASE_COUNTER(h); }

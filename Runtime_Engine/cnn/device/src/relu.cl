@@ -20,6 +20,16 @@ limitations under the License.
 
 #include "../../host/inc/cnn.h"
 
+#define FAST_LOOP_BEGIN(var_name, var_capacity, start, end, step) \
+  int var_name = (start); \
+  int var_name##__end = (end); \
+  int var_name##__step = (step); \
+  do {
+
+#define FAST_LOOP_END(var_name) \
+  var_name += var_name##__step; \
+  } while (var_name < var_name##__end)
+
 // Functions:
 // Performs ReLU operation.
 // TODO: Support the condition NARROW_N_VECTOR != N_VECTOR
@@ -37,24 +47,28 @@ TASK kernel void relu(int frame_num) {
   do {
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
 
-    PeOutput pe_output[NARROW_N_VECTOR];
-    #pragma unroll
-    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
-      pe_output[n_inc] = read_channel_altera(pe_output_channel[n_inc]);
-    }
-	  
-    bool is_QVECTOR = pe_output[0].is_QVECTOR;
-    
-    ReluOutput relu_output;
+    FAST_LOOP_BEGIN(nn_vec, CEIL(N_VECTOR, RELU_N_VECTOR), 0, CEIL(N_VECTOR, NARROW_N_VECTOR), 1) {
 
-    #pragma unroll
-    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+      PeOutput pe_output[NARROW_N_VECTOR];
       #pragma unroll
-      for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
+      for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+        pe_output[n_inc] = read_channel_intel(pe_output_channel[nn_vec * NARROW_N_VECTOR + n_inc]);
       }
-    }
-    write_channel_altera(relu_output_channel, relu_output);
+	    
+      bool is_QVECTOR = pe_output[0].is_QVECTOR;
+      
+      ReluOutput relu_output;
+
+      #pragma unroll
+      for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+        #pragma unroll
+        for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+          relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
+        }
+      }
+      write_channel_intel(relu_output_channel, relu_output);
+
+    } FAST_LOOP_END(nn_vec);
 
     INCREASE_COUNTER(cycle);
 #ifdef ENABLE_INFINITE_LOOPS
