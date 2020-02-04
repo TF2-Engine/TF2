@@ -104,11 +104,11 @@ void Verify(int n, char *file_name, char *q, real *output) {
   for (int n = 0; n < output_channel; n++) {
     for (int h = 0; h < H; h++) {
       for (int w = 0; w < W; w++) {
-        int n_vec = n / N_VECTOR;
+        int n_vec = n / NARROW_N_VECTOR;
         int h_vec = h;
         int w_vec = w / W_VECTOR;
         int ww = w - w_vec * W_VECTOR;
-        int nn = n - n_vec * N_VECTOR;
+        int nn = n - n_vec * NARROW_N_VECTOR;
         int addr_out = 
                     output_offset + concat_offset + ddr_write_offset +
                     n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
@@ -164,12 +164,12 @@ void Evaluation(int n, char* q, real* output, int* top_labels) {
   float sum_exp = 0;
 
   for (int n = 0; n < output_channel; n++) {
-    int n_vec = n / N_VECTOR;
+    int n_vec = n / NARROW_N_VECTOR;
     int h_vec = 0;
     int w = 0;
     int w_vec = 0;
     int ww = w - w_vec * W_VECTOR;
-    int nn = n - n_vec * N_VECTOR;
+    int nn = n - n_vec * NARROW_N_VECTOR;
     int addr_out = 
                 ddr_write_offset + output_offset +
                 n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +

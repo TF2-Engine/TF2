@@ -41,13 +41,15 @@ TASK kernel void relu(int frame_num) {
   int cycle_end = CONV_TOTAL_WRITE_CACHE;
 
 #ifdef PRINT_CYCLE
-  printf("CONV_TOTAL_WRITE_CACHE=%d\frame_index", CONV_TOTAL_WRITE_CACHE);
+  printf("CONV_TOTAL_WRITE_CACHE=%d\n", CONV_TOTAL_WRITE_CACHE);
 #endif
 
   do {
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
 
-    FAST_LOOP_BEGIN(nn_vec, CEIL(N_VECTOR, RELU_N_VECTOR), 0, CEIL(N_VECTOR, NARROW_N_VECTOR), 1) {
+    //printf("RELU cycle=%d/%d\n", cycle, cycle_end);
+
+    FAST_LOOP_BEGIN(nn_vec, CEIL(N_VECTOR, NARROW_N_VECTOR), 0, CEIL(N_VECTOR, NARROW_N_VECTOR), 1) {
 
       PeOutput pe_output[NARROW_N_VECTOR];
       #pragma unroll
@@ -63,6 +65,7 @@ TASK kernel void relu(int frame_num) {
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
         #pragma unroll
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
+          //printf("RELU cycle=%d/%d nn_vec=%d n_inc=%d w_inc=%d data=%d\n", cycle, cycle_end, nn_vec, n_inc, w_inc, pe_output[n_inc].data.v[w_inc]);
           relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
         }
       }

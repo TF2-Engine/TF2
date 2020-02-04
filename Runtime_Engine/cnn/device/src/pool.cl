@@ -52,14 +52,16 @@ TASK kernel void pool(int frame_num) {
 
 #ifdef PRINT_CYCLE
   int ipool_channel_cnt = 0;
-  printf("POOL_TOTAL_CYCLE=%d\frame_index", POOL_TOTAL_CYCLE);
+  //printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
 #endif
 
   #pragma ivdep  
   do {
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
-    
+   
+    //printf("POOL cycle=%d/%d\n", cycle, cycle_end);
+
     bool new_layer = false;
     int start_cycle = 0;
     int layer_temp = 0;
@@ -72,7 +74,7 @@ TASK kernel void pool(int frame_num) {
       }
       start_cycle += POOL_CYCLE(i);
 #ifdef PRINT_CYCLE
-      printf("POOL_CYCLE(%d)=\t%d\frame_index", i, POOL_CYCLE(i));
+      printf("POOL_CYCLE(%d)=\t%d\n", i, POOL_CYCLE(i));
 #endif
     }
 
@@ -128,7 +130,7 @@ TASK kernel void pool(int frame_num) {
           if (valid_w) {
             w_buffer[EDGE_W + w_inc].v[n_inc] = relu_output.data[n_inc].v[w_inc];
 #ifdef PRINT_POOL_INPUT
-            if (layer == NUM_LAYER - 1) printf("POOL layer=%d n=%d oh=%d ow=%d k_inc=%d w_inc=%d data=%d ipool_channel_cnt=%d cycle=%d\frame_index", layer, n, oh, ow, n_inc, w_inc, relu_output.data[n].v[w], ipool_channel_cnt, cycle);
+            if (layer == NUM_LAYER - 1) printf("POOL layer=%d n=%d oh=%d ow=%d n_inc=%d w_inc=%d data=%d cycle=%d\n", layer, n, oh, ow, n_inc, w_inc, relu_output.data[n_inc].v[w_inc], cycle);
 #endif
           } else {
             w_buffer[EDGE_W + w_inc].v[n_inc] = 0;
@@ -136,7 +138,7 @@ TASK kernel void pool(int frame_num) {
         } 
       }
 #ifdef PRINT_POOL_INPUT
-      if (kIpoolEnable[layer]) ipool_channel_cnt++;
+      //if (kIpoolEnable[layer]) ipool_channel_cnt++;
 #endif
       } else { 
       #pragma unroll
@@ -254,7 +256,7 @@ TASK kernel void pool(int frame_num) {
 
         pool_output.data[n_inc].v[w_inc] = output_value;
 #ifdef PRINT_POOL_OUTPUT
-        if (layer == NUM_LAYER - 1) printf("frame_index=%d oh=%d ow=%d k=%d w=%d data=%d\n", frame_index, oh, ow, k, w, output_value);
+        if (layer == NUM_LAYER - 1) printf("frame_index=%d cycle=%d/%d oh=%d ow=%d nn_vec=%d n=%d n_inc=%d w_inc=%d data=%d\n", frame_index, cycle, cycle_end, oh, ow, nn_vec, n, n_inc, w_inc, output_value);
 #endif
       }
     }
@@ -264,7 +266,7 @@ TASK kernel void pool(int frame_num) {
     edge_w_nnvec_addr = (COUNTER_LAST(nn_vec) ? 0 : edge_w_nnvec_addr + 1) & BIT_MASK(CLOG2(NNVEC_ITER));
 
     if (COUNTER_LAST(nn_vec)) {
-      edge_h_wvec_addr = (COUNTER_LAST(ow) ? 0 : edge_h_wvec_addr + NNVEC_ITER) & BIT_MASK(CLOG2(WVEC_ITER));
+      edge_h_wvec_addr = (COUNTER_LAST(ow) ? 0 : edge_h_wvec_addr + NNVEC_ITER) & BIT_MASK(CLOG2(WVEC_ITER * NNVEC_ITER));
     }
 
     INCREASE_COUNTER(nn_vec);

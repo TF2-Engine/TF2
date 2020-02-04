@@ -20,6 +20,8 @@ limitations under the License.
 
 #include "../../host/inc/cnn.h"
 
+#define NN_VEC CEIL(N_VECTOR, NARROW_N_VECTOR)
+
 // Functions:
 // Collects the pool kernel output data, and rearranges it to fit feature_writer kernel.
 
@@ -36,18 +38,20 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
   bool buffer_index = 0;
   bool buffer_done_index = 0;
   
-  real __attribute__((register)) write_data[2][NEXT_POWER_OF_2(W_VECTOR)][NEXT_POWER_OF_2(C_VECTOR)];
+  real __attribute__((register)) write_data[NN_VEC][2][NEXT_POWER_OF_2(W_VECTOR)][NEXT_POWER_OF_2(C_VECTOR)];
   
   bool odd_even_factor = 0;
   bool odd_even_factor_pool = 0;
-  int start_wvec_data_addr = 0;
-  int output_linear_w = 0;
+  int start_wvec_data_addr[NN_VEC] = {0};
+  int output_linear_w[NN_VEC] = {0};
 
   do { 
     int frame_cycle_end = POOL_TOTAL_CYCLE;  // * frame_num BUG
     SET_COUNTER(frame_cycle, frame_cycle_end, 0, frame_cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
-    
+   
+    //printf("POOL_TAIL cycle=%d/%d\n", frame_cycle, frame_cycle_end);
+
     bool new_layer = false;
 
     int conv_start_cycle = 0;
@@ -77,7 +81,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     SET_COUNTER(n_vec, kNEndWithOffsetMax, 0, N_VEC, N_VECTOR);
     SET_COUNTER(h_vec, kOhEndWithOffsetMax, 0, H_VEC, 1);
     SET_COUNTER(w_vec, kOwEndWithOffsetMax, 0, W_VEC, WOW_VECTOR);
-    SET_COUNTER(nn_vec, N_VECTOR, 0, N_VECTOR, NARROW_N_VECTOR);
+    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, 1);
 
     if (new_layer) {
       RESET_COUNTER(n_vec);
@@ -90,21 +94,21 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     bool pool_stride_2 = kPoolStride2[layer];
     bool conv_stride_2 = kConvStride[layer] == 2;
 
-    int ow_offset = pool_stride_2 || conv_stride_2 ? (POOL_OFFSET_P + 1) / 2: POOL_OFFSET_P - kPoolPad[layer];
+    int ow_offset = pool_stride_2 || conv_stride_2 ? (POOL_OFFSET_P + 1) / 2 : POOL_OFFSET_P - kPoolPad[layer];
     
     if (COUNTER_FIRST(w_vec)) {
       odd_even_factor = 1;
-      start_wvec_data_addr = -ow_offset;
-      output_linear_w = -ow_offset;
+      start_wvec_data_addr[nn_vec] = -ow_offset;
+      output_linear_w[nn_vec] = -ow_offset;
       buffer_index = 0;
       buffer_done_index = 0;
-    } else {
+    } else if(COUNTER_FIRST(nn_vec)) {
       odd_even_factor = !odd_even_factor;
     }
 
     if (COUNTER_FIRST(w_vec)) {
       odd_even_factor_pool = 0;
-    } else if((OW_VECTOR & 0x1)) {
+    } else if((OW_VECTOR & 0x1) && COUNTER_FIRST(nn_vec)) {
       odd_even_factor_pool = !odd_even_factor_pool;
     }
 
@@ -133,11 +137,11 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         }
       }
 
-      int w_index = start_wvec_data_addr + w_cursor;
+      int w_index = start_wvec_data_addr[nn_vec] + w_cursor;
 
       if (w_cursor < step && w_index >= W_VECTOR) {
         w_index -= W_VECTOR;
-        if (!is_fliped) {
+        if (!is_fliped && COUNTER_FIRST(nn_vec)) {
           buffer_index = !buffer_index;
           is_fliped = true;
         }
@@ -145,11 +149,13 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
       if (w_cursor >= step) w_index = -1; //invalid data
       w_index_cache[w_inc] = w_index;
       buffer_index_cache[w_inc] = buffer_index;
-      if (w_cursor == (step - 1) && w_index == (W_VECTOR - 1)) buffer_index = !buffer_index;
+      if (w_cursor == (step - 1) && w_index == (W_VECTOR - 1) && COUNTER_LAST(nn_vec)) buffer_index = !buffer_index;
+    
+      printf("POOL_TAIL1 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d w_inc=%d w_index_cache=%d buffer_index_cache=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, w_inc, w_index_cache[w_inc], buffer_index_cache[w_inc]);
     }
 
     #pragma unroll
-    for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
+    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
         real data = 0;
@@ -158,29 +164,33 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         #pragma unroll
         for (int w_cursor = 0; w_cursor < W_VECTOR; w_cursor++) {
           if (w_index_cache[w_cursor] == w_inc) {
-            data = pool_output.data[c_inc].v[w_cursor];
+            data = pool_output.data[n_inc].v[w_cursor];
             //data = data_cache[c_inc][w_cursor];
             buffer_addr = buffer_index_cache[w_cursor];
           }
         }
 
         if (buffer_addr != -1) {
-          write_data[buffer_addr][w_inc][c_inc] = data;
+          printf("POOL_TAIL3 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d buffer_addr=%d w_inc=%d n_inc=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, buffer_addr, w_inc, n_inc, data);
+          write_data[nn_vec][buffer_addr][w_inc][n_inc] = data;
         }
       }
     }
 
     bool buffer_done = false;
-    start_wvec_data_addr += step;
+    start_wvec_data_addr[nn_vec] += step;
     bool buffer_done_index_now = -1;
-    if ((start_wvec_data_addr >= W_VECTOR || COUNTER_LAST(w_vec)) && (output_linear_w < OW)) {
+    printf("POOL_TAIL2 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d start_wvec_data_addr=%d COUNTER_LAST(w_vec)=%d output_linear_w=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, start_wvec_data_addr[nn_vec], COUNTER_LAST(w_vec), output_linear_w[nn_vec]);
+    if ((start_wvec_data_addr[nn_vec] >= W_VECTOR || COUNTER_LAST(w_vec)) && (output_linear_w[nn_vec] < OW)) {
       buffer_done = true;
       buffer_done_index_now = buffer_done_index;
-      buffer_done_index = !buffer_done_index;
-      start_wvec_data_addr -= W_VECTOR;
+      start_wvec_data_addr[nn_vec] -= W_VECTOR;
+      if(COUNTER_LAST(nn_vec)) {
+        buffer_done_index = !buffer_done_index;
+      }
     }
 
-    output_linear_w += step;
+    output_linear_w[nn_vec] += step;
     
     bool write_enable_hvec = true; 
     if ((h_vec < (POOL_OFFSET_P - kPoolPad[layer])) || (!pool_stride_2 && (h_vec > (POOL_OFFSET_P - kPoolPad[layer] + P - 1))) || (pool_stride_2 && (h_vec % 2 != 0))) write_enable_hvec = false;
@@ -191,8 +201,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
         #pragma unroll
-        for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
-          pool_tail_output.write_data[w_inc][c_inc] = write_data[buffer_done_index_now][w_inc][c_inc];
+        for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+          pool_tail_output.write_data[w_inc][n_inc] = write_data[nn_vec][buffer_done_index_now][w_inc][n_inc];
+          printf("POOL_TAIL cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d w_inc=%d n_inc=%d nn_vec=%d index=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, w_inc, n_inc, nn_vec, buffer_done_index_now, pool_tail_output.write_data[w_inc][n_inc]);
         }
       }
 

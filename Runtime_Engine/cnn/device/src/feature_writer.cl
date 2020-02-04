@@ -32,6 +32,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
   INIT_COUNTER(n_vec);
   INIT_COUNTER(h_vec);
   INIT_COUNTER(w_vec);
+  INIT_COUNTER(nn_vec);
 
   int layer = 0;
 
@@ -73,11 +74,15 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     SET_COUNTER(h_vec, kPoolOutputHeightMax, 0, H, 1);
     //SET_COUNTER(w_vec, W_max, 0, CEIL(W, W_VECTOR), 1);
     SET_COUNTER(w_vec, W_VEC, 0, W_VEC, 1);
+    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, 1);
+
+    //printf("FEATURE_WRITER cycle=%d/%d\n", cycle, cycle_end);
 
     if(new_layer) {
       RESET_COUNTER(n_vec);
       RESET_COUNTER(h_vec);
       RESET_COUNTER(w_vec);
+      RESET_COUNTER(nn_vec);
 
       new_layer = false;
     }
@@ -95,7 +100,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
         for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
           int read_res_offset = kDDRReadBase[layer] * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
           unsigned long long int addr =
-                    n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_inc * NARROW_N_VECTOR +
@@ -115,7 +120,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {       
         int ddr_write_offset = (kDDRWriteBase[layer] + concat_offset) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
         unsigned long long int addr =
-                    n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_inc * NARROW_N_VECTOR +
@@ -135,11 +140,13 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
         if (kDDRWriteEnable[layer] || layer == (NUM_LAYER - 1)) { 
           feature_ddr[ddr_write_offset + output_offset + addr] = addition_relu;
         }
+
+        //printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d data=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, addition_relu);
       }
     }
 
     int cache_write_offset = kCacheWriteBase[layer];
-    int cache_write_addr = cache_write_offset + concat_offset + n_vec * H * CEIL(W, W_VECTOR) + h_vec * CEIL(W, W_VECTOR) + w_vec;
+    int cache_write_addr = cache_write_offset + concat_offset + (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) + h_vec * CEIL(W, W_VECTOR) + w_vec;
     pool_tail_output.cache_write_addr = cache_write_addr;
      
     if (kCacheWriteEnable[layer] && !kEndPoolEnable[layer]) {
@@ -150,7 +157,8 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
       write_channel_intel(end_pool_input_channel, pool_tail_output);
     } 
     
-    INCREASE_COUNTER(w_vec);
+    INCREASE_COUNTER(nn_vec);
+    if (COUNTER_DONE(nn_vec)) { RESET_COUNTER(nn_vec); INCREASE_COUNTER(w_vec); }
     if (COUNTER_DONE(w_vec))  { RESET_COUNTER(w_vec);  INCREASE_COUNTER(h_vec); }
     if (COUNTER_DONE(h_vec))  { RESET_COUNTER(h_vec);  INCREASE_COUNTER(n_vec); }
     if (COUNTER_DONE(n_vec))  { RESET_COUNTER(n_vec);  }
