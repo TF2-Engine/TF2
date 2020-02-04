@@ -35,13 +35,13 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
   
   int layer = 0;
  
-  bool buffer_index = 0;
-  bool buffer_done_index = 0;
+  bool buffer_index[NN_VEC] = {0};
+  bool buffer_done_index[NN_VEC] = {0};
   
   real __attribute__((register)) write_data[NN_VEC][2][NEXT_POWER_OF_2(W_VECTOR)][NEXT_POWER_OF_2(C_VECTOR)];
   
-  bool odd_even_factor = 0;
-  bool odd_even_factor_pool = 0;
+  bool odd_even_factor[NN_VEC] = {0};
+  bool odd_even_factor_pool[NN_VEC] = {0};
   int start_wvec_data_addr[NN_VEC] = {0};
   int output_linear_w[NN_VEC] = {0};
 
@@ -97,22 +97,22 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     int ow_offset = pool_stride_2 || conv_stride_2 ? (POOL_OFFSET_P + 1) / 2 : POOL_OFFSET_P - kPoolPad[layer];
     
     if (COUNTER_FIRST(w_vec)) {
-      odd_even_factor = 1;
+      odd_even_factor[nn_vec] = 1;
       start_wvec_data_addr[nn_vec] = -ow_offset;
       output_linear_w[nn_vec] = -ow_offset;
-      buffer_index = 0;
-      buffer_done_index = 0;
-    } else if(COUNTER_FIRST(nn_vec)) {
-      odd_even_factor = !odd_even_factor;
+      buffer_index[nn_vec] = 0;
+      buffer_done_index[nn_vec] = 0;
+    } else {
+      odd_even_factor[nn_vec] = !odd_even_factor[nn_vec];
     }
 
     if (COUNTER_FIRST(w_vec)) {
-      odd_even_factor_pool = 0;
-    } else if((OW_VECTOR & 0x1) && COUNTER_FIRST(nn_vec)) {
-      odd_even_factor_pool = !odd_even_factor_pool;
+      odd_even_factor_pool[nn_vec] = 0;
+    } else if((OW_VECTOR & 0x1)) {
+      odd_even_factor_pool[nn_vec] = !odd_even_factor_pool[nn_vec];
     }
 
-    int step = pool_stride_2 || conv_stride_2 ? (WOW_VECTOR + odd_even_factor) / 2 : WOW_VECTOR;
+    int step = pool_stride_2 || conv_stride_2 ? (WOW_VECTOR + odd_even_factor[nn_vec]) / 2 : WOW_VECTOR;
     
     //
     // write data to the cache
@@ -128,12 +128,12 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
       int w_cursor = w_inc;
       if (pool_stride_2 || conv_stride_2) {
-        if ((w_inc - odd_even_factor_pool) % 2 != 0) {
+        if ((w_inc - odd_even_factor_pool[nn_vec]) % 2 != 0) {
           w_index_cache[w_inc] = -1;
           buffer_index_cache[w_inc] = -1;
           continue;
         } else {
-          w_cursor = (w_inc - odd_even_factor_pool) / 2;       
+          w_cursor = (w_inc - odd_even_factor_pool[nn_vec]) / 2;       
         }
       }
 
@@ -141,15 +141,15 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
 
       if (w_cursor < step && w_index >= W_VECTOR) {
         w_index -= W_VECTOR;
-        if (!is_fliped && COUNTER_FIRST(nn_vec)) {
-          buffer_index = !buffer_index;
+        if (!is_fliped) {
+          buffer_index[nn_vec] = !buffer_index[nn_vec];
           is_fliped = true;
         }
       }
       if (w_cursor >= step) w_index = -1; //invalid data
       w_index_cache[w_inc] = w_index;
-      buffer_index_cache[w_inc] = buffer_index;
-      if (w_cursor == (step - 1) && w_index == (W_VECTOR - 1) && COUNTER_LAST(nn_vec)) buffer_index = !buffer_index;
+      buffer_index_cache[w_inc] = buffer_index[nn_vec];
+      if (w_cursor == (step - 1) && w_index == (W_VECTOR - 1)) buffer_index[nn_vec] = !buffer_index[nn_vec];
     
       printf("POOL_TAIL1 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d w_inc=%d w_index_cache=%d buffer_index_cache=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, w_inc, w_index_cache[w_inc], buffer_index_cache[w_inc]);
     }
@@ -183,11 +183,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     printf("POOL_TAIL2 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d start_wvec_data_addr=%d COUNTER_LAST(w_vec)=%d output_linear_w=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, start_wvec_data_addr[nn_vec], COUNTER_LAST(w_vec), output_linear_w[nn_vec]);
     if ((start_wvec_data_addr[nn_vec] >= W_VECTOR || COUNTER_LAST(w_vec)) && (output_linear_w[nn_vec] < OW)) {
       buffer_done = true;
-      buffer_done_index_now = buffer_done_index;
+      buffer_done_index_now = buffer_done_index[nn_vec];
       start_wvec_data_addr[nn_vec] -= W_VECTOR;
-      if(COUNTER_LAST(nn_vec)) {
-        buffer_done_index = !buffer_done_index;
-      }
+      buffer_done_index[nn_vec] = !buffer_done_index[nn_vec];
     }
 
     output_linear_w[nn_vec] += step;
