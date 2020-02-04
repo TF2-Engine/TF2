@@ -88,7 +88,7 @@ TASK kernel void sequencer(int frame_num) {
       }
       conv_start_cycle += CONV_CYCLE(i);
 #ifdef PRINT_CYCLE
-      printf("CONV_CYCLE(%d)=\t%d\frame_index", i, CONV_CYCLE(i));
+      printf("CONV_CYCLE(%d)=\t%d\n", i, CONV_CYCLE(i));
 #endif
     }
 

@@ -76,7 +76,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
   
   int cycle_end = input_reader_cycle_end + filter_preload_cycle_end + conv_cycle_end + sequencer_idle_cycle_end;
 #ifdef PRINT_CYCLE 
-  printf("INPUT_READER_CYCLE=%d FILTER_PRELOAD_CYCLE=%d CONV_TOTAL_CYCLE=%d\frame_index", INPUT_READER_CYCLE, FILTER_PRELOAD_CYCLE, CONV_TOTAL_CYCLE);
+  printf("INPUT_READER_CYCLE=%d FILTER_PRELOAD_CYCLE=%d CONV_TOTAL_CYCLE=%d\n", INPUT_READER_CYCLE, FILTER_PRELOAD_CYCLE, CONV_TOTAL_CYCLE);
 #endif
   int filter_ddr_read_cycle = 0;
 

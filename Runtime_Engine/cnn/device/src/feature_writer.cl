@@ -37,7 +37,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
   int layer = 0;
 
 #ifdef PRINT_CYCLE
-  printf("FEATURE_WRITER_TOTAL_CYCLE=%d\frame_index", FEATURE_WRITER_TOTAL_CYCLE);
+  printf("FEATURE_WRITER_TOTAL_CYCLE=%d\n", FEATURE_WRITER_TOTAL_CYCLE);
 #endif
 
   #pragma ivdep
@@ -55,7 +55,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
       }
       feature_writer_start_cycle += FEATURE_WRITER_CYCLE(i);
 #ifdef PRINT_CYCLE
-      printf("FEATURE_WRITER_CYCLE(%d)=\t%d\frame_index", i, FEATURE_WRITER_CYCLE(i));
+      printf("FEATURE_WRITER_CYCLE(%d)=\t%d\n", i, FEATURE_WRITER_CYCLE(i));
 #endif
     }
 

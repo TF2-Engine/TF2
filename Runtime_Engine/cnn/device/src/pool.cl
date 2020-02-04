@@ -52,7 +52,7 @@ TASK kernel void pool(int frame_num) {
 
 #ifdef PRINT_CYCLE
   int ipool_channel_cnt = 0;
-  //printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
+  printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
 #endif
 
   #pragma ivdep  
