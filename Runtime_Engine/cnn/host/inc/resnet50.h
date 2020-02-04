@@ -42,7 +42,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 1
+#define NUM_LAYER 54
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -100,6 +100,8 @@ limitations under the License.
 #define EDGE_H_BUFFER_SIZE (WVEC_ITER * NNVEC_ITER)
 #define EDGE_W_BUFFER_SIZE (NNVEC_ITER)
 */
+
+#define NN_VEC (CEIL(N_VECTOR, NARROW_N_VECTOR))
 
 #define DDR_BLOCK_SIZE DDR_PAGE_SIZE0
 #define D0 0

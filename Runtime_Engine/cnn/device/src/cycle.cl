@@ -167,8 +167,6 @@ int FindPoolCycles(int layer) {
   int WOW_VECTOR = FW != 1 ? OW_VECTOR : W_VECTOR;
   
   int W_VEC = CEIL(OW, WOW_VECTOR);
-   
-  int NN_VEC = CEIL(N_VECTOR, NARROW_N_VECTOR);
 
   return N_VEC * OH * W_VEC * NN_VEC;
 }

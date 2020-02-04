@@ -20,8 +20,6 @@ limitations under the License.
 
 #include "../../host/inc/cnn.h"
 
-#define NN_VEC CEIL(N_VECTOR, NARROW_N_VECTOR)
-
 // Functions:
 // Collects the pool kernel output data, and rearranges it to fit feature_writer kernel.
 
@@ -151,7 +149,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
       buffer_index_cache[w_inc] = buffer_index[nn_vec];
       if (w_cursor == (step - 1) && w_index == (W_VECTOR - 1)) buffer_index[nn_vec] = !buffer_index[nn_vec];
     
-      printf("POOL_TAIL1 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d w_inc=%d w_index_cache=%d buffer_index_cache=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, w_inc, w_index_cache[w_inc], buffer_index_cache[w_inc]);
+      //printf("POOL_TAIL1 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d w_inc=%d w_index_cache=%d buffer_index_cache=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, w_inc, w_index_cache[w_inc], buffer_index_cache[w_inc]);
     }
 
     #pragma unroll
@@ -171,7 +169,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         }
 
         if (buffer_addr != -1) {
-          printf("POOL_TAIL3 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d buffer_addr=%d w_inc=%d n_inc=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, buffer_addr, w_inc, n_inc, data);
+          //printf("POOL_TAIL3 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d buffer_addr=%d w_inc=%d n_inc=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, buffer_addr, w_inc, n_inc, data);
           write_data[nn_vec][buffer_addr][w_inc][n_inc] = data;
         }
       }
@@ -180,7 +178,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     bool buffer_done = false;
     start_wvec_data_addr[nn_vec] += step;
     bool buffer_done_index_now = -1;
-    printf("POOL_TAIL2 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d start_wvec_data_addr=%d COUNTER_LAST(w_vec)=%d output_linear_w=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, start_wvec_data_addr[nn_vec], COUNTER_LAST(w_vec), output_linear_w[nn_vec]);
+    //printf("POOL_TAIL2 cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d start_wvec_data_addr=%d COUNTER_LAST(w_vec)=%d output_linear_w=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, nn_vec, start_wvec_data_addr[nn_vec], COUNTER_LAST(w_vec), output_linear_w[nn_vec]);
     if ((start_wvec_data_addr[nn_vec] >= W_VECTOR || COUNTER_LAST(w_vec)) && (output_linear_w[nn_vec] < OW)) {
       buffer_done = true;
       buffer_done_index_now = buffer_done_index[nn_vec];
@@ -201,7 +199,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         #pragma unroll
         for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
           pool_tail_output.write_data[w_inc][n_inc] = write_data[nn_vec][buffer_done_index_now][w_inc][n_inc];
-          printf("POOL_TAIL cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d w_inc=%d n_inc=%d nn_vec=%d index=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, w_inc, n_inc, nn_vec, buffer_done_index_now, pool_tail_output.write_data[w_inc][n_inc]);
+          //printf("POOL_TAIL cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d w_inc=%d n_inc=%d nn_vec=%d index=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, w_inc, n_inc, nn_vec, buffer_done_index_now, pool_tail_output.write_data[w_inc][n_inc]);
         }
       }
 
