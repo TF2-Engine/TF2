@@ -175,7 +175,7 @@ channel PeControlSignal pe_control_channel[N_VECTOR] __attribute__((depth(0)));
 
 // PE output data sent from PE kernels
 channel PeOutput pe_output_channel[N_VECTOR] __attribute__((depth( 16 )));
-//channel PeOutput pe_drain_output_channel[N_VECTOR] __attribute__((depth( 1 )));
+channel PeOutput pe_drain_output_channel[N_VECTOR] __attribute__((depth( 1 )));
 
 // the output of relu
 channel ReluOutput relu_output_channel __attribute__((depth(1)));

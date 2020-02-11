@@ -54,7 +54,7 @@ TASK kernel void relu(int frame_num) {
       PeOutput pe_output[NARROW_N_VECTOR];
       #pragma unroll
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
-        pe_output[n_inc] = read_channel_intel(pe_output_channel[nn_vec * NARROW_N_VECTOR + n_inc]);
+        pe_output[n_inc] = read_channel_intel(pe_drain_output_channel[N_VECTOR -  NARROW_N_VECTOR + n_inc]);
       }
 	    
       bool is_QVECTOR = pe_output[0].is_QVECTOR;
