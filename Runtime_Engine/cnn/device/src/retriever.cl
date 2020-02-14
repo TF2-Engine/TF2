@@ -84,8 +84,6 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
   INIT_COUNTER(frame_index);
 
   do {   
-    //printf("RETRIEVER frame_cycle=%d/%d\frame_index", frame_cycle, cycle_end);
-
     SET_COUNTER(frame_cycle, cycle_end, 0, cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     
@@ -114,6 +112,8 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
     // reads sequencer output channel
     SequencerOutput sequencer_output = conving ? read_channel_intel(sequencer_output_channel) : sequencer_output_zero;
     
+    //printf("RETRIEVER layer=%d frame_cycle=%d/%d\n", sequencer_output.layer, frame_cycle, cycle_end);
+
     {
       int C = kInputChannels[sequencer_output.layer];
       int W = kInputWidth[sequencer_output.layer];

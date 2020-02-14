@@ -63,6 +63,8 @@ TASK kernel void full_size_pool(int frame_num) {
 
     if (new_layer) layer = layer_temp;
     
+    printf("full_size_pool layer=%d cycle=%d/%d\n", layer, frame_cycle, frame_cycle_end);
+    
     // write cache start
     //
     // receive pool data

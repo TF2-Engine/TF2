@@ -60,8 +60,6 @@ TASK kernel void pool(int frame_num) {
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
    
-    //printf("POOL cycle=%d/%d\n", cycle, cycle_end);
-
     bool new_layer = false;
     int start_cycle = 0;
     int layer_temp = 0;
@@ -80,6 +78,8 @@ TASK kernel void pool(int frame_num) {
 
     if (new_layer) layer = layer_temp;
 
+    //printf("pool layer=%d cycle=%d/%d\n", layer, cycle, cycle_end);
+
     int S = kPoolWindow[layer];
     int H = CEIL(kOutputHeight[layer], kConvStride[layer]);
     int W = kOutputWidth[layer];
@@ -91,10 +91,13 @@ TASK kernel void pool(int frame_num) {
 
     int WOW_VECTOR = FH != 1 ? OW_VECTOR : W_VECTOR;
 
-    SET_COUNTER(n, kNEndWithOffsetMax, 0, N, N_VECTOR);
+    int NVEC_INC = kIpoolEnable[layer] ? NARROW_N_VECTOR : N_VECTOR;
+    int NNVEC_INC = kIpoolEnable[layer] ? N_VECTOR : NARROW_N_VECTOR;
+
+    SET_COUNTER(n, kNEndWithOffsetMax, 0, N, NVEC_INC);
     SET_COUNTER(oh, kOhEndWithOffsetMax, 0, OH, 1 );
     SET_COUNTER(ow, kOwEndWithOffsetMax, 0, OW, WOW_VECTOR); 
-    SET_COUNTER(nn_vec, N_VECTOR, 0, N_VECTOR, NARROW_N_VECTOR);
+    SET_COUNTER(nn_vec, N_VECTOR, 0, N_VECTOR, NNVEC_INC);
  
     if (new_layer) {
       RESET_COUNTER(n);
@@ -103,7 +106,6 @@ TASK kernel void pool(int frame_num) {
       RESET_COUNTER(nn_vec);
       new_layer = false;
     }
-
     	
     ReluChannelVector w_buffer[EDGE_W + W_VECTOR];
 
@@ -130,7 +132,7 @@ TASK kernel void pool(int frame_num) {
           if (valid_w) {
             w_buffer[EDGE_W + w_inc].v[n_inc] = relu_output.data[n_inc].v[w_inc];
 #ifdef PRINT_POOL_INPUT
-            if (layer == NUM_LAYER - 1) printf("POOL layer=%d n=%d oh=%d ow=%d n_inc=%d w_inc=%d data=%d cycle=%d\n", layer, n, oh, ow, n_inc, w_inc, relu_output.data[n_inc].v[w_inc], cycle);
+            if (n == 8 && layer == NUM_LAYER - 1) printf("POOL layer=%d n=%d oh=%d ow=%d n_inc=%d w_inc=%d data=%d cycle=%d\n", layer, n, oh, ow, n_inc, w_inc, relu_output.data[n_inc].v[w_inc], cycle);
 #endif
           } else {
             w_buffer[EDGE_W + w_inc].v[n_inc] = 0;
@@ -256,7 +258,7 @@ TASK kernel void pool(int frame_num) {
 
         pool_output.data[n_inc].v[w_inc] = output_value;
 #ifdef PRINT_POOL_OUTPUT
-        if (layer == NUM_LAYER - 1) printf("frame_index=%d cycle=%d/%d oh=%d ow=%d nn_vec=%d n=%d n_inc=%d w_inc=%d data=%d\n", frame_index, cycle, cycle_end, oh, ow, nn_vec, n, n_inc, w_inc, output_value);
+        if (n == 8 && layer == NUM_LAYER - 1) printf("frame_index=%d cycle=%d/%d oh=%d ow=%d nn_vec=%d n=%d n_inc=%d w_inc=%d data=%d\n", frame_index, cycle, cycle_end, oh, ow, nn_vec, n, n_inc, w_inc, output_value);
 #endif
       }
     }

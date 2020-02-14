@@ -88,12 +88,14 @@ TASK kernel void sequencer(int frame_num) {
       }
       conv_start_cycle += CONV_CYCLE(i);
 #ifdef PRINT_CYCLE
-      printf("CONV_CYCLE(%d)=\t%d\frame_index", i, CONV_CYCLE(i));
+      printf("CONV_CYCLE(%d)=\t%d\n", i, CONV_CYCLE(i));
 #endif
     }
 
     if (new_layer)  layer = layer_temp;
     
+    //printf("sequencer layer=%d cycle=%d/%d\n", layer, frame_cycle, frame_cycle_end);
+
     int N = kOutputChannels[layer];
     int C = kInputChannels[layer];
     int OW = kOutputWidth[layer]; 

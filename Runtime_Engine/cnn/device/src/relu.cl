@@ -47,7 +47,7 @@ TASK kernel void relu(int frame_num) {
   do {
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
 
-    //printf("RELU cycle=%d/%d\n", cycle, cycle_end);
+    //printf("relu cycle=%d/%d\n", cycle, cycle_end);
 
     FAST_LOOP_BEGIN(nn_vec, CEIL(N_VECTOR, NARROW_N_VECTOR), 0, CEIL(N_VECTOR, NARROW_N_VECTOR), 1) {
 

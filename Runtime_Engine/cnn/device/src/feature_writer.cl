@@ -46,6 +46,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     bool new_layer = false;
     int feature_writer_start_cycle = 0;
     int layer_temp = 0;
+    
     #pragma unroll
     for (int i = 0; i < NUM_CONVOLUTIONS; i++) {
       if (new_layer) continue;
@@ -61,6 +62,8 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
 
     if (new_layer) layer = layer_temp;
     
+    //printf("feature_writer layer=%d cycle=%d/%d\n", layer, cycle, cycle_end);
+    
     int N = kOutputChannels[layer];
     int H = kPoolOutputHeight[layer];
     int W = kPoolOutputWidth[layer];
@@ -68,13 +71,15 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     int N_VEC = kNvecEnd[layer];
     int W_VEC = kPoolOutputWvecEnd[layer];
 
+    int NNVEC_END = kIpoolEnable[layer] ? 1 : NN_VEC;
+
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
     SET_COUNTER(n_vec, kOutputChannelsMax, 0, N_VEC, 1);
     SET_COUNTER(h_vec, kPoolOutputHeightMax, 0, H, 1);
     //SET_COUNTER(w_vec, W_max, 0, CEIL(W, W_VECTOR), 1);
     SET_COUNTER(w_vec, W_VEC, 0, W_VEC, 1);
-    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, 1);
+    SET_COUNTER(nn_vec, NNVEC_END, 0, NNVEC_END, 1);
 
     //printf("FEATURE_WRITER cycle=%d/%d\n", cycle, cycle_end);
 
@@ -100,7 +105,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
         for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
           int read_res_offset = kDDRReadBase[layer] * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
           unsigned long long int addr =
-                    (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    (n_vec * NNVEC_END + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_inc * NARROW_N_VECTOR +
@@ -120,7 +125,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {       
         int ddr_write_offset = (kDDRWriteBase[layer] + concat_offset) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
         unsigned long long int addr =
-                    (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    (n_vec * NNVEC_END + nn_vec) * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
                     w_inc * NARROW_N_VECTOR +
@@ -141,12 +146,12 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
           feature_ddr[ddr_write_offset + output_offset + addr] = addition_relu;
         }
 
-        //printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d data=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, addition_relu);
+        if (layer == NUM_LAYER - 1 && n_vec == 1 && n_inc == 0) printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d w_inc=%d n_inc=%d data=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, w_inc, n_inc, addition_relu);
       }
     }
 
     int cache_write_offset = kCacheWriteBase[layer];
-    int cache_write_addr = cache_write_offset + concat_offset + (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) + h_vec * CEIL(W, W_VECTOR) + w_vec;
+    int cache_write_addr = cache_write_offset + concat_offset + (n_vec * NNVEC_END + nn_vec) * H * CEIL(W, W_VECTOR) + h_vec * CEIL(W, W_VECTOR) + w_vec;
     pool_tail_output.cache_write_addr = cache_write_addr;
      
     if (kCacheWriteEnable[layer] && !kEndPoolEnable[layer]) {

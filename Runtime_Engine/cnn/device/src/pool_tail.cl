@@ -43,13 +43,11 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
   int start_wvec_data_addr[NN_VEC] = {0};
   int output_linear_w[NN_VEC] = {0};
 
-  do { 
+  do {
     int frame_cycle_end = POOL_TOTAL_CYCLE;  // * frame_num BUG
     SET_COUNTER(frame_cycle, frame_cycle_end, 0, frame_cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
    
-    //printf("POOL_TAIL cycle=%d/%d\n", frame_cycle, frame_cycle_end);
-
     bool new_layer = false;
 
     int conv_start_cycle = 0;
@@ -66,6 +64,8 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
 
     if (new_layer) layer = layer_temp;
 
+    //printf("POOL_TAIL layer=%d cycle=%d/%d\n", layer, frame_cycle, frame_cycle_end);
+
     int P = kPoolOutputHeight[layer];
     int OW = kPoolOutputWidth[layer];
     int FH = kFilterSize[layer];
@@ -76,10 +76,13 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     int H_VEC = kOhEndWithOffset[layer];
     int W_VEC = kOwEndWithOffset[layer];
 
-    SET_COUNTER(n_vec, kNEndWithOffsetMax, 0, N_VEC, N_VECTOR);
+    int NVEC_INC = kIpoolEnable[layer] ? NARROW_N_VECTOR : N_VECTOR;
+    int NNVEC_INC = kIpoolEnable[layer] ? 3 : 1;
+
+    SET_COUNTER(n_vec, kNEndWithOffsetMax, 0, N_VEC, NVEC_INC);
     SET_COUNTER(h_vec, kOhEndWithOffsetMax, 0, H_VEC, 1);
     SET_COUNTER(w_vec, kOwEndWithOffsetMax, 0, W_VEC, WOW_VECTOR);
-    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, 1);
+    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, NNVEC_INC);
 
     if (new_layer) {
       RESET_COUNTER(n_vec);
@@ -199,7 +202,7 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
         #pragma unroll
         for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
           pool_tail_output.write_data[w_inc][n_inc] = write_data[nn_vec][buffer_done_index_now][w_inc][n_inc];
-          //printf("POOL_TAIL cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d w_inc=%d n_inc=%d nn_vec=%d index=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, w_inc, n_inc, nn_vec, buffer_done_index_now, pool_tail_output.write_data[w_inc][n_inc]);
+          //if (layer == NUM_LAYER - 1 && n_vec == 8 && n_inc == 0) printf("POOL_TAIL cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d w_inc=%d n_inc=%d nn_vec=%d index=%d data=%d\n", frame_cycle, frame_cycle_end, n_vec, w_vec, h_vec, w_inc, n_inc, nn_vec, buffer_done_index_now, pool_tail_output.write_data[w_inc][n_inc]);
         }
       }
 

@@ -168,7 +168,9 @@ int FindPoolCycles(int layer) {
   
   int W_VEC = CEIL(OW, WOW_VECTOR);
 
-  return N_VEC * OH * W_VEC * NN_VEC;
+  int total_cycles = kIpoolEnable[layer] ? CEIL(N, NARROW_N_VECTOR) * OH * W_VEC : N_VEC * OH * W_VEC * NN_VEC;
+
+  return total_cycles;
 }
 
 int FindPoolTotalCycles() {
@@ -190,7 +192,7 @@ int FindFeatureWriterCycles(int layer) {
   int W = kPoolOutputWidth[layer];       
   int FW = kFilterSize[layer];
   
-  total_cycles = CEIL(N, N_VECTOR) * CEIL(N_VECTOR, NARROW_N_VECTOR) * H * CEIL(W, W_VECTOR);
+  total_cycles = kIpoolEnable[layer] ? CEIL(N, NARROW_N_VECTOR) * H * CEIL(W, W_VECTOR) : CEIL(N, N_VECTOR) * CEIL(N_VECTOR, NARROW_N_VECTOR) * H * CEIL(W, W_VECTOR);
     
   return total_cycles;
 }
