@@ -95,6 +95,12 @@ TASK kernel void full_size_pool(int frame_num) {
     PoolTailOutput end_pool_input = read_channel_intel(end_pool_input_channel);
     PoolTailOutput end_pool_output = PoolTailOutputZero;
 
+    Sreal temp_result[NARROW_N_VECTOR] = {0};
+    #pragma unroll
+    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+      temp_result[n_inc] = result[nn_vec][n_inc];
+    }
+
     #pragma unroll
     for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
       #pragma unroll
@@ -104,7 +110,8 @@ TASK kernel void full_size_pool(int frame_num) {
         int ow = w_vec * W_VECTOR + w_inc;
       
         if (n < N && (oh >= 0 && oh < H) && (ow >= 0 && ow < W)) {
-          result[nn_vec][n_inc] += end_pool_input.write_data[w_inc][n_inc];
+          //result[nn_vec][n_inc] += end_pool_input.write_data[w_inc][n_inc];
+          temp_result[n_inc] += end_pool_input.write_data[w_inc][n_inc];
         }
       }
     }    
@@ -118,16 +125,22 @@ TASK kernel void full_size_pool(int frame_num) {
           // (1/(7*7))*power(2, 15) = 669
           //float temp = (float)result[n_inc] * 0.02040816;
           //Mreal Mtemp = temp > 0 ? (temp + 0.5) : (temp - 0.5);
-          Mreal Mtemp = (((result[nn_vec][n_inc] * 669) >> 14) + 1) >> 1;
+          //Mreal Mtemp = (((result[nn_vec][n_inc] * 669) >> 14) + 1) >> 1;
+          Mreal Mtemp = (((temp_result[n_inc] * 669) >> 14) + 1) >> 1;
           end_pool_output.write_data[0][n_inc] = Mtemp > REALMAX ? REALMAX : Mtemp < REALMIN ? REALMIN : Mtemp;
           int cache_write_offset = kCacheWriteBase[layer];
           int concat_offset = kNStart[layer] / NARROW_N_VECTOR * P * CEIL(OW, W_VECTOR);
           end_pool_output.cache_write_addr = cache_write_offset + concat_offset + (n_vec * NN_VEC + nn_vec) * P * CEIL(OW, W_VECTOR);
-          result[nn_vec][n_inc] = 0;
+          temp_result[n_inc] = 0;
         }
       }
       
       write_channel_intel(end_pool_output_channel, end_pool_output);
+    }
+    
+    #pragma unroll
+    for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
+       result[nn_vec][n_inc] = temp_result[n_inc];
     }
     
     INCREASE_COUNTER(nn_vec);
