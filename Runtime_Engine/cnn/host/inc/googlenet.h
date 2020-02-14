@@ -44,7 +44,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 9
+#define NUM_LAYER 67
 #define NUM_CONVOLUTIONS 67
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1 + 9) // 1 is for input data Quantization value, 9 is for concatenate layer, their qs are stored seperately.
 

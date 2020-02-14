@@ -77,12 +77,12 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     int W_VEC = kOwEndWithOffset[layer];
 
     int NVEC_INC = kIpoolEnable[layer] ? NARROW_N_VECTOR : N_VECTOR;
-    int NNVEC_INC = kIpoolEnable[layer] ? 3 : 1;
+    int NNVEC_END = kIpoolEnable[layer] ? 1 : NN_VEC;
 
     SET_COUNTER(n_vec, kNEndWithOffsetMax, 0, N_VEC, NVEC_INC);
     SET_COUNTER(h_vec, kOhEndWithOffsetMax, 0, H_VEC, 1);
     SET_COUNTER(w_vec, kOwEndWithOffsetMax, 0, W_VEC, WOW_VECTOR);
-    SET_COUNTER(nn_vec, NN_VEC, 0, NN_VEC, NNVEC_INC);
+    SET_COUNTER(nn_vec, NNVEC_END, 0, NNVEC_END, 1);
 
     if (new_layer) {
       RESET_COUNTER(n_vec);

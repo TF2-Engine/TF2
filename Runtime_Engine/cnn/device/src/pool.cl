@@ -92,12 +92,11 @@ TASK kernel void pool(int frame_num) {
     int WOW_VECTOR = FH != 1 ? OW_VECTOR : W_VECTOR;
 
     int NVEC_INC = kIpoolEnable[layer] ? NARROW_N_VECTOR : N_VECTOR;
-    int NNVEC_INC = kIpoolEnable[layer] ? N_VECTOR : NARROW_N_VECTOR;
 
     SET_COUNTER(n, kNEndWithOffsetMax, 0, N, NVEC_INC);
     SET_COUNTER(oh, kOhEndWithOffsetMax, 0, OH, 1 );
     SET_COUNTER(ow, kOwEndWithOffsetMax, 0, OW, WOW_VECTOR); 
-    SET_COUNTER(nn_vec, N_VECTOR, 0, N_VECTOR, NNVEC_INC);
+    SET_COUNTER(nn_vec, NVEC_INC, 0, NVEC_INC, NARROW_N_VECTOR);
  
     if (new_layer) {
       RESET_COUNTER(n);
