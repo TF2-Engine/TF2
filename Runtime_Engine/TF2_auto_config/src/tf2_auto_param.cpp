@@ -1000,10 +1000,10 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
       module_framework.total_framework.num_concate = index_concate + 1; //as start from -1 from index_concate
 
-      if((!strcmp(netname.c_str(),"resnet50")) && (conv_count == 0 || conv_count == 10 || conv_count == 23 || conv_count == 42)) 
-      {
-         conv_block[conv_count].wait_cycle = 1000;
-      }
+      // if((!strcmp(netname.c_str(),"resnet50")) && (conv_count == 0 || conv_count == 10 || conv_count == 23 || conv_count == 42)) //committed out according to latest hardware code
+      //{
+      //   conv_block[conv_count].wait_cycle = 1000;
+      //}
 
       if(conv_count >= 1 && i == (num_block-1)) module_framework.conv_blocks.push_back(conv_block[conv_count]);//push back the last block
    }
@@ -1260,8 +1260,16 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "CONSTANT int kCacheWriteEnable[%d] = \n", module_framework.total_framework.num_conv);
      fprintf(fp, "{\n");
      for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index < module_framework.total_framework.num_conv -1)
+		{
+			fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
+		}
+		else
+	    {
+
+			fprintf(fp, " %d", 0);//force to set to 0 for last layer
+		}
+		if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
