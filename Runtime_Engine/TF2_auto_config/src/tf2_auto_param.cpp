@@ -1262,13 +1262,13 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
         if(c_index < module_framework.total_framework.num_conv -1)
         {
-			    fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
-		    }
-		    else
-	      {
+          fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
+        }
+        else
+        {
           fprintf(fp, " %d", 0);//force to set to 0 for last layer
-		    }
-		    if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        }
+        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
