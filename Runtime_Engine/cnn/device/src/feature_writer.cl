@@ -36,7 +36,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
 
   int layer = 0;
 
-#ifdef PRINT_CYCLE
+#ifdef PRINT_TOTAL_CYCLE
   printf("FEATURE_WRITER_TOTAL_CYCLE=%d\n", FEATURE_WRITER_TOTAL_CYCLE);
 #endif
 
@@ -141,7 +141,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
           feature_ddr[ddr_write_offset + output_offset + addr] = addition_relu;
         }
 
-        //printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d data=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, addition_relu);
+        //if (layer == 0) printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d data=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, addition_relu);
       }
     }
 
@@ -151,6 +151,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
      
     if (kCacheWriteEnable[layer] && !kEndPoolEnable[layer]) {
       write_channel_intel(retriever_input_channel, pool_tail_output);
+      //if ( layer == 0 ) printf("FEATURE_WRITER cycle=%d/%d n_vec=%d w_vec=%d h_vec=%d nn_vec=%d offset=%d addr=%d\n", cycle, cycle_end, n_vec, w_vec, h_vec, nn_vec, cache_write_offset, cache_write_addr);
     }
 
     if (kEndPoolEnable[layer]) {

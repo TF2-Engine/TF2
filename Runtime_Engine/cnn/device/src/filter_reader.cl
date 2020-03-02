@@ -37,7 +37,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
 
   int write_cache_addr = 0; 
 
-#ifdef PRINT_CYCLE
+#ifdef PRINT_TOTAL_CYCLE
   printf("FILTER_READER_CONV_TOTAL_CYCLES=%d\n", FILTER_READER_CONV_TOTAL_CYCLE);
 #endif
 

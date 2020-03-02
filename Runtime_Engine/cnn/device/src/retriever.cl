@@ -75,7 +75,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
   }
   
   int cycle_end = input_reader_cycle_end + filter_preload_cycle_end + conv_cycle_end + sequencer_idle_cycle_end;
-#ifdef PRINT_CYCLE 
+#ifdef PRINT_TOTAL_CYCLE 
   printf("INPUT_READER_CYCLE=%d FILTER_PRELOAD_CYCLE=%d CONV_TOTAL_CYCLE=%d\n", INPUT_READER_CYCLE, FILTER_PRELOAD_CYCLE, CONV_TOTAL_CYCLE);
 #endif
   int filter_ddr_read_cycle = 0;
@@ -110,9 +110,11 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
     }
     
     bool conving = (input_reading == false && filter_preloading == false && sequencer_idle == false);
-    
+   
     // reads sequencer output channel
     SequencerOutput sequencer_output = conving ? read_channel_intel(sequencer_output_channel) : sequencer_output_zero;
+    
+    printf("RETRIEVER cycle=%d/%d input_reading=%d filter_preloading=%d sequencer_idle=%d filter_loading=%d filter_loading_conv_idle=%d\n", frame_cycle, cycle_end, input_reading, filter_preloading, sequencer_idle, sequencer_output.filter_loading, sequencer_output.filter_loading_conv_idle);
     
     {
       int C = kInputChannels[sequencer_output.layer];
@@ -348,6 +350,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
 
           if(feature_writing) {
             feature_cache[feature_write_addr][w_inc][c_inc] = feature_write_data;
+            //printf("RETRIEVER cycle=%d/%d c_inc=%d w_inc=%d addr=%d data=%d\n", frame_cycle, cycle_end, c_inc, w_inc, feature_write_addr, feature_write_data);
           }
         }
       }

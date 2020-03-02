@@ -31,7 +31,8 @@ limitations under the License.
 #define STATIC_CYCLE
 //#define PRINT_N 1
 //#define PRINT_CYCLE
-#define PRINT_SEQUENCER_INDEX
+//#define PRINT_TOTAL_CYCLE
+//#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
 //#define PRINT_PE_OUTPUT
@@ -42,7 +43,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 54
+#define NUM_LAYER 2
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -1320,26 +1321,26 @@ CONSTANT int kConcatLayer[NUM_CONVOLUTIONS] = {
 
 CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = { 
   5000, 
-  5000, 
-  5000, 5000, 5000,
-  5000, 5000, 5000, 
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000, 
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
+  0, 
+  0, 0, 0,
+  0, 0, 0, 
+  0, 0, 0,
+  0,
+  0, 0, 0, 
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
   0
 };
 
@@ -1582,14 +1583,14 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 #define CONV_CYCLE(i) conv_cycles[i]
 #define POOL_CYCLE(i) pool_cycles[i]
 
-#define CONV_TOTAL_CYCLE 3885728 
+#define CONV_TOTAL_CYCLE 180992 //259840 //317184 //123648 //3885728 
 #define INPUT_READER_CYCLE 7752 
 #define FILTER_PRELOAD_CYCLE 192
-#define FILTER_READER_CONV_TOTAL_CYCLE 1075552 
-#define CONV_TOTAL_WRITE_CACHE 112063 
-#define POOL_TOTAL_CYCLE 293978 
-#define FEATURE_WRITER_TOTAL_CYCLE 178430 
-#define END_POOL_TOTAL_CYCLE 1792
+#define FILTER_READER_CONV_TOTAL_CYCLE 1536 //3264 //4032 //768 //1075552 
+#define CONV_TOTAL_WRITE_CACHE 17472 //21952 //29120 //10304 //112063 
+#define POOL_TOTAL_CYCLE 37680 //47424 //64128 //20976 //293978 
+#define FEATURE_WRITER_TOTAL_CYCLE 17920 //25088 //39424 //3584 //178430 
+#define END_POOL_TOTAL_CYCLE 0 //1792
 
 #endif
 

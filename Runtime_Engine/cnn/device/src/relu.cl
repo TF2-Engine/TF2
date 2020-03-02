@@ -40,7 +40,7 @@ TASK kernel void relu(int frame_num) {
   
   int cycle_end = CONV_TOTAL_WRITE_CACHE;
 
-#ifdef PRINT_CYCLE
+#ifdef PRINT_TOTAL_CYCLE
   printf("CONV_TOTAL_WRITE_CACHE=%d\n", CONV_TOTAL_WRITE_CACHE);
 #endif
 
