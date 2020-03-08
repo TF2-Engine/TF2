@@ -166,6 +166,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
               float filter_tems;
               fread(&filter_tems, sizeof(float), 1, infile);
               filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
+              //printf("Weights n=%d c=%d h=%d w=%d q_fixed=%d q_fixed_gap=%d expand=%d filter_tems=%f filter_raw=%d\n", n, c, h, w, q_fixed, q_fixed_gap, expand, filter_tems, filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w]);
             }
           }
         }
@@ -177,9 +178,10 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       for (int n = 0; n < N; n++) {
         int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
         float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
-	float bias_data;
+	      float bias_data;
         fread( &bias_data, sizeof(float), 1, infile );
-	bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;    
+	      bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;    
+        //printf("Bias n=%d bias_data=%f bias_trans_coe=%f bias_data=%d\n", n, bias_data, bias_trans_coe, bias_bn[bias_addr_offset + n].bias);
       }
     } else {
       for (int n = 0; n < N; n++) {
@@ -191,25 +193,31 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       // mean
       for (int n = 0; n < N; n++) {
         fread(&mean[n], sizeof(float), 1, infile);
+        //printf("Mean n=%d mean=%f\n", n, mean[n]);
       }
-
+      
       // variance
       for (int n = 0; n < N; n++) {
         fread( &variance[n], sizeof(float), 1, infile);
+        //printf("Variance n=%d variance=%f\n", n, variance[n]);
       }
-
-      // scale_factor
-      fread(&scale_factor, sizeof(float), 1, infile);
 
       // alpha
       for (int n = 0; n < N; n++) {
         fread(&alpha[n], sizeof(float), 1, infile);
+        //printf("Alpha n=%d, alpha=%f\n", n, alpha[n]);
       }
 
       // beta
       for (int n = 0; n < N; n++) {
         fread(&beta[n], sizeof(float), 1, infile);
+        //printf("Beta n=%d, beta=%f\n", n, beta[n]);
       }
+      
+      // scale_factor
+      //fread(&scale_factor, sizeof(float), 1, infile);
+      scale_factor = 1.0f;
+      //printf("Scale factor scale_factor=%f\n", scale_factor);
     }
 
     // alpha data

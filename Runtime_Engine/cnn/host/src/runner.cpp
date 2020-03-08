@@ -155,11 +155,12 @@ void Runner::Run() {
 
   InputConvert(network.input_raw, network.input, num_images);
 
-  float trans = 1.0f / ( 1 << network.q[0]);
+  float trans = 1 << (-network.q[0]);
   for (int i = 0; i < input_device_size; i++) {
     float tmp = network.input[i] * trans;
     int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);
     network.input_real[i] = tmp_int > REALMAX ? REALMAX : tmp_int < REALMIN ? REALMIN : tmp_int;
+    printf("Input Real i=%d network.q[0]=%d trans=%f tmp=%f input_real=%d\n", i, network.q[0], trans, tmp, network.input_real[i]);
   }
 
   status = clEnqueueWriteBuffer(platform.input_queue, network.input_buffer[0], CL_TRUE, 0, sizeof(real)* input_device_size, network.input_real, 0, NULL, NULL);
