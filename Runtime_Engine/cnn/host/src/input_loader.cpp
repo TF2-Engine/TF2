@@ -90,7 +90,7 @@ void LoadInputImage(char *image_name, float *input_raw, float *raw_images, int i
       for (int w = 0; w < W; w++) {
         int addr = c * H * W + h * W + w;
         fread( &raw_images[addr], sizeof(float), 1, fp );
-        printf("Image c=%d h=%d w=%d raw_images=%f\n", c, h, w, raw_images[addr]);
+        //printf("Image c=%d h=%d w=%d raw_images=%f\n", c, h, w, raw_images[addr]);
       }
     }
   }
@@ -109,7 +109,7 @@ void LoadInputImage(char *image_name, float *input_raw, float *raw_images, int i
     for (int j = 0; j < 114; j++) {
       for (int k = 0; k < 114; k++) {
         input_raw[i * 114 * 114 + j * 114 + k]=new_input[i * WW * HH + j * WW + k];
-        printf("Input Raw i=%d j=%d k=%d input_raw=%f\n", i, j, k, input_raw[i * 114 * 114 + j * 114 + k]);
+        //printf("Input Raw i=%d j=%d k=%d input_raw=%f\n", i, j, k, input_raw[i * 114 * 114 + j * 114 + k]);
       }
     }
   }
@@ -147,7 +147,7 @@ void InputConvert(float *input_raw, float *input, int num_images)
              unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
 
              input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
-             printf("Input Convert cvec=%d h=%d ww=%d wvec=%d c=%d addr=%llu data=%f\n", cvec, h, ww, wvec, c, addr, input[addr]);
+             //printf("Input Convert cvec=%d h=%d ww=%d wvec=%d c=%d addr=%llu data=%f\n", cvec, h, ww, wvec, c, addr, input[addr]);
             }
           }
         }

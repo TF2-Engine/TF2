@@ -138,25 +138,32 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
   
   // load whole model
   int q_offset = 0;
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = 0; layer < NUM_CONVOLUTIONS; layer++) {
     float mean[MAX_OUTPUT_CHANNEL] = {0};
     float variance[MAX_OUTPUT_CHANNEL] = {0};
     float scale_factor = 0;
     float alpha[MAX_OUTPUT_CHANNEL] = {0};
     float beta[MAX_OUTPUT_CHANNEL] = {0};
     
-    int C = layer == 0 ? INPUT_IMAGE_C : kInputChannels[layer];
+    int C = layer == 0 ? INPUT_IMAGE_C : kInputChannels[kLoadLayer[layer]];
       
-    int H = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[layer];
-    int W = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[layer];
-    int N = kOutputChannels[layer];
+    int H = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[kLoadLayer[layer]];
+    int W = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[kLoadLayer[layer]];
+    int N = kOutputChannels[kLoadLayer[layer]];
+
+    if (layer < ( NUM_CONVOLUTIONS - 1)) {
+      filter_addr_offset = kLoadLayer[layer] * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
+      bias_addr_offset = kLoadLayer[layer] * MAX_BIAS_SIZE;
+    }
+
+    q_offset = kLoadLayer[layer] * MAX_OUT_CHANNEL;
     	  
-    if (!kIpoolEnable[layer]) { 
+    if (!kIpoolEnable[kLoadLayer[layer]]) { 
       for (int n = 0; n < N; n++) {
         for (int c = 0; c < C; c++) {
           int q_fixed;
             
-          q_fixed = q[kInputLayer[layer] * MAX_OUT_CHANNEL + c];
+          q_fixed = q[kInputLayer[kLoadLayer[layer]] * MAX_OUT_CHANNEL + c];
           
           int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n]; 
           char expand = INFLAT + q_fixed - q_fixed_gap;
@@ -174,7 +181,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     }
 
     // bias
-    if (kBiasEnable[layer]) {				  
+    if (kBiasEnable[kLoadLayer[layer]]) {				  
       for (int n = 0; n < N; n++) {
         int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
         float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
@@ -189,7 +196,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       }
     }	
 
-    if (kBnEnable[layer]) {
+    if (kBnEnable[kLoadLayer[layer]]) {
       // mean
       for (int n = 0; n < N; n++) {
         fread(&mean[n], sizeof(float), 1, infile);
@@ -230,21 +237,14 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       
       a = mean[n] / scale_factor;
       b = sqrt( variance[n] / scale_factor + eps );
-      alpha_data = kBnEnable[layer] ? alpha[n] / b : 1.0;
-      beta_data = kBnEnable[layer] ? - (alpha[n] / b * a) + beta[n] : 0.0;
+      alpha_data = kBnEnable[kLoadLayer[layer]] ? alpha[n] / b : 1.0;
+      beta_data = kBnEnable[kLoadLayer[layer]] ? - (alpha[n] / b * a) + beta[n] : 0.0;
       
       int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
       float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
       bias_bn[bias_addr_offset + n].alpha = alpha_data * pow(2, ALPHA_INFLAT);
       bias_bn[bias_addr_offset + n].beta = beta_data > 0 ? (bias_trans_coe * beta_data + 0.5) : (bias_trans_coe * beta_data - 0.5);
     }
-
-    if (layer < ( NUM_LAYER - 1)) {
-      filter_addr_offset += MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
-      bias_addr_offset += MAX_BIAS_SIZE;
-    }
-
-    q_offset += MAX_OUT_CHANNEL;
   }
 
   fclose(infile);
