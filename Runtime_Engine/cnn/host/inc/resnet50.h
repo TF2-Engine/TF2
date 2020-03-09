@@ -37,6 +37,7 @@ limitations under the License.
 //#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
+//#define PRINT_POOL_TAIL_OUTPUT
 
 //
 // Configuration Parameters
@@ -1185,7 +1186,7 @@ CONSTANT int kNEnd[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int kPoolPad[NUM_CONVOLUTIONS] = {
-  0,
+  1,
 	0,
 	0, 0, 0,
 	0, 0, 0,
