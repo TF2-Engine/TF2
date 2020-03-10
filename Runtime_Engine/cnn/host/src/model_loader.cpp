@@ -173,7 +173,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
               float filter_tems;
               fread(&filter_tems, sizeof(float), 1, infile);
               filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
-              //if (kLoadLayer[layer] == 11) printf("Weights n=%d c=%d h=%d w=%d q_fixed=%d q_fixed_gap=%d expand=%d filter_tems=%f filter_raw=%d\n", n, c, h, w, q_fixed, q_fixed_gap, expand, filter_tems, filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w]);
+              //if (kLoadLayer[layer] == NUM_LAYER - 1) printf("Weights n=%d c=%d h=%d w=%d q_fixed=%d q_fixed_gap=%d expand=%d filter_tems=%f filter_raw=%d\n", n, c, h, w, q_fixed, q_fixed_gap, expand, filter_tems, filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w]);
             }
           }
         }

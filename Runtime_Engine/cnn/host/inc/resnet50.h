@@ -34,7 +34,7 @@ limitations under the License.
 #define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
-#define PRINT_PE_OUTPUT
+//#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
 //#define PRINT_POOL_TAIL_OUTPUT
@@ -43,7 +43,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 12
+#define NUM_LAYER 14
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -453,7 +453,7 @@ CONSTANT int kInputWidth[NUM_CONVOLUTIONS] = {
   56, 56, 56, 
   56, 56, 56,
   56,  
-  56, 28, 28, 
+  56, 56, 28, 
   28, 28, 28, 
   28, 28, 28, 
   28, 28, 28,
@@ -479,7 +479,7 @@ CONSTANT int kInputHeight[NUM_CONVOLUTIONS] = {
   56, 56, 56, 
   56, 56, 56,
   56,  
-  56, 28, 28, 
+  56, 56, 28, 
   28, 28, 28, 
   28, 28, 28, 
   28, 28, 28,
