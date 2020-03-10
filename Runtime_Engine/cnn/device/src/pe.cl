@@ -61,9 +61,9 @@ void PeFunction(int n_inc) {
   Mreal result[W_VECTOR]={0};
   int cycle_end = FILTER_PRELOAD_CYCLE + CONV_TOTAL_CYCLE;
 
-#ifdef PRINT_PE_INPUT
+#if (defined PRINT_PE_INPUT) || (defined PRINT_PE_OUTPUT)
   int debug_cycle = FILTER_PRELOAD_CYCLE + FindConvLayerCycles(NUM_LAYER - 1);
-  int debug_range = 100000;
+  int debug_range = 1000;
 #endif
 
   #pragma ivdep
@@ -195,7 +195,7 @@ void PeFunction(int n_inc) {
         pe_output.pe_output_relu = cont.pe_output_relu;
 #ifdef PRINT_PE_OUTPUT
         if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) 
-          printf("PE cycle=%d w_inc=%d result=%d bias_bn.alpha=%d bias_bn.beta=%d pe_output.data.v=%d\frame_index", cycle, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, pe_output.data.v[w_inc]);
+          printf("PE cycle=%d/%d w_inc=%d result=%d bias_bn.alpha=%d bias_bn.beta=%d pe_output.data.v=%d\n", cycle, cycle_end, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, pe_output.data.v[w_inc]);
 #endif
       }
 

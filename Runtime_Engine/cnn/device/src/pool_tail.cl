@@ -91,8 +91,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     bool pool_stride_2 = kPoolStride2[layer];
     bool conv_stride_2 = kConvStride[layer] == 2;
 
-    //int ow_offset = pool_stride_2 || conv_stride_2 ? (POOL_OFFSET_P + 1) / 2 : POOL_OFFSET_P - kPoolPad[layer];
-    int ow_offset = pool_stride_2 || conv_stride_2 ? 0 : POOL_OFFSET_P - kPoolPad[layer];
+    //int ow_offset = pool_stride_2 || conv_stride_2 ? (pool_offset_p + 1) / 2 : POOL_OFFSET_P - kPoolPad[layer];
+    //int ow_offset = pool_stride_2 || conv_stride_2 ? 0 : POOL_OFFSET_P - kPoolPad[layer];
+    int ow_offset = pool_stride_2 || conv_stride_2 ? (POOL_OFFSET_P + 1) / 2 - kPoolPad[layer] : POOL_OFFSET_P - kPoolPad[layer];
     
     if (COUNTER_FIRST(w_vec)) {
       //odd_even_factor = 1;
@@ -187,7 +188,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     output_linear_w += step;
     
     bool write_enable_hvec = true; 
-    if ((h_vec < (POOL_OFFSET_P - kPoolPad[layer])) || (pool_stride_2 && ((h_vec % 2) != (kPoolPad[layer] % 2))) || (h_counter > P))
+    if ((h_vec < (POOL_OFFSET_P - kPoolPad[layer]))
+      || (pool_stride_2 && ((h_vec % 2) != (kPoolPad[layer] % 2)))
+      || (h_counter > P))
       write_enable_hvec = false;
       
     if (COUNTER_FIRST(w_vec) && write_enable_hvec) 
