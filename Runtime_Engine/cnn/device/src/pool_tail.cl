@@ -187,10 +187,10 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     output_linear_w += step;
     
     bool write_enable_hvec = true; 
-    if ((h_vec < (POOL_OFFSET_P - kPoolPad[layer])) || ((h_vec % 2) != (kPoolPad[layer] % 2)) || (h_counter > P))
+    if ((h_vec < (POOL_OFFSET_P - kPoolPad[layer])) || (pool_stride_2 && ((h_vec % 2) != (kPoolPad[layer] % 2))) || (h_counter > P))
       write_enable_hvec = false;
       
-    if(COUNTER_FIRST(w_vec) && write_enable_hvec) 
+    if (COUNTER_FIRST(w_vec) && write_enable_hvec) 
       h_counter++;
     
     //printf("Pool Tail cycle=%d/%d n_vec=%d h_vec=%d write_enable_hvec=%d h_counter=%d\n", frame_cycle, frame_cycle_end, n_vec, h_vec, write_enable_hvec, h_counter);
