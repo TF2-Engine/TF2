@@ -43,7 +43,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 14
+#define NUM_LAYER 53
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -458,14 +458,14 @@ CONSTANT int kInputWidth[NUM_CONVOLUTIONS] = {
   28, 28, 28, 
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,
   7,  7,  7,
   1   // fc1000
@@ -484,14 +484,14 @@ CONSTANT int kInputHeight[NUM_CONVOLUTIONS] = {
   28, 28, 28, 
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,
   7,  7,  7,
   1   // fc1000
@@ -511,14 +511,14 @@ CONSTANT int kOutputWidth[NUM_CONVOLUTIONS] = {
   28, 28, 28,
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,  
   7,  7,  7,
   1   // fc1000
@@ -538,14 +538,14 @@ CONSTANT int kOutputHeight[NUM_CONVOLUTIONS] = {
   28, 28, 28,
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,  
   7,  7,  7,
   1   // fc1000
@@ -675,14 +675,14 @@ CONSTANT int kWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), 
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR),
-  CEIL(28, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
+  CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR),
-  CEIL(14, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
+  CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(1, W_VECTOR)  // fc1000
@@ -701,14 +701,14 @@ CONSTANT int kConvStride[NUM_CONVOLUTIONS] = {
   1, 1, 1, // res3c 
   1, 1, 1, // res3d
   2,       // res4a_branch1
-  2, 1, 1, // res4a 
+  1, 2, 1, // res4a 
   1, 1, 1, // res4b 
   1, 1, 1, // res4c 
   1, 1, 1, // res4d 
   1, 1, 1, // res4e 
   1, 1, 1, // res4f
   2,       // res5a_branch1
-  2, 1, 1, // res5a 
+  1, 2, 1, // res5a 
   1, 1, 1, // res5b
   1, 1, 1, // res5c 
   1        // FC1000
@@ -883,14 +883,14 @@ CONSTANT int kPoolOutputWidth[NUM_CONVOLUTIONS] = {
   28, 28, 28,
   28, 28, 28,// res3d
   14,
-  14, 14, 14,
+  28, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,// res4f
   7,
-  7, 7, 7,
+  14, 7, 7,
   7, 7, 7,
   7, 7, 7, // res5c
   1   // fc1000
@@ -909,14 +909,14 @@ CONSTANT int kPoolOutputHeight[NUM_CONVOLUTIONS] = {
   28, 28, 28,
   28, 28, 28,// res3d
   14,
-  14, 14, 14,
+  28, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,// res4f
   7,
-  7, 7, 7,
+  14, 7, 7,
   7, 7, 7,
   7, 7, 7, // res5c
   1   // fc1000
@@ -935,14 +935,14 @@ CONSTANT int kPoolOutputWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), // res3d
   CEIL(14, W_VECTOR), 
-  CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
+  CEIL(28, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), // res4f
   CEIL(7,  W_VECTOR), 
-  CEIL(7, W_VECTOR),  CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
+  CEIL(14, W_VECTOR),  CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7,  W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7,  W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), // res5c
   CEIL(1, W_VECTOR) // fc1000
@@ -961,14 +961,14 @@ CONSTANT int kOhEndWithOffset[NUM_CONVOLUTIONS] = {
   28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P,
   28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P,
-  14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
+  28 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
    7 + POOL_OFFSET_P,
-   7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
+  14 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
    7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  
    7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
    1 + POOL_OFFSET_P
@@ -988,14 +988,14 @@ CONSTANT int kOwEndWithOffset[NUM_CONVOLUTIONS] = {
   28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q,
   28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 
   28 + POOL_OFFSET_Q,
-  28 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
+  28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q,
-  14 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
+  14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
    7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  
    7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
    1 + POOL_OFFSET_Q
