@@ -74,10 +74,12 @@ def feature_hook(model, x):
         def hook(module, input, output):
             global Features, layer_name, layer_count, call_count, threshold
             layer_count = layer_count + 1
-            Features[layer_count] = np.maximum(abs(output.cpu().detach().numpy()),Features[layer_count])
-            if call_count == threshold - 1:
-                print(layer_count+1,' of ', len(layer_name))
+            #Features[layer_count] = np.maximum(abs(output.cpu().detach().numpy()),Features[layer_count])
+            Features[layer_count] = output.cpu().detach().numpy()
+            if call_count == threshold:
+                print(layer_count+1,' of ',len(layer_name))
                 FeatureWrite(layer_name[layer_count],Features[layer_count])
+            #layer_count = layer_count + 1
         hooks.append(module.register_forward_hook(hook))
     hooks = []
     model.apply(register_hook)
@@ -89,26 +91,27 @@ if __name__ == "__main__":
     
     layer_count = 0
     call_count = 0
-    threshold = 1000
-    print(threshold, 'pics in total:')
+    threshold = 0
     # set your network will be quantized: googlenet', 'resnet50', 'squeezenet', 'ssd' ...
     net_name = sys.argv[1]
     ValLoader = load_data(net_name)
     cnn, layer_name, Features, feature_path = load_model(net_name)
+    print(threshold + 1, ' pic in total')
+    # due to the shuffle is Fasle
+    print('The test pic is label 0.')
     for j,(test_x,test_y) in enumerate(ValLoader):
-        print(j+1,' of ',threshold)
         test_x = test_x.cuda()
         test_y = test_y.cuda()
-        Features[layer_count] = np.maximum(abs(test_x.cpu().detach().numpy()),Features[layer_count])
-        if call_count == threshold - 1: 
-            print('-----Start write the features:-----')
-            print(layer_count+1,' of ', len(layer_name))
+        Features[layer_count] = test_x.cpu().detach().numpy()
+        #Features[layer_count] = np.maximum(abs(test_x.cpu().detach().numpy()),Features[layer_count])
+        if call_count == threshold:
+            print('-----Start write the features:-----') 
+            print(layer_count+1,' of ',len(layer_name))
             FeatureWrite(layer_name[layer_count],Features[layer_count])
         feature_hook(cnn,test_x)
         layer_count = 0
         call_count = call_count + 1
-        if j%(threshold-1) == 0 and j != 0:
-            print('The 1000 pic. features have been written in '+feature_path+'.')
-            break
+        print('The features data for each layer has been saved!')
+        break
  
  

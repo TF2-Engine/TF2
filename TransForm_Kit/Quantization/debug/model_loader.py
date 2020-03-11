@@ -32,8 +32,8 @@ def load_model(net_name):
         net = torch.nn.DataParallel(net).cuda()
     if net_name == 'ssd':
         net = SSD.build_ssd('test', 300, 21)
-    pars_path = 'weights/' + net_name + '.pth.tar'
-    feature_path = 'features/' + net_name
+    pars_path = '../weights/' + net_name + '.pth.tar'
+    feature_path = 'Feature_float/' + net_name
     net.eval()
     checkpoint = torch.load(pars_path)
     net.load_state_dict(checkpoint['state_dict'])

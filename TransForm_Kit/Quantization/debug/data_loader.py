@@ -92,19 +92,19 @@ def load_data(net_name):
             transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
         ]) 
         val = datasets.ImageFolder(os.path.join(data_path,'val'),transform)
-        ValLoader = data.DataLoader(val,batch_size=1,shuffle=True)
+        ValLoader = data.DataLoader(val,batch_size=1,shuffle=False)
         return ValLoader
     if net_name == 'googlenet':
         data_path = 'data'
         transform = transforms.Compose([GoogLeNetPreProcess()])
         val = datasets.ImageFolder(os.path.join(data_path,'val'),transform)
-        ValLoader = data.DataLoader(val,batch_size=1,shuffle=True)
+        ValLoader = data.DataLoader(val,batch_size=1,shuffle=False)
         return ValLoader
     if net_name == 'squeezenet':
         data_path = 'data'
         transform = transforms.Compose([SqueezeNetPreProcess()])
         val = datasets.ImageFolder(os.path.join(data_path,'test_images_aligned_test'),transform)
-        ValLoader = data.DataLoader(val,batch_size=1,shuffle=True)
+        ValLoader = data.DataLoader(val,batch_size=1,shuffle=False)
         return ValLoader
     if net_name == 'ssd':
         ValLoader = []
