@@ -34,7 +34,7 @@ from ConvertModel import ConvertModel_caffe
 
 """  Set empty path to use default weight initialization  """
 # model_path = '../ModelFiles/ResNet/resnet50.pth'
-model_path = '../finetune.pth'
+model_path = '../part5_model_best.pth.tar'
 ModelDir = '../ModelFiles/'
 
 InputShape=[1,3,224,224]
@@ -44,9 +44,9 @@ NetName = str(pytorch_net.__class__.__name__)
 if model_path != '':
     try:
         #pytorch_net.load_state_dict(torch.load(model_path, map_location=lambda storage, loc: storage))
+        pytorch_net = nn.DataParallel(pytorch_net).cuda()
         finetune_checkpoint = torch.load(model_path)
-        pytorch_net=finetune_checkpoint['model']
-        pytorch_net = nn.DataParallel(pytorch_net)
+        pytorch_net.load_state_dict(finetune_checkpoint['state_dict'])
     except AttributeError:
         pytorch_net = torch.load(model_path, map_location=lambda storage, loc: storage)
 else:
