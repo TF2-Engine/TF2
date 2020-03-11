@@ -43,7 +43,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 53
+#define NUM_LAYER 54
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -288,7 +288,7 @@ CONSTANT bool kEndPoolEnable[NUM_CONVOLUTIONS] = {
   0,       // res5a_branch1
   0, 0, 0, // res5a 
   0, 0, 0, // res5b
-  0, 0, 0, // res5c 
+  0, 0, 1, // res5c 
   0        // FC1000
 };
 
@@ -313,7 +313,7 @@ CONSTANT bool kAdditionEnable[NUM_CONVOLUTIONS] = {
   0,       // res5a_branch1
   0, 0, 1, // res5a 
   0, 0, 1, // res5b
-  0, 0, 0, // res5c 
+  0, 0, 1, // res5c 
   0        // FC1000
 };
 
@@ -338,7 +338,7 @@ CONSTANT bool kAdditionReluEnable[NUM_CONVOLUTIONS] = {
   0,       // res5a_branch1
   0, 0, 1, // res5a 
   0, 0, 1, // res5b
-  0, 0, 0, // res5c 
+  0, 0, 1, // res5c 
   0        // FC1000
 };
 

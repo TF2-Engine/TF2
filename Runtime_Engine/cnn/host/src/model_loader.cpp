@@ -151,7 +151,7 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     int W = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[kLoadLayer[layer]];
     int N = kOutputChannels[kLoadLayer[layer]];
 
-    if (layer < ( NUM_CONVOLUTIONS - 1)) {
+    if (layer < NUM_CONVOLUTIONS) {
       filter_addr_offset = kLoadLayer[layer] * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
       bias_addr_offset = kLoadLayer[layer] * MAX_BIAS_SIZE;
     }
@@ -173,13 +173,15 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
               float filter_tems;
               fread(&filter_tems, sizeof(float), 1, infile);
               filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
-              //if (kLoadLayer[layer] == NUM_LAYER - 1) printf("Weights n=%d c=%d h=%d w=%d q_fixed=%d q_fixed_gap=%d expand=%d filter_tems=%f filter_raw=%d\n", n, c, h, w, q_fixed, q_fixed_gap, expand, filter_tems, filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w]);
+              //if (kLoadLayer[layer] == NUM_LAYER - 1) printf("Weights n=%d c=%d h=%d w=%d q_fixed=%d q_fixed_gap=%d expand=%d filter_tems=%f filter_raw=%d addr=%llu\n", n, c, h, w, q_fixed, q_fixed_gap, expand, filter_tems, filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w], filter_addr_offset + n * C * H * W + c * H * W + h * W + w);
             }
           }
         }
       }
     }
 
+    printf("layer=%d 10filter_raw[872415232]=%d\n", layer, filter_raw[872415232]);
+    
     // bias
     if (kBiasEnable[kLoadLayer[layer]]) {				  
       for (int n = 0; n < N; n++) {
@@ -249,6 +251,8 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
 
   fclose(infile);
   
+  printf("11filter_raw[872415232]=%d\n", filter_raw[872415232]);
+  
   // convert first layer kernel size to 3 
   int Trans_size = 64 * 3 * 3 * 3 * 3 * 3;
   real *first_layer_filter_trans = (real*)malloc(sizeof(real) * Trans_size);
@@ -259,6 +263,8 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     }
   }
  
+  printf("12filter_raw[872415232]=%d\n", filter_raw[872415232]);
+  
   for (int i = 0; i < Trans_size; i++)
     filter_raw[i] = first_layer_filter_trans[i];
  
@@ -313,6 +319,7 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
 
                   if (not_out_of_bounds) {
                     filter_real[addr] = filter_raw[filter_raw_addr];
+                    //if (layer == NUM_LAYER - 1) printf("Filter Convert layer=%d n_vec=%d c_vec=%d fh=%d fw=%d n_inc=%d addr=%llu filter_real=%d raw_addr=%llu\n", layer, n_vec, c_vec, fh, fw, n_inc, addr, filter_real[addr], filter_raw_addr);
                   }
                 }
               }

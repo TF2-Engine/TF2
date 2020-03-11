@@ -125,7 +125,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
 
         real filter_data = valid ? gl_filter[filter_addr] : 0;
         filter_reader_output.filter_data.v[fw_inc].v[c_inc] = filter_data;
-        if (layer == NUM_LAYER - 1) printf("Filter cycle=%d/%d layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n_inc=%d\n addr=%d filter=%d\n", frame_cycle, frame_cycle_end, layer, n_vec, c_vec, fh_vec, fw_vec, n_inc, filter_addr, filter_data);
+        //if (layer == NUM_LAYER - 1) printf("Filter cycle=%d/%d layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n_inc=%d\n addr=%d filter=%d\n", frame_cycle, frame_cycle_end, layer, n_vec, c_vec, fh_vec, fw_vec, n_inc, filter_addr, filter_data);
       }
     }
 
