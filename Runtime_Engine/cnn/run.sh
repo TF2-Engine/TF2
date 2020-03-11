@@ -27,4 +27,5 @@
 #env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/pytorch_resnet50/param.bin ../host/model/pytorch_resnet50_q ../host/model/pytorch_resnet50/data.bin ../host/model/pytorch_resnet50/res5c_branch2b-scale.bin 1
 #nohup env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/pytorch_resnet50/param.bin ../host/model/pytorch_resnet50_q ../host/model/pytorch_resnet50/data.bin ../host/model/pytorch_resnet50/res5c_branch2c-scale.bin 1 &
 env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/pytorch_resnet50/param.bin ../host/model/pytorch_resnet50_q ../host/model/pytorch_resnet50/data.bin ../host/model/pytorch_resnet50/fc1000.bin 1
+#nohup env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/pytorch_resnet50/param.bin ../host/model/pytorch_resnet50_q ../host/model/pytorch_resnet50/data.bin ../host/model/pytorch_resnet50/fc1000.bin 1 &
 #./bin/host ../host/model/resnet50_pruned/param.bin ../host/model/resnet50_pruned_Q ../host/model/resnet50_pruned/data.bin ../host/model/resnet50_pruned/fc1000.bin 16

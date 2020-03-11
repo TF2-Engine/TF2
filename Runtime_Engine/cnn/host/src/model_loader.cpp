@@ -180,8 +180,6 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
       }
     }
 
-    printf("layer=%d 10filter_raw[872415232]=%d\n", layer, filter_raw[872415232]);
-    
     // bias
     if (kBiasEnable[kLoadLayer[layer]]) {				  
       for (int n = 0; n < N; n++) {
@@ -251,8 +249,6 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
 
   fclose(infile);
   
-  printf("11filter_raw[872415232]=%d\n", filter_raw[872415232]);
-  
   // convert first layer kernel size to 3 
   int Trans_size = 64 * 3 * 3 * 3 * 3 * 3;
   real *first_layer_filter_trans = (real*)malloc(sizeof(real) * Trans_size);
@@ -263,8 +259,6 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     }
   }
  
-  printf("12filter_raw[872415232]=%d\n", filter_raw[872415232]);
-  
   for (int i = 0; i < Trans_size; i++)
     filter_raw[i] = first_layer_filter_trans[i];
  

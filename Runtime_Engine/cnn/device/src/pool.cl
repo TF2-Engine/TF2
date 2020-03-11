@@ -72,7 +72,7 @@ TASK kernel void pool(int frame_num) {
       }
       start_cycle += POOL_CYCLE(i);
 #ifdef PRINT_CYCLE
-      printf("POOL_CYCLE(%d)=\t%d\frame_index", i, POOL_CYCLE(i));
+      printf("POOL_CYCLE(%d)=\t%d\n", i, POOL_CYCLE(i));
 #endif
     }
 
