@@ -1,17 +1,11 @@
-# Copyright 2019 Inspur Corporation. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+"""
+Copyright (c) 2017-present, starime.
+All rights reserved.
+
+This source code is licensed under the BSD-style license found in the
+LICENSE file in the root directory of this source tree. An additional grant
+of patent rights can be found in the PATENTS file in the same directory.
+"""
 
 import math
 import numpy as np
@@ -371,13 +365,13 @@ class networkbuild():
         layer_bn.blobs.extend([
             self.as_blob(bnmodule.running_mean.cpu().numpy()),
             self.as_blob(bnmodule.running_var.cpu().numpy()),
-            self.as_blob(np.array([1.]))
+            #self.as_blob(np.array([1.]))
         ])
-        layer_bn.blobs.extend([
-            self.as_blob(bnmodule.weight.data.cpu().numpy()),
-            self.as_blob(bnmodule.weight.data.cpu().numpy()),
-            self.as_blob(np.array([1.]))
-        ])
+        #layer_bn.blobs.extend([
+            #self.as_blob(bnmodule.weight.data.cpu().numpy()),
+            #self.as_blob(bnmodule.weight.data.cpu().numpy()),
+            #self.as_blob(np.array([1.]))
+        #])
         layer_scale = pb2.LayerParameter()
         layer_scale.type = "Scale"
 
@@ -398,12 +392,16 @@ class networkbuild():
         return {
             'data': self.data,
             'ThAddmm': self.inner_product,
+            'Addmm': self.inner_product,
             'Threshold1': self.ty('ReLU'),
+            'Relu1': self.ty('ReLU'),
             'ThnnConv2D': self.spatial_convolution,
             'CudnnConvolution': self.spatial_convolution,
             'MaxPool2DWithIndices': self.MaxPooling,
             'AvgPool2D': self.AvgPooling,
+            'Mean1': self.AvgPooling,
             'ThAdd': self.eltwise,
+            'Add0': self.eltwise,
             'Cmax': self.eltwise_max,
             'ThnnBatchNorm': self.batchnorm,
             'CudnnBatchNorm': self.batchnorm,
