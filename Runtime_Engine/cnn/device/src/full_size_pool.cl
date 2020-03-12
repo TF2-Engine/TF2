@@ -89,7 +89,7 @@ TASK kernel void full_size_pool(int frame_num) {
       new_layer = false;
     }  
   
-    PoolTailOutput end_pool_input = read_channel_altera(end_pool_input_channel);
+    PoolTailOutput end_pool_input = read_channel_intel(end_pool_input_channel);
     PoolTailOutput end_pool_output = PoolTailOutputZero;
 
     #pragma unroll
@@ -124,7 +124,7 @@ TASK kernel void full_size_pool(int frame_num) {
         }
       }
       
-      write_channel_altera(end_pool_output_channel, end_pool_output);
+      write_channel_intel(end_pool_output_channel, end_pool_output);
     }
     
     INCREASE_COUNTER(w_vec);

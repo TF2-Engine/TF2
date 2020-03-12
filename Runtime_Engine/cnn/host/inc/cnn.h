@@ -22,6 +22,8 @@ limitations under the License.
 // Function: Device code top level header file.                                       //
 //------------------------------------------------------------------------------------//
 
+#pragma OPENCL EXTENSION cl_intel_channels : enable
+
 #include "archs.h"
 #include "defines.h"
 #include "types.h"

@@ -23,7 +23,7 @@ limitations under the License.
 // Functions:
 // 1. Performs convolution operations in a shifting manner.
 // 2. Sends data in daisy-chains through convolution kernels
-
+/*
 inline Mreal MUL(real feature, real filter) {
   if (BIT_IS_SET(filter, 6)) {
     return 0;
@@ -46,7 +46,9 @@ STATIC Mreal DotProduct(DotVector feature_values, DotVector filter_values) {
     dot_accum += MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
   
   return dot_accum;
-}
+}*/
+
+STATIC Mreal DotProduct(uchar16 feature_values, uchar16 filter_values );
 
 // this function is the prototype code for each pe kernels in N_VECTOR pe arrays
 void PeFunction(int n_inc) {
@@ -76,18 +78,18 @@ void PeFunction(int n_inc) {
     PeControlSignal cont;
     
     if (n_inc == 0) {
-      cont      = read_channel_altera(pe_control_channel_first);
-      pe_filter = read_channel_altera(pe_input_filter_channel_first);
-      pe_in     = read_channel_altera(pe_input_data_channel_first);
+      cont      = read_channel_intel(pe_control_channel_first);
+      pe_filter = read_channel_intel(pe_input_filter_channel_first);
+      pe_in     = read_channel_intel(pe_input_data_channel_first);
     } else {                          
-      cont      = read_channel_altera(pe_control_channel[n_inc-1]);
-      pe_filter = read_channel_altera(pe_input_filter_channel[n_inc-1]);
-      pe_in     = read_channel_altera(pe_input_data_channel[n_inc-1]);
+      cont      = read_channel_intel(pe_control_channel[n_inc-1]);
+      pe_filter = read_channel_intel(pe_input_filter_channel[n_inc-1]);
+      pe_in     = read_channel_intel(pe_input_data_channel[n_inc-1]);
     }
     
-    write_channel_altera(pe_control_channel[n_inc],      cont);
-    write_channel_altera(pe_input_filter_channel[n_inc], pe_filter);
-    write_channel_altera(pe_input_data_channel[n_inc],   pe_in);    
+    write_channel_intel(pe_control_channel[n_inc],      cont);
+    write_channel_intel(pe_input_filter_channel[n_inc], pe_filter);
+    write_channel_intel(pe_input_data_channel[n_inc],   pe_in);    
 
     // input feature map data
     DotFeatureVector input_data = pe_in.input_data;
@@ -143,12 +145,17 @@ void PeFunction(int n_inc) {
     //
     Mreal  dot_sum_fw_vec[W_VECTOR] = {0};
 
+    uchar16 fea_dat;
+    uchar16 fil_dat;
+
     if (cont.is_QVECTOR){
       #pragma unroll
       for (int ow_inc = 0; ow_inc < OW_VECTOR; ow_inc++) {
         #pragma unroll
         for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
-          dot_sum_fw_vec[ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter.v[fw_inc]);
+	        fea_dat = *(uchar16 *)(&input_data.v[ow_inc+fw_inc]);
+	        fil_dat = *(uchar16 *)(&filter.v[fw_inc]);
+          dot_sum_fw_vec[ow_inc] += DotProduct(fea_dat, fil_dat);
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
@@ -160,7 +167,9 @@ void PeFunction(int n_inc) {
     } else {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec]);
+	      fea_dat = *(uchar16 *)(&input_data.v[w_inc]);
+        fil_dat = *(uchar16 *)(&filter.v[filter_read_fw_vec]);
+        dot_sum_fw_vec[w_inc] = DotProduct(fea_dat, fil_dat);
 #ifdef PRINT_PE_INPUT
         if (n == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
           for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
@@ -199,7 +208,7 @@ void PeFunction(int n_inc) {
 #endif
       }
 
-      write_channel_altera(pe_output_channel[n_inc], pe_output);
+      write_channel_intel(pe_output_channel[n_inc], pe_output);
     }
     
     INCREASE_COUNTER(cycle);
@@ -219,11 +228,11 @@ AUTORUN TASK kernel void pe_tail() {
   while (1) {
     bool valid = false;
 
-    PeInputData pe_input_data = read_channel_nb_altera(pe_input_data_channel[N_VECTOR-1], &valid);
+    PeInputData pe_input_data = read_channel_nb_intel(pe_input_data_channel[N_VECTOR-1], &valid);
 
-    PeInputFilter pe_input_filter = read_channel_nb_altera(pe_input_filter_channel[N_VECTOR-1], &valid);
+    PeInputFilter pe_input_filter = read_channel_nb_intel(pe_input_filter_channel[N_VECTOR-1], &valid);
 
-    PeControlSignal pe_control = read_channel_nb_altera(pe_control_channel[N_VECTOR-1], &valid);
+    PeControlSignal pe_control = read_channel_nb_intel(pe_control_channel[N_VECTOR-1], &valid);
   }
 }
 

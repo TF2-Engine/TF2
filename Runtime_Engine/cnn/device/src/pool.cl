@@ -116,7 +116,7 @@ TASK kernel void pool(int frame_num) {
     if (valid_n && valid_h && valid_w) {
       ReluOutput relu_output;
       
-      relu_output = kIpoolEnable[layer] ? read_channel_altera(ipool_channel) : read_channel_altera(relu_output_channel);
+      relu_output = kIpoolEnable[layer] ? read_channel_intel(ipool_channel) : read_channel_intel(relu_output_channel);
 
       #pragma unroll
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
@@ -259,7 +259,7 @@ TASK kernel void pool(int frame_num) {
       }
     }
     
-    write_channel_altera(pool_output_channel, pool_output);
+    write_channel_intel(pool_output_channel, pool_output);
 
     edge_w_nnvec_addr = (COUNTER_LAST(nn_vec) ? 0 : edge_w_nnvec_addr + 1) & BIT_MASK(CLOG2(NNVEC_ITER));
 

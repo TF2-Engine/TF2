@@ -40,7 +40,7 @@ TASK kernel void relu(int frame_num) {
     PeOutput pe_output[NARROW_N_VECTOR];
     #pragma unroll
     for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
-      pe_output[n_inc] = read_channel_altera(pe_output_channel[n_inc]);
+      pe_output[n_inc] = read_channel_intel(pe_output_channel[n_inc]);
     }
 	  
     bool is_QVECTOR = pe_output[0].is_QVECTOR;
@@ -54,7 +54,7 @@ TASK kernel void relu(int frame_num) {
         relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
       }
     }
-    write_channel_altera(relu_output_channel, relu_output);
+    write_channel_intel(relu_output_channel, relu_output);
 
     INCREASE_COUNTER(cycle);
 #ifdef ENABLE_INFINITE_LOOPS

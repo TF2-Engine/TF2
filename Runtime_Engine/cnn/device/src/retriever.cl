@@ -112,7 +112,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
     bool conving = (input_reading == false && filter_preloading == false && sequencer_idle == false);
     
     // reads sequencer output channel
-    SequencerOutput sequencer_output = conving ? read_channel_altera(sequencer_output_channel) : sequencer_output_zero;
+    SequencerOutput sequencer_output = conving ? read_channel_intel(sequencer_output_channel) : sequencer_output_zero;
     
     {
       int C = kInputChannels[sequencer_output.layer];
@@ -243,7 +243,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         if (filter_preloading || sequencer_output.filter_loading) {
           int FILTER_DDR_READ_STEP = FH != 1 ? FILTER_DDR_READ_STEP1 : FILTER_DDR_READ_STEP2;
           if (filter_ddr_read_cycle == (FILTER_DDR_READ_STEP - 1)) {
-            filter_data = read_channel_altera(filter_reader_output_channel);
+            filter_data = read_channel_intel(filter_reader_output_channel);
             pe_filter.data_valid = true;
 
             filter_ddr_read_cycle = 0;
@@ -277,9 +277,9 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_filter.filter_data = filter_data.filter_data;
         pe_filter.bias_bn_data = filter_data.bias_bn_data;
 
-        write_channel_altera(pe_control_channel_first,     pe_cont);
-        write_channel_altera(pe_input_filter_channel_first, pe_filter);
-        write_channel_altera(pe_input_data_channel_first,   pe_in);
+        write_channel_intel(pe_control_channel_first,     pe_cont);
+        write_channel_intel(pe_input_filter_channel_first, pe_filter);
+        write_channel_intel(pe_input_data_channel_first,   pe_in);
       }
 
       if (input_reading == false && sequencer_idle == false && sequencer_output.filter_loading_conv_idle == 
@@ -298,7 +298,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
           }
         }
 
-        write_channel_altera(ipool_channel, ipool_input);
+        write_channel_intel(ipool_channel, ipool_input);
       }
 
     } // read cache end
@@ -323,10 +323,10 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
       bool feature_writing = false;
       
       if (input_reading) {
-        input_reader_output = read_channel_altera(input_reader_output_channel);
+        input_reader_output = read_channel_intel(input_reader_output_channel);
       } else {
-        pool_tail_output = read_channel_nb_altera(retriever_input_channel, &pool_tail_data_received);
-        if(!pool_tail_data_received) pool_tail_output = read_channel_nb_altera(end_pool_output_channel, &pool_tail_data_received);
+        pool_tail_output = read_channel_nb_intel(retriever_input_channel, &pool_tail_data_received);
+        if(!pool_tail_data_received) pool_tail_output = read_channel_nb_intel(end_pool_output_channel, &pool_tail_data_received);
       } 
   
       //
