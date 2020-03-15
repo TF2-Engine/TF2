@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
 
 #ifdef IMAGENET
   for(int test_index=0; test_index < num_images; test_index++) {
-    std::string line_addr_img = "../imagenet_test_images/" + demo.imagenet_labels[test_index].jpg_image_name;
+    //std::string line_addr_img = "../imagenet_test_images/" + demo.imagenet_labels[test_index].jpg_image_name;
+    std::string line_addr_img = "../valimages/" + demo.imagenet_labels[test_index].jpg_image_name;
     std::ifstream fin_img_addr;
     fin_img_addr.open(const_cast<char*>(line_addr_img.c_str()));
 

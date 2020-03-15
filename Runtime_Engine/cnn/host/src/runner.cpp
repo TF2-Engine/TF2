@@ -151,13 +151,15 @@ void Runner::Run(char *image_file) {
 #ifdef IMAGENET
     LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
 #else
-    LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+    LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+    //LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
 #endif
   }
 
   InputConvert(network.input_raw, network.input, num_images);
 
-  float trans = 1.0f / ( 1 << network.q[0]);
+  //float trans = 1.0f / ( 1 << network.q[0]);
+  float trans = network.q[0] > 0 ? (1.0f / ( 1 << network.q[0])) : (1 << (-network.q[0]));
   for (int i = 0; i < input_device_size; i++) {
     float tmp = network.input[i] * trans;
     int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);

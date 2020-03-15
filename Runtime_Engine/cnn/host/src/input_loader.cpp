@@ -85,19 +85,23 @@ void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int it
   int  H_middle = 256;
   int  W_middle = 256;
 
-  float googlenet_mean[3] = {104, 117, 123};
+  //float googlenet_mean[3] = {104, 117, 123};
+  float static_mean[3] = {0.485, 0.456, 0.406};
+  float static_norm[3] = {0.229, 0.224, 0.225};
 
   FILE *fp;
   fp = fopen( "../host/model/mean.bin", "rb" );
 
   // 256 * 256 preprocess
   src = cv::imread( image_name );
-  //src.convertTo( dst1, CV_32FC3 );
-  //resize( dst1, dst2, cvSize( H_middle, W_middle ) );
-  resize( src, dst2, cvSize( H_middle, W_middle ) );
+  src.convertTo( dst1, CV_32FC3 );
+  resize( dst1, dst2, cvSize( H_middle, W_middle ), 1 );
+  //resize( src, dst2, cvSize( H_middle, W_middle ) );
   cv::split( dst2, channels ); 
 
   float *middle_images = (float*)malloc( sizeof(float) * C * H_middle * W_middle ); 
+
+  int channel_order[3] = {2, 1, 0};
 
   for(int c = 0; c < C; c++) {
     for(int h = 0; h < H_middle; h++) {
@@ -105,11 +109,13 @@ void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int it
         int addr = c * H_middle * W_middle + h * W_middle + w;
         float mean;
 #if (defined RESNET50) || (defined RESNET50_PRUNED)
-        fread( &mean, sizeof(float), 1, fp );
+        //fread( &mean, sizeof(float), 1, fp );
+        mean = static_mean[c];
 #else
         mean = googlenet_mean[c];
 #endif
-        middle_images[addr] = channels[c].at<uchar>(h,w) - mean;
+        //middle_images[addr] = channels[c].at<uchar>(h,w) - mean;
+        middle_images[addr] = (channels[channel_order[c]].at<float>(h,w) / 255.0f - mean) / static_norm[c];
         //printf( "c=%d h=%d w=%d middle_images[%d]=%f mean=%f\n", c, h, w, addr, middle_images[addr], mean );
       }
     }
@@ -126,6 +132,7 @@ void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int it
         int addr2 = c * H * W + h * W + w;
         raw_images[addr2] = middle_images[addr1];
         //printf( "c=%d h=%d w=%d addr1=%d raw_images[%d]=%f\n", c, h, w, addr1, addr2, raw_images[addr2] );
+        //printf( "c=%d h=%d w=%d images[%d]=%f\n", c, h, w, addr2, raw_images[addr2] );
       }
     }
   }
@@ -169,6 +176,7 @@ void LoadInputImage(char *image_name, float *input_raw, float *raw_images, int i
       for (int w = 0; w < W; w++) {
         int addr = c * H * W + h * W + w;
         fread( &raw_images[addr], sizeof(float), 1, fp );
+        printf( "c=%d h=%d w=%d images[%d]=%f\n", c, h, w, addr, raw_images[addr] );
       }
     }
   }
