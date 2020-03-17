@@ -18,18 +18,23 @@ limitations under the License.
 #include "fpganetworkinterface.h"
 #include "cycles_computation.h"
 #include "tf2_auto_param.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <ctype.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
-std::vector<std::vector<int> >framework;
+// std::vector<std::vector<int> >framework;
+typedef std::vector<int> VECINT;
 
-module_framework_data FrameParseStore(std::string filename, std::string netname) {
+// module_framework_data FrameParseStore(std::string filename, std::string netname) {
+void FrameParseStore(std::string filename, std::string netname, module_framework_data* module_framework) {
     
-   module_framework_data module_framework;
+   // module_framework_data module_framework;
 
-   memset(&(module_framework.total_framework), 0, sizeof(a_frame));
+   memset(&(module_framework->total_framework), 0, sizeof(a_frame));
 
    StFpgaNetInfo *pstNetInfo;
    pstNetInfo=(StFpgaNetInfo*)malloc(Max_Param_size*sizeof(char));
@@ -50,6 +55,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
    bool is_concate[num_block];
    bool is_inherit_concate[num_block];
    std::vector<int> conv_siblings[num_block];
+   // VECINT* conv_siblings = new VECINT[num_block];
    block_sibling block_siblings[num_block]; //summarize the inputblock's output
    int input_id = 0;
 
@@ -101,6 +107,9 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
    int last_ddr_write_num = 2;
    int common_read_ddr_num = 0;
    int common_write_ddr_num = 0;
+   // int last_sibling_id = 0;
+   // int id_last = -1;
+   int blob_input_num = -1;
 
    for(int i = 0; i < num_block; i++)
    {
@@ -111,6 +120,9 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
       id_conv[i] = -1; //initializaiton
       conv_block[i].pool_max = 1;
       input_id = pstLayerInfo->ariInputBlobId[0];
+
+      blob_input_num = pstLayerInfo->iBlobInputNum;
+      std::sort(pstLayerInfo->ariInputBlobId, pstLayerInfo->ariInputBlobId + blob_input_num);
 
       if(input_id != -1) 
       {
@@ -166,10 +178,10 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
     
             if(conv_count == 0)// get first layer num and block ID
             {
-               std::vector<int> id_info_f;
+               // std::vector<int> id_info_f;
 
-               id_info_f.push_back(pstLayerInfo->iLayerId);
-               framework.push_back(id_info_f);
+               // id_info_f.push_back(pstLayerInfo->iLayerId);
+               // framework.push_back(id_info_f);
                layer_num ++;
                last_input_layer_id = pstLayerInfo->ariInputBlobId[0];
             }
@@ -179,8 +191,8 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                last_input_layer_id = pstLayerInfo->ariInputBlobId[0];
             }
 
-            if(conv_count >= 1) module_framework.conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
-            module_framework.total_framework.num_conv =  conv_count;
+            if(conv_count >= 1) module_framework->conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
+            module_framework->total_framework.num_conv =  conv_count;
 
             pstOpInfo->pvOpInfo=(void*)((char*)pvMemory+size_memory);
             size_memory+=sizeof(StConvParam);
@@ -193,10 +205,10 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
             {
                if(conv_count == 0)
                {
-                  module_framework.total_framework.input_image_channel = (!strcmp(netname.c_str(),"googlenet")) ? 3 : pstLayerInfo->arstInputfeatDim[iblob].C;
-                  module_framework.total_framework.input_image_height = pstLayerInfo->arstInputfeatDim[iblob].H;
-                  module_framework.total_framework.input_image_width = pstLayerInfo->arstInputfeatDim[iblob].W;
-                  module_framework.total_framework.first_filter_size = pstNetConvparam->ikernel_h;
+                  module_framework->total_framework.input_image_channel = (!strcmp(netname.c_str(),"googlenet")) ? 3 : pstLayerInfo->arstInputfeatDim[iblob].C;
+                  module_framework->total_framework.input_image_height = pstLayerInfo->arstInputfeatDim[iblob].H;
+                  module_framework->total_framework.input_image_width = pstLayerInfo->arstInputfeatDim[iblob].W;
+                  module_framework->total_framework.first_filter_size = pstNetConvparam->ikernel_h;
                }
 
                if(((strcmp(netname.c_str(),"resnet50") || strcmp(netname.c_str(),"googlenet"))) && conv_count == 0)
@@ -282,7 +294,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                   else
                   {
                     conv_block[conv_first_sibling].input_concate_connection = conv_block[conv_count].input_concate_connection = true;
-                    module_framework.conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
+                    module_framework->conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
                   }
 
                }
@@ -297,43 +309,43 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
             conv_block[conv_count].basic_info_frame.mem_write_enable[0] = 1; //cache write enable
             //get max value
             current_conv_output_channel = conv_block[conv_count].size_block[0].output_feature_size[0];
-            module_framework.total_framework.max_output_channel = (module_framework.total_framework.max_output_channel > current_conv_output_channel) \
-            ? module_framework.total_framework.max_output_channel : current_conv_output_channel;
+            module_framework->total_framework.max_output_channel = (module_framework->total_framework.max_output_channel > current_conv_output_channel) \
+            ? module_framework->total_framework.max_output_channel : current_conv_output_channel;
 
             current_conv_input_channel = conv_block[conv_count].size_block[0].input_feature_size[0];
-            module_framework.total_framework.max_input_channel = (module_framework.total_framework.max_input_channel > current_conv_input_channel) \
-            ? module_framework.total_framework.max_input_channel : current_conv_input_channel;
+            module_framework->total_framework.max_input_channel = (module_framework->total_framework.max_input_channel > current_conv_input_channel) \
+            ? module_framework->total_framework.max_input_channel : current_conv_input_channel;
 
             current_conv_input_height = conv_block[conv_count].size_block[0].input_feature_size[1];
-            module_framework.total_framework.max_input_height = (module_framework.total_framework.max_input_height > current_conv_input_height) \
-            ? module_framework.total_framework.max_input_height : current_conv_input_height;
+            module_framework->total_framework.max_input_height = (module_framework->total_framework.max_input_height > current_conv_input_height) \
+            ? module_framework->total_framework.max_input_height : current_conv_input_height;
 
             current_conv_input_width = conv_block[conv_count].size_block[0].input_feature_size[2];
-            module_framework.total_framework.max_input_width = (module_framework.total_framework.max_input_width > current_conv_input_width) \
-            ? module_framework.total_framework.max_input_width : current_conv_input_width;
+            module_framework->total_framework.max_input_width = (module_framework->total_framework.max_input_width > current_conv_input_width) \
+            ? module_framework->total_framework.max_input_width : current_conv_input_width;
 
             current_conv_output_height = conv_block[conv_count].size_block[0].output_feature_size[1];
-            module_framework.total_framework.max_output_height = (module_framework.total_framework.max_output_height > current_conv_output_height) \
-            ? module_framework.total_framework.max_output_height : current_conv_output_height;
+            module_framework->total_framework.max_output_height = (module_framework->total_framework.max_output_height > current_conv_output_height) \
+            ? module_framework->total_framework.max_output_height : current_conv_output_height;
 
             current_conv_output_width = conv_block[conv_count].size_block[0].output_feature_size[2];
-            module_framework.total_framework.max_output_width = (module_framework.total_framework.max_output_width > current_conv_output_width) \
-            ? module_framework.total_framework.max_output_width : current_conv_output_width;
+            module_framework->total_framework.max_output_width = (module_framework->total_framework.max_output_width > current_conv_output_width) \
+            ? module_framework->total_framework.max_output_width : current_conv_output_width;
 
             current_filter = conv_block[conv_count].size_block[0].window_size[2];
-            module_framework.total_framework.max_filter = (module_framework.total_framework.max_filter > current_filter) \
-            ? module_framework.total_framework.max_filter : current_filter;
+            module_framework->total_framework.max_filter = (module_framework->total_framework.max_filter > current_filter) \
+            ? module_framework->total_framework.max_filter : current_filter;
 
             if(current_filter == 3) current_window_3_input_channel = current_conv_input_channel;
             if(current_filter == 1) current_window_1_input_channel = current_conv_input_channel;
 
-            module_framework.total_framework.max_filter_size_1 = (module_framework.total_framework.max_filter_size_1  > current_window_1_input_channel) \
-            ? module_framework.total_framework.max_filter_size_1 : current_window_1_input_channel;
+            module_framework->total_framework.max_filter_size_1 = (module_framework->total_framework.max_filter_size_1  > current_window_1_input_channel) \
+            ? module_framework->total_framework.max_filter_size_1 : current_window_1_input_channel;
 
-            module_framework.total_framework.max_filter_size_2 = (module_framework.total_framework.max_filter_size_2  > current_window_3_input_channel) \
-            ? module_framework.total_framework.max_filter_size_2 : current_window_3_input_channel;
+            module_framework->total_framework.max_filter_size_2 = (module_framework->total_framework.max_filter_size_2  > current_window_3_input_channel) \
+            ? module_framework->total_framework.max_filter_size_2 : current_window_3_input_channel;
 
-            module_framework.total_framework.max_bias_size = module_framework.total_framework.max_output_channel;
+            module_framework->total_framework.max_bias_size = module_framework->total_framework.max_output_channel;
 
          }
          if(pstOpInfo->enumOpType==OpBn)
@@ -371,7 +383,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
                id_conv[i] = conv_count; //record for independent pooling
 
-               if(conv_count >= 1) module_framework.conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
+               if(conv_count >= 1) module_framework->conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
  
                //StFcParam
                conv_block[conv_count].basic_info_frame.specific_struct_enable[4] = 1;//independent pooling enable
@@ -458,7 +470,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                      {
                         is_inherit_concate[i] = false; //for current pool after concate situation
                         conv_block[conv_first_sibling].input_concate_connection = conv_block[conv_count].input_concate_connection = true;
-                        module_framework.conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
+                        module_framework->conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
                      }
                      
                   }
@@ -471,43 +483,43 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
                //get max value
                current_conv_output_channel = conv_block[conv_count].size_block[0].output_feature_size[0];
-               module_framework.total_framework.max_output_channel = (module_framework.total_framework.max_output_channel > current_conv_output_channel) \
-               ? module_framework.total_framework.max_output_channel : current_conv_output_channel;
+               module_framework->total_framework.max_output_channel = (module_framework->total_framework.max_output_channel > current_conv_output_channel) \
+               ? module_framework->total_framework.max_output_channel : current_conv_output_channel;
 
                current_conv_input_channel = conv_block[conv_count].size_block[0].input_feature_size[0];
-               module_framework.total_framework.max_input_channel = (module_framework.total_framework.max_input_channel > current_conv_input_channel) \
-               ? module_framework.total_framework.max_input_channel : current_conv_input_channel;
+               module_framework->total_framework.max_input_channel = (module_framework->total_framework.max_input_channel > current_conv_input_channel) \
+               ? module_framework->total_framework.max_input_channel : current_conv_input_channel;
 
                current_conv_input_height = conv_block[conv_count].size_block[0].input_feature_size[1];
-               module_framework.total_framework.max_input_height = (module_framework.total_framework.max_input_height > current_conv_input_height) \
-               ? module_framework.total_framework.max_input_height : current_conv_input_height;
+               module_framework->total_framework.max_input_height = (module_framework->total_framework.max_input_height > current_conv_input_height) \
+               ? module_framework->total_framework.max_input_height : current_conv_input_height;
 
                current_conv_input_width = conv_block[conv_count].size_block[0].input_feature_size[2];
-               module_framework.total_framework.max_input_width = (module_framework.total_framework.max_input_width > current_conv_input_width) \
-               ? module_framework.total_framework.max_input_width : current_conv_input_width;
+               module_framework->total_framework.max_input_width = (module_framework->total_framework.max_input_width > current_conv_input_width) \
+               ? module_framework->total_framework.max_input_width : current_conv_input_width;
 
                current_conv_output_height = conv_block[conv_count].size_block[0].output_feature_size[1];
-               module_framework.total_framework.max_output_height = (module_framework.total_framework.max_output_height > current_conv_output_height) \
-               ? module_framework.total_framework.max_output_height : current_conv_output_height;
+               module_framework->total_framework.max_output_height = (module_framework->total_framework.max_output_height > current_conv_output_height) \
+               ? module_framework->total_framework.max_output_height : current_conv_output_height;
 
                current_conv_output_width = conv_block[conv_count].size_block[0].output_feature_size[2];
-               module_framework.total_framework.max_output_width = (module_framework.total_framework.max_output_width > current_conv_output_width) \
-               ? module_framework.total_framework.max_output_width : current_conv_output_width;
+               module_framework->total_framework.max_output_width = (module_framework->total_framework.max_output_width > current_conv_output_width) \
+               ? module_framework->total_framework.max_output_width : current_conv_output_width;
 
                current_filter = conv_block[conv_count].size_block[0].window_size[2];
-               module_framework.total_framework.max_filter = (module_framework.total_framework.max_filter > current_filter) \
-               ? module_framework.total_framework.max_filter : current_filter;
+               module_framework->total_framework.max_filter = (module_framework->total_framework.max_filter > current_filter) \
+               ? module_framework->total_framework.max_filter : current_filter;
 
                if(current_filter == 3) current_window_3_input_channel = current_conv_input_channel;
                if(current_filter == 1) current_window_1_input_channel = current_conv_input_channel;
 
-               module_framework.total_framework.max_filter_size_1 = (module_framework.total_framework.max_filter_size_1  > current_window_1_input_channel) \
-               ? module_framework.total_framework.max_filter_size_1 : current_window_1_input_channel;
+               module_framework->total_framework.max_filter_size_1 = (module_framework->total_framework.max_filter_size_1  > current_window_1_input_channel) \
+               ? module_framework->total_framework.max_filter_size_1 : current_window_1_input_channel;
 
-               module_framework.total_framework.max_filter_size_2 = (module_framework.total_framework.max_filter_size_2  > current_window_3_input_channel) \
-               ? module_framework.total_framework.max_filter_size_2 : current_window_3_input_channel;
+               module_framework->total_framework.max_filter_size_2 = (module_framework->total_framework.max_filter_size_2  > current_window_3_input_channel) \
+               ? module_framework->total_framework.max_filter_size_2 : current_window_3_input_channel;
 
-               module_framework.total_framework.max_bias_size = module_framework.total_framework.max_output_channel;
+               module_framework->total_framework.max_bias_size = module_framework->total_framework.max_output_channel;
 
 
                //pool operation
@@ -552,28 +564,28 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
                //get max value
                current_pool_input_height = conv_block[conv_pool_count].size_block[1].input_feature_size[1];
-               module_framework.total_framework.max_pool_input_height = (module_framework.total_framework.max_pool_input_height > current_pool_input_height) \
-               ? module_framework.total_framework.max_pool_input_height : current_pool_input_height;
+               module_framework->total_framework.max_pool_input_height = (module_framework->total_framework.max_pool_input_height > current_pool_input_height) \
+               ? module_framework->total_framework.max_pool_input_height : current_pool_input_height;
 
                current_pool_input_width = conv_block[conv_pool_count].size_block[1].input_feature_size[2];
-               module_framework.total_framework.max_pool_input_width = (module_framework.total_framework.max_pool_input_width > current_pool_input_width) \
-               ? module_framework.total_framework.max_pool_input_width : current_pool_input_width;
+               module_framework->total_framework.max_pool_input_width = (module_framework->total_framework.max_pool_input_width > current_pool_input_width) \
+               ? module_framework->total_framework.max_pool_input_width : current_pool_input_width;
 
                current_pool_output_height = conv_block[conv_pool_count].size_block[1].output_feature_size[1];
-               module_framework.total_framework.max_pool_output_height = (module_framework.total_framework.max_pool_output_height > current_pool_output_height) \
-               ? module_framework.total_framework.max_pool_output_height : current_pool_output_height;
+               module_framework->total_framework.max_pool_output_height = (module_framework->total_framework.max_pool_output_height > current_pool_output_height) \
+               ? module_framework->total_framework.max_pool_output_height : current_pool_output_height;
 
                current_pool_output_width = conv_block[conv_pool_count].size_block[1].output_feature_size[2];
-               module_framework.total_framework.max_pool_output_width = (module_framework.total_framework.max_pool_output_width > current_pool_output_width) \
-               ? module_framework.total_framework.max_pool_output_width : current_pool_output_width;
+               module_framework->total_framework.max_pool_output_width = (module_framework->total_framework.max_pool_output_width > current_pool_output_width) \
+               ? module_framework->total_framework.max_pool_output_width : current_pool_output_width;
 
                current_pool_window_size = conv_block[conv_pool_count].size_block[1].window_size[2];
-               module_framework.total_framework.max_pool_window_size = (module_framework.total_framework.max_pool_window_size > current_pool_window_size) \
-               ? module_framework.total_framework.max_pool_window_size : current_pool_window_size;
+               module_framework->total_framework.max_pool_window_size = (module_framework->total_framework.max_pool_window_size > current_pool_window_size) \
+               ? module_framework->total_framework.max_pool_window_size : current_pool_window_size;
 
                current_pool_pad_size = conv_block[conv_pool_count].size_block[1].pad_size;
-               module_framework.total_framework.max_pool_pad_size = (module_framework.total_framework.max_pool_pad_size > current_pool_pad_size) \
-               ? module_framework.total_framework.max_pool_pad_size : current_pool_pad_size;
+               module_framework->total_framework.max_pool_pad_size = (module_framework->total_framework.max_pool_pad_size > current_pool_pad_size) \
+               ? module_framework->total_framework.max_pool_pad_size : current_pool_pad_size;
 
             }
             else
@@ -635,50 +647,50 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
                   //get max value
                   current_pool_output_channel = conv_block[conv_pool_count].size_block[1].output_feature_size[0]; //take pool into account for max_output_channel
-                  module_framework.total_framework.max_output_channel = (module_framework.total_framework.max_output_channel > current_pool_output_channel) \
-                  ? module_framework.total_framework.max_output_channel : current_pool_output_channel;
+                  module_framework->total_framework.max_output_channel = (module_framework->total_framework.max_output_channel > current_pool_output_channel) \
+                  ? module_framework->total_framework.max_output_channel : current_pool_output_channel;
 
                   current_pool_input_channel = conv_block[conv_pool_count].size_block[1].input_feature_size[0]; //take pool into account for max_input_channel
-                  module_framework.total_framework.max_input_channel = (module_framework.total_framework.max_input_channel > current_pool_input_channel) \
-                  ? module_framework.total_framework.max_input_channel : current_pool_input_channel;
+                  module_framework->total_framework.max_input_channel = (module_framework->total_framework.max_input_channel > current_pool_input_channel) \
+                  ? module_framework->total_framework.max_input_channel : current_pool_input_channel;
 
                   current_pool_input_height = conv_block[conv_pool_count].size_block[1].input_feature_size[1];
-                  module_framework.total_framework.max_pool_input_height = (module_framework.total_framework.max_pool_input_height > current_pool_input_height) \
-                  ? module_framework.total_framework.max_pool_input_height : current_pool_input_height;
+                  module_framework->total_framework.max_pool_input_height = (module_framework->total_framework.max_pool_input_height > current_pool_input_height) \
+                  ? module_framework->total_framework.max_pool_input_height : current_pool_input_height;
 
                   current_pool_input_width = conv_block[conv_pool_count].size_block[1].input_feature_size[2];
-                  module_framework.total_framework.max_pool_input_width = (module_framework.total_framework.max_pool_input_width > current_pool_input_width) \
-                  ? module_framework.total_framework.max_pool_input_width : current_pool_input_width;
+                  module_framework->total_framework.max_pool_input_width = (module_framework->total_framework.max_pool_input_width > current_pool_input_width) \
+                  ? module_framework->total_framework.max_pool_input_width : current_pool_input_width;
 
                   current_pool_output_height = conv_block[conv_pool_count].size_block[1].output_feature_size[1];
-                  module_framework.total_framework.max_pool_output_height = (module_framework.total_framework.max_pool_output_height > current_pool_output_height) \
-                  ? module_framework.total_framework.max_pool_output_height : current_pool_output_height;
+                  module_framework->total_framework.max_pool_output_height = (module_framework->total_framework.max_pool_output_height > current_pool_output_height) \
+                  ? module_framework->total_framework.max_pool_output_height : current_pool_output_height;
 
                   current_pool_output_width = conv_block[conv_pool_count].size_block[1].output_feature_size[2];
-                  module_framework.total_framework.max_pool_output_width = (module_framework.total_framework.max_pool_output_width > current_pool_output_width) \
-                  ? module_framework.total_framework.max_pool_output_width : current_pool_output_width;
+                  module_framework->total_framework.max_pool_output_width = (module_framework->total_framework.max_pool_output_width > current_pool_output_width) \
+                  ? module_framework->total_framework.max_pool_output_width : current_pool_output_width;
 
                   current_pool_window_size = conv_block[conv_pool_count].size_block[1].window_size[2];
-                  module_framework.total_framework.max_pool_window_size = (module_framework.total_framework.max_pool_window_size > current_pool_window_size) \
-                  ? module_framework.total_framework.max_pool_window_size : current_pool_window_size;
+                  module_framework->total_framework.max_pool_window_size = (module_framework->total_framework.max_pool_window_size > current_pool_window_size) \
+                  ? module_framework->total_framework.max_pool_window_size : current_pool_window_size;
 
                   current_pool_pad_size = conv_block[conv_pool_count].size_block[1].pad_size;
-                  module_framework.total_framework.max_pool_pad_size = (module_framework.total_framework.max_pool_pad_size > current_pool_pad_size) \
-                  ? module_framework.total_framework.max_pool_pad_size : current_pool_pad_size;
+                  module_framework->total_framework.max_pool_pad_size = (module_framework->total_framework.max_pool_pad_size > current_pool_pad_size) \
+                  ? module_framework->total_framework.max_pool_pad_size : current_pool_pad_size;
 
                   conv_block[conv_pool_count].basic_info_frame.specific_struct_enable[0] = (pstNetPoolparam->enPoolMethod == PoolAvg) ? 1 : 0; //kEndPoolEnable
-                  module_framework.total_framework.max_bias_size = module_framework.total_framework.max_output_channel; //take pool into account for max_input_channel
+                  module_framework->total_framework.max_bias_size = module_framework->total_framework.max_output_channel; //take pool into account for max_input_channel
                   if(j!= conv_siblings_num - 1)
                   {
                      if(pstNetPoolparam->enPoolMethod == PoolAvg) //poolavg and not the last conv_count
                      {
-                        module_framework.conv_blocks[conv_pool_count].basic_info_frame.specific_struct_enable[0] = conv_block[conv_pool_count].basic_info_frame.specific_struct_enable[0];
+                        module_framework->conv_blocks[conv_pool_count].basic_info_frame.specific_struct_enable[0] = conv_block[conv_pool_count].basic_info_frame.specific_struct_enable[0];
                      }
                      else
                      {
-                        module_framework.conv_blocks[conv_pool_count].basic_info_frame.enable_info[2] = conv_block[conv_pool_count].basic_info_frame.enable_info[2];
-                        module_framework.conv_blocks[conv_pool_count].size_block[1].output_feature_size[1] = conv_block[conv_pool_count].size_block[1].output_feature_size[1];
-                        module_framework.conv_blocks[conv_pool_count].size_block[1].output_feature_size[2] = conv_block[conv_pool_count].size_block[1].output_feature_size[2];
+                        module_framework->conv_blocks[conv_pool_count].basic_info_frame.enable_info[2] = conv_block[conv_pool_count].basic_info_frame.enable_info[2];
+                        module_framework->conv_blocks[conv_pool_count].size_block[1].output_feature_size[1] = conv_block[conv_pool_count].size_block[1].output_feature_size[1];
+                        module_framework->conv_blocks[conv_pool_count].size_block[1].output_feature_size[2] = conv_block[conv_pool_count].size_block[1].output_feature_size[2];
                      }
                      
                   }
@@ -731,7 +743,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                layer_num ++;
                last_input_layer_id = pstLayerInfo->ariInputBlobId[0];
             }
-            if(conv_count >= 1) module_framework.conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
+            if(conv_count >= 1) module_framework->conv_blocks.push_back(conv_block[conv_count - 1]);//push back last block
             
             conv_block[conv_count].basic_info_frame.specific_struct_enable[5] = pstNetFcparam->bias_term; //for bias enable info
             for(int iblob = 0; iblob < pstLayerInfo->iBlobInputNum; iblob++)
@@ -792,7 +804,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
 
                   conv_block[conv_count].index_input_layer = conv_count;
                   if(is_concate[input_id] || is_inherit_concate[input_id]) conv_block[conv_count].input_concate_connection = true;
-                  module_framework.conv_blocks[input_id].input_concate_connection = conv_block[input_id].input_concate_connection; //needed or not?
+                  module_framework->conv_blocks[input_id].input_concate_connection = conv_block[input_id].input_concate_connection; //needed or not?
                }
                else if(block_siblings[input_id].id.size() > 1)
                {
@@ -812,7 +824,7 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                   else
                   {
                      conv_block[conv_first_sibling].input_concate_connection = conv_block[conv_count].input_concate_connection = true;
-                     module_framework.conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
+                     module_framework->conv_blocks[conv_first_sibling].input_concate_connection = conv_block[conv_first_sibling].input_concate_connection;
                   }
                }
             }
@@ -826,43 +838,43 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
             conv_block[conv_count].basic_info_frame.mem_write_enable[0] = 1; //cache write enable
             //get max value
             current_conv_output_channel = conv_block[conv_count].size_block[0].output_feature_size[0];
-            module_framework.total_framework.max_output_channel = (module_framework.total_framework.max_output_channel > current_conv_output_channel) \
-            ? module_framework.total_framework.max_output_channel : current_conv_output_channel;
+            module_framework->total_framework.max_output_channel = (module_framework->total_framework.max_output_channel > current_conv_output_channel) \
+            ? module_framework->total_framework.max_output_channel : current_conv_output_channel;
 
             current_conv_input_channel = conv_block[conv_count].size_block[0].input_feature_size[0];
-            module_framework.total_framework.max_input_channel = (module_framework.total_framework.max_input_channel > current_conv_input_channel) \
-            ? module_framework.total_framework.max_input_channel : current_conv_input_channel;
+            module_framework->total_framework.max_input_channel = (module_framework->total_framework.max_input_channel > current_conv_input_channel) \
+            ? module_framework->total_framework.max_input_channel : current_conv_input_channel;
 
             current_conv_input_height = conv_block[conv_count].size_block[0].input_feature_size[1];
-            module_framework.total_framework.max_input_height = (module_framework.total_framework.max_input_height > current_conv_input_height) \
-            ? module_framework.total_framework.max_input_height : current_conv_input_height;
+            module_framework->total_framework.max_input_height = (module_framework->total_framework.max_input_height > current_conv_input_height) \
+            ? module_framework->total_framework.max_input_height : current_conv_input_height;
 
             current_conv_input_width = conv_block[conv_count].size_block[0].input_feature_size[2];
-            module_framework.total_framework.max_input_width = (module_framework.total_framework.max_input_width > current_conv_input_width) \
-            ? module_framework.total_framework.max_input_width : current_conv_input_width;
+            module_framework->total_framework.max_input_width = (module_framework->total_framework.max_input_width > current_conv_input_width) \
+            ? module_framework->total_framework.max_input_width : current_conv_input_width;
 
             current_conv_output_height = conv_block[conv_count].size_block[0].output_feature_size[1];
-            module_framework.total_framework.max_output_height = (module_framework.total_framework.max_output_height > current_conv_output_height) \
-            ? module_framework.total_framework.max_output_height : current_conv_output_height;
+            module_framework->total_framework.max_output_height = (module_framework->total_framework.max_output_height > current_conv_output_height) \
+            ? module_framework->total_framework.max_output_height : current_conv_output_height;
 
             current_conv_output_width = conv_block[conv_count].size_block[0].output_feature_size[2];
-            module_framework.total_framework.max_output_width = (module_framework.total_framework.max_output_width > current_conv_output_width) \
-            ? module_framework.total_framework.max_output_width : current_conv_output_width;
+            module_framework->total_framework.max_output_width = (module_framework->total_framework.max_output_width > current_conv_output_width) \
+            ? module_framework->total_framework.max_output_width : current_conv_output_width;
 
             current_filter = conv_block[conv_count].size_block[0].window_size[2];
-            module_framework.total_framework.max_filter = (module_framework.total_framework.max_filter > current_filter) \
-            ? module_framework.total_framework.max_filter : current_filter;
+            module_framework->total_framework.max_filter = (module_framework->total_framework.max_filter > current_filter) \
+            ? module_framework->total_framework.max_filter : current_filter;
 
             if(current_filter == 3) current_window_3_input_channel = current_conv_input_channel;
             if(current_filter == 1) current_window_1_input_channel = current_conv_input_channel;
 
-            module_framework.total_framework.max_filter_size_1 = (module_framework.total_framework.max_filter_size_1  > current_window_1_input_channel) \
-            ? module_framework.total_framework.max_filter_size_1 : current_window_1_input_channel;
+            module_framework->total_framework.max_filter_size_1 = (module_framework->total_framework.max_filter_size_1  > current_window_1_input_channel) \
+            ? module_framework->total_framework.max_filter_size_1 : current_window_1_input_channel;
 
-            module_framework.total_framework.max_filter_size_2 = (module_framework.total_framework.max_filter_size_2  > current_window_3_input_channel) \
-            ? module_framework.total_framework.max_filter_size_2 : current_window_3_input_channel;
+            module_framework->total_framework.max_filter_size_2 = (module_framework->total_framework.max_filter_size_2  > current_window_3_input_channel) \
+            ? module_framework->total_framework.max_filter_size_2 : current_window_3_input_channel;
 
-            module_framework.total_framework.max_bias_size = module_framework.total_framework.max_output_channel;
+            module_framework->total_framework.max_bias_size = module_framework->total_framework.max_output_channel;
 
 			}
          if(pstOpInfo->enumOpType==OpSoftmax)
@@ -894,11 +906,11 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                {
                   conv_block[conv_count].size_block[0].output_feature_size[1] = conv_block[conv_count - 1].size_block[0].output_feature_size[1]; //tempararily for height
                   conv_block[conv_count].size_block[0].output_feature_size[2] = conv_block[conv_count - 1].size_block[0].output_feature_size[2]; //move following pool stride
-                  module_framework.conv_blocks[conv_count].size_block[0].output_feature_size[1] = conv_block[conv_count].size_block[0].output_feature_size[1];
-                  module_framework.conv_blocks[conv_count].size_block[0].output_feature_size[2] = conv_block[conv_count].size_block[0].output_feature_size[2];
+                  module_framework->conv_blocks[conv_count].size_block[0].output_feature_size[1] = conv_block[conv_count].size_block[0].output_feature_size[1];
+                  module_framework->conv_blocks[conv_count].size_block[0].output_feature_size[2] = conv_block[conv_count].size_block[0].output_feature_size[2];
 
-                  module_framework.conv_blocks[conv_count].size_block[1].input_feature_size[2] = conv_block[conv_count].size_block[1].input_feature_size[2];
-                  module_framework.conv_blocks[conv_count].size_block[1].output_feature_size[2] = conv_block[conv_count].size_block[1].output_feature_size[2];
+                  module_framework->conv_blocks[conv_count].size_block[1].input_feature_size[2] = conv_block[conv_count].size_block[1].input_feature_size[2];
+                  module_framework->conv_blocks[conv_count].size_block[1].output_feature_size[2] = conv_block[conv_count].size_block[1].output_feature_size[2];
                }
 
                if(conv_block[conv_count].size_block[1].window_size[2] == 0) conv_block[conv_count].size_block[1].window_size[2] = conv_block[conv_count - 1].size_block[1].window_size[2]; //for pool window postprocessing
@@ -912,7 +924,9 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
          
          int id_check = (pstLayerInfo->ariInputBlobId[iblob_siblings] == -1) ? 0 : pstLayerInfo->ariInputBlobId[iblob_siblings];
          int id_last = (pstLayerInfo->ariInputBlobId[last_sibling_id] == -1) ? 0 : pstLayerInfo->ariInputBlobId[last_sibling_id];
-         if(id_conv[id_check] != -1)
+         
+
+         if((id_conv[id_check] != -1) && (id_conv[id_last] != -1))
          {
             int conv_check = id_conv[id_check];
             int last_conv = id_conv[id_last];
@@ -951,14 +965,14 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                last_ddr_read_num = conv_block[conv_ddr_count].basic_info_frame.base_num[2] = (!strcmp(netname.c_str(),"googlenet")) ? 0 : (common_read_ddr_num + 1 - last_ddr_read_num);
                conv_block[conv_ddr_count].basic_info_frame.base_num[3] = (!strcmp(netname.c_str(),"googlenet")) ? 0 : (common_write_ddr_num + 1 - conv_block[conv_ddr_count].basic_info_frame.base_num[2]);
                conv_block[conv_ddr_count].basic_info_frame.mem_write_enable[1] = (!strcmp(netname.c_str(),"googlenet")) ? 0 : 1;
-               module_framework.conv_blocks[conv_ddr_count].basic_info_frame.mem_write_enable[1] = conv_block[conv_ddr_count].basic_info_frame.mem_write_enable[1]; //cache write enable for branchs
+               module_framework->conv_blocks[conv_ddr_count].basic_info_frame.mem_write_enable[1] = conv_block[conv_ddr_count].basic_info_frame.mem_write_enable[1]; //cache write enable for branchs
                
                if(j != (conv_siblings[conv_count].size() - 1)) //modify as no pushing in advance
                {
-                  module_framework.conv_blocks[conv_ddr_count].basic_info_frame.base_num[2] = conv_block[conv_ddr_count].basic_info_frame.base_num[2];
-                  module_framework.conv_blocks[conv_ddr_count].basic_info_frame.base_num[3] = conv_block[conv_ddr_count].basic_info_frame.base_num[3];
+                  module_framework->conv_blocks[conv_ddr_count].basic_info_frame.base_num[2] = conv_block[conv_ddr_count].basic_info_frame.base_num[2];
+                  module_framework->conv_blocks[conv_ddr_count].basic_info_frame.base_num[3] = conv_block[conv_ddr_count].basic_info_frame.base_num[3];
 
-                  module_framework.conv_blocks[conv_ddr_count].basic_info_frame.mem_write_enable[0] = (!strcmp(netname.c_str(),"googlenet")) ? 1 : 0; //cache write disable for branch 1
+                  module_framework->conv_blocks[conv_ddr_count].basic_info_frame.mem_write_enable[0] = (!strcmp(netname.c_str(),"googlenet")) ? 1 : 0; //cache write disable for branch 1
                }
                else
                {
@@ -970,48 +984,48 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
                if(pstLayerInfo->pstFpgaOpInfo->enumOpType == OpConcat) //check concatenation
                {
                   conv_block[conv_ddr_count].basic_info_frame.specific_struct_enable[2] = 1;
-                  module_framework.conv_blocks[conv_ddr_count].basic_info_frame.specific_struct_enable[2] = conv_block[conv_ddr_count].basic_info_frame.specific_struct_enable[2];
+                  module_framework->conv_blocks[conv_ddr_count].basic_info_frame.specific_struct_enable[2] = conv_block[conv_ddr_count].basic_info_frame.specific_struct_enable[2];
 
                   if(j>0)
                   {
                      int conv_offset_start_count = conv_siblings[conv_count][j-1];
                      conv_block[conv_ddr_count].basic_info_frame.concate_offset[0] = conv_block[conv_offset_start_count].size_block[0].output_feature_size[0] + conv_block[conv_offset_start_count].basic_info_frame.concate_offset[0]; //for kNStart
-                     module_framework.conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[0] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[0];
+                     module_framework->conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[0] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[0];
 
                      conv_block[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].size_block[0].output_feature_size[0] + conv_block[conv_offset_start_count].basic_info_frame.concate_offset[1]; //for kNEnd
-                     module_framework.conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[1];
+                     module_framework->conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[1];
                   }
                   else if(j==0)
                   {
                      /* code */
                      conv_block[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].size_block[0].output_feature_size[0];
-                     module_framework.conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[1];
+                     module_framework->conv_blocks[conv_ddr_count].basic_info_frame.concate_offset[1] = conv_block[conv_ddr_count].basic_info_frame.concate_offset[1];
                   }
                   
                }
 
                conv_block[conv_ddr_count].concate_index = (index_concate!=-1) ? index_concate : 0;
-               module_framework.conv_blocks[conv_ddr_count].concate_index = conv_block[conv_ddr_count].concate_index;
+               module_framework->conv_blocks[conv_ddr_count].concate_index = conv_block[conv_ddr_count].concate_index;
 
             }
          }
 
       }
 
-      module_framework.total_framework.num_concate = index_concate + 1; //as start from -1 from index_concate
+      module_framework->total_framework.num_concate = index_concate + 1; //as start from -1 from index_concate
 
       // if((!strcmp(netname.c_str(),"resnet50")) && (conv_count == 0 || conv_count == 10 || conv_count == 23 || conv_count == 42)) //committed out according to latest hardware code
       //{
       //   conv_block[conv_count].wait_cycle = 1000;
       //}
 
-      if(conv_count >= 1 && i == (num_block-1)) module_framework.conv_blocks.push_back(conv_block[conv_count]);//push back the last block
+      if(conv_count >= 1 && i == (num_block-1)) module_framework->conv_blocks.push_back(conv_block[conv_count]);//push back the last block
    }
 
-   module_framework.total_framework.num_layer = layer_num;
+   module_framework->total_framework.num_layer = layer_num;
     
-   module_framework.total_framework.num_cnct = conv_count + 1;   
-   module_framework.total_framework.num_conv = module_framework.total_framework.num_cnct;                         
+   module_framework->total_framework.num_cnct = conv_count + 1;   
+   module_framework->total_framework.num_conv = module_framework->total_framework.num_cnct;                         
 
     for(int i=0; i<num_block; i++)
     {
@@ -1020,34 +1034,39 @@ module_framework_data FrameParseStore(std::string filename, std::string netname)
        if(id_conv[i] != -1)
        {
           int conv_index = id_conv[i];
-          if(module_framework.conv_blocks[conv_index].input_concate_connection)
+          if(module_framework->conv_blocks[conv_index].input_concate_connection)
           {  
-             conv_block[conv_index].index_input_layer = module_framework.total_framework.num_conv + input_index_base;
-             module_framework.conv_blocks[conv_index].index_input_layer =  conv_block[conv_index].index_input_layer;
+             conv_block[conv_index].index_input_layer = module_framework->total_framework.num_conv + input_index_base;
+             module_framework->conv_blocks[conv_index].index_input_layer =  conv_block[conv_index].index_input_layer;
           }
 
-          if((module_framework.conv_blocks[conv_index].concate_index != 0) && (module_framework.conv_blocks[conv_index].size_block[1].stride_size == 2)) //for kPoolStride2
+          if((module_framework->conv_blocks[conv_index].concate_index != 0) && (module_framework->conv_blocks[conv_index].size_block[1].stride_size == 2)) //for kPoolStride2
           {
                for(int j=0; j<conv_siblings[conv_index].size(); j++)
                {
                   int conv_pool_stride2_index = conv_siblings[conv_index][j];
                   conv_block[conv_pool_stride2_index].size_block[1].stride_size = 2;
-                  module_framework.conv_blocks[conv_pool_stride2_index].size_block[1].stride_size = conv_block[conv_pool_stride2_index].size_block[1].stride_size;
+                  module_framework->conv_blocks[conv_pool_stride2_index].size_block[1].stride_size = conv_block[conv_pool_stride2_index].size_block[1].stride_size;
                }
           }
        }
     }
 
-    module_framework = cycles_computation(module_framework);
+    cycles_computation(module_framework);
 
-    return module_framework;
+    free(pstNetInfo);
 }
 
-bool ParamGeneration(module_framework_data module_framework, std::string netname) {
+bool ParamGeneration(module_framework_data* module_framework, std::string netname) {
      FILE *fp;
    //   fp = fopen("./inc/cnn_param.h","w+");
    //   std::string file_addr = "./inc/"+netname+".h";
-     std::string file_addr = "../generated_config_file/"+netname+".h";
+     std::string generated_file_dir = "../generated_config_file/";
+     
+     if(access(generated_file_dir.c_str(),0) == -1)
+     mkdir(generated_file_dir.c_str(),0777);
+   
+     std::string file_addr = generated_file_dir + netname +".h";
    //   fp = fopen("./inc/"+netname.c_str()+".h","w+");
      fp = fopen(file_addr.c_str(),"w+");
      if(fp == NULL)
@@ -1109,45 +1128,45 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "\n");
      fprintf(fp, "//============================total summary===========================//\n");
      fprintf(fp, "// number of convolution layers\n");
-     fprintf(fp, "#define NUM_LAYER (%d) //for debug\n", module_framework.total_framework.num_conv);
+     fprintf(fp, "#define NUM_LAYER (%d) //for debug\n", module_framework->total_framework.num_conv);
      fprintf(fp, "\n");
-     fprintf(fp, "#define NUM_CONVOLUTIONS (%d)\n", module_framework.total_framework.num_conv);
+     fprintf(fp, "#define NUM_CONVOLUTIONS (%d)\n", module_framework->total_framework.num_conv);
      fprintf(fp, "\n");
-     fprintf(fp, "#define NUM_Q_LAYERS (NUM_CONVOLUTIONS + %d + 1)\n", module_framework.total_framework.num_concate);
-     fprintf(fp, "\n");
-     fprintf(fp, "\n");
-     fprintf(fp, "#define INPUT_IMAGE_C %d\n", module_framework.total_framework.input_image_channel);
-     fprintf(fp, "\n");
-     fprintf(fp, "#define INPUT_IMAGE_H %d\n", module_framework.total_framework.input_image_height);
-     fprintf(fp, "\n");
-     fprintf(fp, "#define INPUT_IMAGE_W %d\n", module_framework.total_framework.input_image_width);
-     fprintf(fp, "\n");
-     fprintf(fp, "#define FIRST_FILTER_SIZE %d\n", module_framework.total_framework.first_filter_size);
+     fprintf(fp, "#define NUM_Q_LAYERS (NUM_CONVOLUTIONS + %d + 1)\n", module_framework->total_framework.num_concate);
      fprintf(fp, "\n");
      fprintf(fp, "\n");
-     fprintf(fp, "#define MAX_OUT_CHANNEL %d\n", module_framework.total_framework.max_output_channel);
+     fprintf(fp, "#define INPUT_IMAGE_C %d\n", module_framework->total_framework.input_image_channel);
      fprintf(fp, "\n");
-     fprintf(fp, "#define MAX_POOL_OUTPUT_WVEC CEIL(%d, W_VECTOR)\n",module_framework.total_framework.max_pool_output_width);
+     fprintf(fp, "#define INPUT_IMAGE_H %d\n", module_framework->total_framework.input_image_height);
+     fprintf(fp, "\n");
+     fprintf(fp, "#define INPUT_IMAGE_W %d\n", module_framework->total_framework.input_image_width);
+     fprintf(fp, "\n");
+     fprintf(fp, "#define FIRST_FILTER_SIZE %d\n", module_framework->total_framework.first_filter_size);
+     fprintf(fp, "\n");
+     fprintf(fp, "\n");
+     fprintf(fp, "#define MAX_OUT_CHANNEL %d\n", module_framework->total_framework.max_output_channel);
+     fprintf(fp, "\n");
+     fprintf(fp, "#define MAX_POOL_OUTPUT_WVEC CEIL(%d, W_VECTOR)\n",module_framework->total_framework.max_pool_output_width);
      fprintf(fp, "\n");
      fprintf(fp, "\n");
      fprintf(fp, "// the maximum pool window size \n");
      fprintf(fp, "\n");
-     fprintf(fp, "#define POOL_WINDOW_MAX %d\n", module_framework.total_framework.max_pool_window_size);
+     fprintf(fp, "#define POOL_WINDOW_MAX %d\n", module_framework->total_framework.max_pool_window_size);
      fprintf(fp, "\n");
      fprintf(fp, "// set size of input_size \n");
      int current_max_ddr_size = 0;
      int ddr_window_size = 0;
      int ddr_pool_output_width = 0;
      int ddr_pool_output_height = 0;
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++){
-        if(module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[1] || (!strcmp(netname.c_str(),"GOOGLENET")))
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++){
+        if(module_framework->conv_blocks[c_index].basic_info_frame.mem_write_enable[1] || (!strcmp(netname.c_str(),"GOOGLENET")))
         {
-            if(ceil((module_framework.conv_blocks[c_index].size_block[0].window_size[0] * 1.0)/C_VECTOR) * module_framework.conv_blocks[c_index].size_block[1].output_feature_size[1] * ceil((module_framework.conv_blocks[c_index].size_block[1].output_feature_size[2] * 1.0)/W_VECTOR) > current_max_ddr_size)
+            if(ceil((module_framework->conv_blocks[c_index].size_block[0].window_size[0] * 1.0)/C_VECTOR) * module_framework->conv_blocks[c_index].size_block[1].output_feature_size[1] * ceil((module_framework->conv_blocks[c_index].size_block[1].output_feature_size[2] * 1.0)/W_VECTOR) > current_max_ddr_size)
             {
-               ddr_window_size = module_framework.conv_blocks[c_index].size_block[0].window_size[0];
-               ddr_pool_output_height = module_framework.conv_blocks[c_index].size_block[1].output_feature_size[1];
-               ddr_pool_output_width = module_framework.conv_blocks[c_index].size_block[1].output_feature_size[2];
-               current_max_ddr_size = ceil((module_framework.conv_blocks[c_index].size_block[0].window_size[0] * 1.0)/C_VECTOR) * module_framework.conv_blocks[c_index].size_block[1].output_feature_size[1] * ceil((module_framework.conv_blocks[c_index].size_block[1].output_feature_size[2] * 1.0)/W_VECTOR);
+               ddr_window_size = module_framework->conv_blocks[c_index].size_block[0].window_size[0];
+               ddr_pool_output_height = module_framework->conv_blocks[c_index].size_block[1].output_feature_size[1];
+               ddr_pool_output_width = module_framework->conv_blocks[c_index].size_block[1].output_feature_size[2];
+               current_max_ddr_size = ceil((module_framework->conv_blocks[c_index].size_block[0].window_size[0] * 1.0)/C_VECTOR) * module_framework->conv_blocks[c_index].size_block[1].output_feature_size[1] * ceil((module_framework->conv_blocks[c_index].size_block[1].output_feature_size[2] * 1.0)/W_VECTOR);
             }
         }
      }
@@ -1159,16 +1178,16 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      int cache_window_size = 0;
      int cache_pool_output_width = 0;
      int cache_pool_output_height = 0;
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++)
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++)
      {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0])
+        if(module_framework->conv_blocks[c_index].basic_info_frame.mem_write_enable[0])
         {
-            if(ceil((module_framework.conv_blocks[c_index].size_block[0].window_size[1] * 1.0)/C_VECTOR) * module_framework.conv_blocks[c_index].size_block[0].input_feature_size[1] * ceil((module_framework.conv_blocks[c_index].size_block[0].input_feature_size[2]*1.0)/W_VECTOR) > current_max_cache_size)
+            if(ceil((module_framework->conv_blocks[c_index].size_block[0].window_size[1] * 1.0)/C_VECTOR) * module_framework->conv_blocks[c_index].size_block[0].input_feature_size[1] * ceil((module_framework->conv_blocks[c_index].size_block[0].input_feature_size[2]*1.0)/W_VECTOR) > current_max_cache_size)
             {
-               cache_window_size = module_framework.conv_blocks[c_index].size_block[0].window_size[1];
-               cache_pool_output_height = module_framework.conv_blocks[c_index].size_block[0].input_feature_size[1];
-               cache_pool_output_width = module_framework.conv_blocks[c_index].size_block[0].input_feature_size[2];
-               current_max_cache_size = ceil((module_framework.conv_blocks[c_index].size_block[0].window_size[1] * 1.0) / C_VECTOR) * module_framework.conv_blocks[c_index].size_block[0].input_feature_size[1] * ceil((module_framework.conv_blocks[c_index].size_block[0].input_feature_size[2]*1.0)/W_VECTOR);
+               cache_window_size = module_framework->conv_blocks[c_index].size_block[0].window_size[1];
+               cache_pool_output_height = module_framework->conv_blocks[c_index].size_block[0].input_feature_size[1];
+               cache_pool_output_width = module_framework->conv_blocks[c_index].size_block[0].input_feature_size[2];
+               current_max_cache_size = ceil((module_framework->conv_blocks[c_index].size_block[0].window_size[1] * 1.0) / C_VECTOR) * module_framework->conv_blocks[c_index].size_block[0].input_feature_size[1] * ceil((module_framework->conv_blocks[c_index].size_block[0].input_feature_size[2]*1.0)/W_VECTOR);
             }
         }
      }
@@ -1179,8 +1198,8 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "#define CACHE_SIZE (CACHE_PAGE_SIZE * 3)\n");
      fprintf(fp, "\n");
      fprintf(fp, "// the largest of conv1 and conv2 filters\n");
-     fprintf(fp, "#define FILTER_CACHE_PAGE_SIZE1 (NEXT_DIVISIBLE(%d, C_VECTOR) * 3 * CEIL(3, FW_VECTOR))\n",module_framework.total_framework.max_filter_size_2);
-     fprintf(fp, "#define FILTER_CACHE_PAGE_SIZE2 (NEXT_DIVISIBLE(%d, C_VECTOR * FW_VECTOR))\n",module_framework.total_framework.max_filter_size_1);
+     fprintf(fp, "#define FILTER_CACHE_PAGE_SIZE1 (NEXT_DIVISIBLE(%d, C_VECTOR) * 3 * CEIL(3, FW_VECTOR))\n",module_framework->total_framework.max_filter_size_2);
+     fprintf(fp, "#define FILTER_CACHE_PAGE_SIZE2 (NEXT_DIVISIBLE(%d, C_VECTOR * FW_VECTOR))\n",module_framework->total_framework.max_filter_size_1);
      fprintf(fp, "#define FILTER_CACHE_PAGE_SIZE  (MYMAX2(FILTER_CACHE_PAGE_SIZE1, FILTER_CACHE_PAGE_SIZE2))\n");
      fprintf(fp, "\n");
      fprintf(fp, "///MODDDS\n");
@@ -1193,21 +1212,21 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "#define FEATURE_DDR_READ_STEP 1\n");
      fprintf(fp, "\n");
      fprintf(fp, "//Set size of host filter and bias buffer of each layer.\n");
-     fprintf(fp,"#define MAX_FILTER_SIZE1 (NEXT_POWER_OF_2(CEIL(%d, C_VECTOR) * 1 * CEIL(1, FW_VECTOR) * NEXT_DIVISIBLE(%d, N_VECTOR) * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))\n", module_framework.total_framework.max_filter_size_1, module_framework.total_framework.max_filter_size_1);
-     fprintf(fp,"#define MAX_FILTER_SIZE2 (NEXT_POWER_OF_2(CEIL(%d, C_VECTOR) * 3 * CEIL(3, FW_VECTOR) * NEXT_DIVISIBLE(%d, N_VECTOR) * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))\n", module_framework.total_framework.max_filter_size_2, module_framework.total_framework.max_filter_size_2);
+     fprintf(fp,"#define MAX_FILTER_SIZE1 (NEXT_POWER_OF_2(CEIL(%d, C_VECTOR) * 1 * CEIL(1, FW_VECTOR) * NEXT_DIVISIBLE(%d, N_VECTOR) * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))\n", module_framework->total_framework.max_filter_size_1, module_framework->total_framework.max_filter_size_1);
+     fprintf(fp,"#define MAX_FILTER_SIZE2 (NEXT_POWER_OF_2(CEIL(%d, C_VECTOR) * 3 * CEIL(3, FW_VECTOR) * NEXT_DIVISIBLE(%d, N_VECTOR) * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))\n", module_framework->total_framework.max_filter_size_2, module_framework->total_framework.max_filter_size_2);
      fprintf(fp,"#define MAX_FILTER_SIZE_TEMP ((MAX_FILTER_SIZE1 > MAX_FILTER_SIZE2) ? MAX_FILTER_SIZE1 : MAX_FILTER_SIZE2)\n");
      fprintf(fp,"#define MAX_FILTER_SIZE (CEIL(MAX_FILTER_SIZE_TEMP, NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))\n");
      fprintf(fp, "\n");
-     fprintf(fp, "#define MAX_BIAS_SIZE  NEXT_DIVISIBLE(%d, N_VECTOR)\n", module_framework.total_framework.max_bias_size);
+     fprintf(fp, "#define MAX_BIAS_SIZE  NEXT_DIVISIBLE(%d, N_VECTOR)\n", module_framework->total_framework.max_bias_size);
      fprintf(fp, "\n");
-     fprintf(fp, "// used by pool.cl\n");
-     fprintf(fp, "#define EDGE_H (POOL_WINDOW_MAX - 1)\n");
-     fprintf(fp, "#define EDGE_W (POOL_WINDOW_MAX - 1)\n");
-     fprintf(fp, "#define WVEC_ITER (CEIL(kOwEndWithOffsetMax, OW_VECTOR))\n");
-     fprintf(fp, "#define NNVEC_ITER (CEIL(N_VECTOR, NARROW_N_VECTOR))\n");
-     fprintf(fp, "#define EDGE_H_BUFFER_SIZE (WVEC_ITER * NNVEC_ITER)\n");
-     fprintf(fp, "#define EDGE_W_BUFFER_SIZE (NNVEC_ITER)\n");
-     fprintf(fp, "\n");
+   //   fprintf(fp, "// used by pool.cl\n");                                        //deserted by new version
+   //   fprintf(fp, "#define EDGE_H (POOL_WINDOW_MAX - 1)\n");
+   //   fprintf(fp, "#define EDGE_W (POOL_WINDOW_MAX - 1)\n");
+   //   fprintf(fp, "#define WVEC_ITER (CEIL(kOwEndWithOffsetMax, OW_VECTOR))\n");
+   //   fprintf(fp, "#define NNVEC_ITER (CEIL(N_VECTOR, NARROW_N_VECTOR))\n");
+   //   fprintf(fp, "#define EDGE_H_BUFFER_SIZE (WVEC_ITER * NNVEC_ITER)\n");
+   //   fprintf(fp, "#define EDGE_W_BUFFER_SIZE (NNVEC_ITER)\n");
+   //   fprintf(fp, "\n");
      fprintf(fp, "#define DDR_BLOCK_SIZE DDR_PAGE_SIZE0\n");
      fprintf(fp, "#define D0 0\n");
      fprintf(fp, "#define D1 0\n");
@@ -1225,177 +1244,178 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "\n");
      fprintf(fp, "//==========================basic structure===========================//\n");
      fprintf(fp, "//----------------------------base addr info-----------------------------//\n");
-     fprintf(fp, "CONSTANT int kCacheReadBase[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kCacheReadBase[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " C%d", module_framework.conv_blocks[c_index].basic_info_frame.base_num[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " C%d", module_framework->conv_blocks[c_index].basic_info_frame.base_num[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kCacheWriteBase[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kCacheWriteBase[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " C%d", module_framework.conv_blocks[c_index].basic_info_frame.base_num[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " C%d", module_framework->conv_blocks[c_index].basic_info_frame.base_num[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kDDRReadBase[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kDDRReadBase[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " D%d", module_framework.conv_blocks[c_index].basic_info_frame.base_num[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " D%d", module_framework->conv_blocks[c_index].basic_info_frame.base_num[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kDDRWriteBase[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kDDRWriteBase[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " D%d", module_framework.conv_blocks[c_index].basic_info_frame.base_num[3]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " D%d", module_framework->conv_blocks[c_index].basic_info_frame.base_num[3]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kCacheWriteEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kCacheWriteEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(c_index < module_framework.total_framework.num_conv -1)
-        {
-          fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
-        }
-        else
-        {
-          fprintf(fp, " %d", 0);//force to set to 0 for last layer
-        }
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(c_index < module_framework->total_framework.num_conv -1)
+		{
+			fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.mem_write_enable[0]);
+		}
+		else
+	    {
+
+			fprintf(fp, " %d", 0);//force to set to 0 for last layer
+		}
+		if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kDDRWriteEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kDDRWriteEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.mem_write_enable[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.mem_write_enable[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kEndPoolEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kEndPoolEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kAdditionEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kAdditionEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kBranchTail[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kBranchTail[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kAdditionReluEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kAdditionReluEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[3]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[3]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kIpoolEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kIpoolEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[4]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[4]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT bool kBiasEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT bool kBiasEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[5]) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[5]) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "//----------------------------enable info-----------------------------//\n");
      //conv_enabled
-     fprintf(fp, "CONSTANT bool kConvEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT bool kConvEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.enable_info[0]) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].basic_info_frame.enable_info[0]) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      //relu_enabled
-     fprintf(fp, "CONSTANT bool kReluEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT bool kReluEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.enable_info[1]) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].basic_info_frame.enable_info[1]) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      //pool_enabled
-     fprintf(fp, "CONSTANT bool kPoolEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT bool kPoolEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.enable_info[2]) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].basic_info_frame.enable_info[2]) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      //BN_enabled
-     fprintf(fp, "CONSTANT bool kBnEnable[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT bool kBnEnable[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].basic_info_frame.enable_info[3]) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].basic_info_frame.enable_info[3]) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "//----------------------concatenation and conv info-------------------//\n");
-     fprintf(fp, "CONSTANT int kConcatLayer[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kConcatLayer[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].concate_index);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].concate_index);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kInputLayer[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kInputLayer[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].index_input_layer);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].index_input_layer);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "//-----------------------------wait cycles-------------------------------//\n");
-     fprintf(fp, "CONSTANT int kSequencerIdleCycle[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kSequencerIdleCycle[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].wait_cycle);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].wait_cycle);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
@@ -1404,11 +1424,11 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "//-------------------------pool classification-------------------------//\n");
      fprintf(fp, "// 0 - max pooling\n");
      fprintf(fp, "// 1 - average pooling\n");
-     fprintf(fp, "CONSTANT int kPoolType[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kPoolType[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", (!module_framework.conv_blocks[c_index].pool_max));
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", (!module_framework->conv_blocks[c_index].pool_max));
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
@@ -1416,280 +1436,283 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "//-------------------------------size info----------------------------//\n");
      fprintf(fp, "//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~conv~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//\n");
      fprintf(fp, "//channel\n");
-     fprintf(fp, "CONSTANT int kCvecEnd[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kCvecEnd[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kCvecEndMax = CEIL(%d, C_VECTOR);\n", module_framework.total_framework.max_input_channel);
+     fprintf(fp, "CONSTANT int kCvecEndMax = CEIL(%d, C_VECTOR);\n", module_framework->total_framework.max_input_channel);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kFilterCvecEnd[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kFilterCvecEnd[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].size_block[0].window_size[3] == 3)
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].size_block[0].window_size[3] == 3)
         {
-          fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0]);
+          fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0]);
         }
-        else if(module_framework.conv_blocks[c_index].size_block[0].window_size[3] == 5)
+        else if(module_framework->conv_blocks[c_index].size_block[0].window_size[3] == 5)
         {
-          fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0]);
+          fprintf(fp, " CEIL(%d, C_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0]);
         }
         else
         {
-          fprintf(fp, " CEIL(%d, C_VECTOR * FW_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0]);
+          fprintf(fp, " CEIL(%d, C_VECTOR * FW_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0]);
         }
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kFilterCvecEndMax = CEIL(%d, C_VECTOR * FW_VECTOR);\n", module_framework.total_framework.max_input_channel);
+     fprintf(fp, "CONSTANT int kFilterCvecEndMax = CEIL(%d, C_VECTOR * FW_VECTOR);\n", module_framework->total_framework.max_input_channel);
      fprintf(fp, "\n");
      fprintf(fp, "// input\n");
-     fprintf(fp, "CONSTANT int END_WW_MAX_INPUT_READER = CEIL(%d, FW_VECTOR);\n", module_framework.total_framework.max_input_width);
+     fprintf(fp, "CONSTANT int END_WW_MAX_INPUT_READER = CEIL(%d, FW_VECTOR);\n", module_framework->total_framework.max_input_width);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kNvecEnd[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kNvecEnd[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " CEIL(%d, N_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].output_feature_size[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " CEIL(%d, N_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].output_feature_size[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kNvecEndMax = CEIL(%d, N_VECTOR);\n", module_framework.total_framework.max_output_channel);
+     fprintf(fp, "CONSTANT int kNvecEndMax = CEIL(%d, N_VECTOR);\n", module_framework->total_framework.max_output_channel);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kNEndWithOffset[%d] = \n", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kNEndWithOffset[%d] = \n", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].output_feature_size[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].output_feature_size[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kNEndWithOffsetMax = %d;\n", module_framework.total_framework.max_output_channel);
+     fprintf(fp, "CONSTANT int kNEndWithOffsetMax = %d;\n", module_framework->total_framework.max_output_channel);
      fprintf(fp, "\n");
      fprintf(fp, "//input height\n");
-     fprintf(fp, "CONSTANT int kInputHeight[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kInputHeight[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kInputHeightMax = %d;\n", module_framework.total_framework.max_input_height);
+     fprintf(fp, "CONSTANT int kInputHeightMax = %d;\n", module_framework->total_framework.max_input_height);
      fprintf(fp, "\n");
      fprintf(fp, "//input width\n");
-     fprintf(fp, "CONSTANT int kInputWidth[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kInputWidth[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kInputWidthMax = %d;\n", module_framework.total_framework.max_input_width);
+     fprintf(fp, "CONSTANT int kInputWidthMax = %d;\n", module_framework->total_framework.max_input_width);
      fprintf(fp, "\n");
      fprintf(fp, "//output height\n");
-     fprintf(fp, "CONSTANT int kOutputHeight[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kOutputHeight[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].output_feature_size[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].output_feature_size[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kOutputHeightMax = %d;\n", module_framework.total_framework.max_output_height);
+     fprintf(fp, "CONSTANT int kOutputHeightMax = %d;\n", module_framework->total_framework.max_output_height);
      fprintf(fp, "\n");
      fprintf(fp, "//output width\n");
-     fprintf(fp, "CONSTANT int kOutputWidth[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kOutputWidth[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].output_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].output_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kOutputWidthMax = %d;\n", module_framework.total_framework.max_output_width);
+     fprintf(fp, "CONSTANT int kOutputWidthMax = %d;\n", module_framework->total_framework.max_output_width);
      fprintf(fp, "\n");
      fprintf(fp, "//This is the K dimension\n");
-     fprintf(fp, "CONSTANT int kOutputChannels[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kOutputChannels[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].window_size[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].window_size[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kOutputChannelsMax = %d;\n", module_framework.total_framework.max_output_channel);
+     fprintf(fp, "CONSTANT int kOutputChannelsMax = %d;\n", module_framework->total_framework.max_output_channel);
      fprintf(fp, "\n");
      fprintf(fp, "//This is the C dimension\n");
-     fprintf(fp, "CONSTANT int kInputChannels[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kInputChannels[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].window_size[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].window_size[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "//window size\n");
-     fprintf(fp, "CONSTANT int kFilterSize[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kFilterSize[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].window_size[3]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].window_size[3]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kFilterSizeMax = %d;\n", module_framework.total_framework.max_filter);
+     fprintf(fp, "CONSTANT int kFilterSizeMax = %d;\n", module_framework->total_framework.max_filter);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kFWvecEnd[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kFWvecEnd[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " CEIL(%d, FW_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].window_size[3]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " CEIL(%d, FW_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].window_size[3]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kFWvecEndMax = CEIL(%d, FW_VECTOR);\n", module_framework.total_framework.max_filter);
+     fprintf(fp, "CONSTANT int kFWvecEndMax = CEIL(%d, FW_VECTOR);\n", module_framework->total_framework.max_filter);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kWvecEnd[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kWvecEnd[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " CEIL(%d, W_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " CEIL(%d, W_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kWvecEndMax = CEIL(%d, W_VECTOR);\n", module_framework.total_framework.max_input_width);
+     fprintf(fp, "CONSTANT int kWvecEndMax = CEIL(%d, W_VECTOR);\n", module_framework->total_framework.max_input_width);
      fprintf(fp, "\n");
      fprintf(fp, "//Conv pad\n");
-     fprintf(fp, "CONSTANT int kPoolPad[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kPoolPad[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[1].pad_size);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if((c_index == 0) && (!strcmp(netname.c_str(),"RESNET50")))
+        fprintf(fp, " %d", 1);//force to 1 temporarily  for resnet50 and will be removed in later version
+        else
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[1].pad_size);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kConvStride[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kConvStride[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].stride_size);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].stride_size);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "//Conv pad\n");
-     fprintf(fp, "CONSTANT int kPadHeight[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kPadHeight[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].pad_size);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].pad_size);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int  kPadWidth[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int  kPadWidth[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[0].pad_size);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[0].pad_size);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "// for pool computation\n");
-     fprintf(fp, "CONSTANT int kNStart[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kNStart[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.concate_offset[0]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.concate_offset[0]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kNEnd[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kNEnd[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].basic_info_frame.concate_offset[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].basic_info_frame.concate_offset[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
      fprintf(fp, "//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~pool~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~//\n");
      fprintf(fp, "//pool output feature map width\n");
-     fprintf(fp, "CONSTANT int kOhEndWithOffset[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kOhEndWithOffset[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d + POOL_OFFSET_P", module_framework.conv_blocks[c_index].size_block[1].input_feature_size[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d + POOL_OFFSET_P", module_framework->conv_blocks[c_index].size_block[1].input_feature_size[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kOhEndWithOffsetMax = %d + POOL_OFFSET_P;\n", module_framework.total_framework.max_pool_input_height);
+     fprintf(fp, "CONSTANT int kOhEndWithOffsetMax = %d + POOL_OFFSET_P;\n", module_framework->total_framework.max_pool_input_height);
      fprintf(fp, "\n");
      fprintf(fp, "//pool output feature map hight\n");
-     fprintf(fp, "CONSTANT int kOwEndWithOffset[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kOwEndWithOffset[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d + POOL_OFFSET_Q", module_framework.conv_blocks[c_index].size_block[0].output_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d + POOL_OFFSET_Q", module_framework->conv_blocks[c_index].size_block[0].output_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kOwEndWithOffsetMax = %d + POOL_OFFSET_Q;\n", module_framework.total_framework.max_output_width);
+     fprintf(fp, "CONSTANT int kOwEndWithOffsetMax = %d + POOL_OFFSET_Q;\n", module_framework->total_framework.max_output_width);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int  kPoolOutputHeight[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int  kPoolOutputHeight[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[1].output_feature_size[1]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[1].output_feature_size[1]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int  kPoolOutputHeightMax = %d;\n", module_framework.total_framework.max_pool_output_height);
+     fprintf(fp, "CONSTANT int  kPoolOutputHeightMax = %d;\n", module_framework->total_framework.max_pool_output_height);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int  kPoolOutputWidth[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int  kPoolOutputWidth[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[1].output_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[1].output_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
-     fprintf(fp, "CONSTANT int kPoolOutputWidthMax = %d;\n", module_framework.total_framework.max_pool_output_width);
+     fprintf(fp, "CONSTANT int kPoolOutputWidthMax = %d;\n", module_framework->total_framework.max_pool_output_width);
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kPoolOutputWvecEnd[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kPoolOutputWvecEnd[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " CEIL(%d, W_VECTOR)", module_framework.conv_blocks[c_index].size_block[1].output_feature_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
-     }
-     fprintf(fp, "\n");
-     fprintf(fp, "};\n");
-     fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int kPoolWindow[%d] = ", module_framework.total_framework.num_conv);
-     fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.conv_blocks[c_index].size_block[1].window_size[2]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " CEIL(%d, W_VECTOR)", module_framework->conv_blocks[c_index].size_block[1].output_feature_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT bool kPoolStride2[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kPoolWindow[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].size_block[1].stride_size == 2) fprintf(fp, " true");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->conv_blocks[c_index].size_block[1].window_size[2]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
+     }
+     fprintf(fp, "\n");
+     fprintf(fp, "};\n");
+     fprintf(fp, "\n");
+     fprintf(fp, "CONSTANT bool kPoolStride2[%d] = ", module_framework->total_framework.num_conv);
+     fprintf(fp, "{\n");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].size_block[1].stride_size == 2) fprintf(fp, " true");
         else fprintf(fp, " false");
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
@@ -1699,29 +1722,29 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "// how much filter data (number of float_vec_t reads) we need to prefetch\n");
      fprintf(fp, "// at each stage of convolution\n");
      fprintf(fp, "// formula : num_cvec * R * end_ss\n");
-     fprintf(fp, "CONSTANT int kFilterLoadSize[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int kFilterLoadSize[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        if(module_framework.conv_blocks[c_index].size_block[0].window_size[3] == 3)
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        if(module_framework->conv_blocks[c_index].size_block[0].window_size[3] == 3)
         {
-         fprintf(fp, " CEIL(%d, C_VECTOR) * %d * CEIL(%d, FW_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0], \
-         module_framework.conv_blocks[c_index].size_block[0].window_size[3], module_framework.conv_blocks[c_index].size_block[0].window_size[3]);
+         fprintf(fp, " CEIL(%d, C_VECTOR) * %d * CEIL(%d, FW_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0], \
+         module_framework->conv_blocks[c_index].size_block[0].window_size[3], module_framework->conv_blocks[c_index].size_block[0].window_size[3]);
         }
-        else if(module_framework.conv_blocks[c_index].size_block[0].window_size[3] == 5)
+        else if(module_framework->conv_blocks[c_index].size_block[0].window_size[3] == 5)
         {
-         fprintf(fp, " CEIL(%d, C_VECTOR) * %d * CEIL(%d, FW_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0], \
-         module_framework.conv_blocks[c_index].size_block[0].window_size[3], module_framework.conv_blocks[c_index].size_block[0].window_size[3]);
+         fprintf(fp, " CEIL(%d, C_VECTOR) * %d * CEIL(%d, FW_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0], \
+         module_framework->conv_blocks[c_index].size_block[0].window_size[3], module_framework->conv_blocks[c_index].size_block[0].window_size[3]);
         }
-        else if(module_framework.conv_blocks[c_index].basic_info_frame.specific_struct_enable[4])
+        else if(module_framework->conv_blocks[c_index].basic_info_frame.specific_struct_enable[4])
         {
          fprintf(fp, " 0");
         }
         else
         {
-         fprintf(fp, " CEIL(%d, C_VECTOR * FW_VECTOR)", module_framework.conv_blocks[c_index].size_block[0].input_feature_size[0], \
-         module_framework.conv_blocks[c_index].size_block[0].window_size[3], module_framework.conv_blocks[c_index].size_block[0].window_size[3]);
+         fprintf(fp, " CEIL(%d, C_VECTOR * FW_VECTOR)", module_framework->conv_blocks[c_index].size_block[0].input_feature_size[0], \
+         module_framework->conv_blocks[c_index].size_block[0].window_size[3], module_framework->conv_blocks[c_index].size_block[0].window_size[3]);
         } 
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
@@ -1732,38 +1755,38 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "//\n");
      fprintf(fp, "#ifdef STATIC_CYCLE\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int feature_writer_cycles[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int feature_writer_cycles[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.cycle_block.feature_writer_cyc[c_index]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->cycle_block.feature_writer_cyc[c_index]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int conv_cycles[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int conv_cycles[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.cycle_block.conv_cyc[c_index]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->cycle_block.conv_cyc[c_index]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int pool_cycles[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int pool_cycles[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.cycle_block.pool_cyc[c_index]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->cycle_block.pool_cyc[c_index]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
      fprintf(fp, "\n");
-     fprintf(fp, "CONSTANT int filter_reader_conv_cycles[%d] = ", module_framework.total_framework.num_conv);
+     fprintf(fp, "CONSTANT int filter_reader_conv_cycles[%d] = ", module_framework->total_framework.num_conv);
      fprintf(fp, "{\n");
-     for(int c_index = 0; c_index < module_framework.total_framework.num_conv; c_index++) {
-        fprintf(fp, " %d", module_framework.cycle_block.filter_reader_conv_cyc[c_index]);
-        if(c_index != module_framework.total_framework.num_conv - 1) fprintf(fp, ",");
+     for(int c_index = 0; c_index < module_framework->total_framework.num_conv; c_index++) {
+        fprintf(fp, " %d", module_framework->cycle_block.filter_reader_conv_cyc[c_index]);
+        if(c_index != module_framework->total_framework.num_conv - 1) fprintf(fp, ",");
      }
      fprintf(fp, "\n");
      fprintf(fp, "};\n");
@@ -1773,21 +1796,21 @@ bool ParamGeneration(module_framework_data module_framework, std::string netname
      fprintf(fp, "#define CONV_CYCLE(i) conv_cycles[i]\n");
      fprintf(fp, "#define POOL_CYCLE(i) pool_cycles[i]\n");
      fprintf(fp, "\n");
-     fprintf(fp, "#define CONV_TOTAL_CYCLE %d\n", module_framework.cycle_block.conv_total_cyc);
+     fprintf(fp, "#define CONV_TOTAL_CYCLE %d\n", module_framework->cycle_block.conv_total_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define INPUT_READER_CYCLE %d\n", module_framework.cycle_block.input_reader_cyc);
+     fprintf(fp, "#define INPUT_READER_CYCLE %d\n", module_framework->cycle_block.input_reader_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define FILTER_PRELOAD_CYCLE %d\n", module_framework.cycle_block.filter_preload_cyc);
+     fprintf(fp, "#define FILTER_PRELOAD_CYCLE %d\n", module_framework->cycle_block.filter_preload_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define FILTER_READER_CONV_TOTAL_CYCLE %d\n", module_framework.cycle_block.filter_reader_conv_total_cyc);
+     fprintf(fp, "#define FILTER_READER_CONV_TOTAL_CYCLE %d\n", module_framework->cycle_block.filter_reader_conv_total_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define CONV_TOTAL_WRITE_CACHE %d\n", module_framework.cycle_block.write_cache_total_cyc);
+     fprintf(fp, "#define CONV_TOTAL_WRITE_CACHE %d\n", module_framework->cycle_block.write_cache_total_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define POOL_TOTAL_CYCLE %d\n", module_framework.cycle_block.pool_total_cyc);
+     fprintf(fp, "#define POOL_TOTAL_CYCLE %d\n", module_framework->cycle_block.pool_total_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define FEATURE_WRITER_TOTAL_CYCLE %d\n", module_framework.cycle_block.feature_writer_total_cyc);
+     fprintf(fp, "#define FEATURE_WRITER_TOTAL_CYCLE %d\n", module_framework->cycle_block.feature_writer_total_cyc);
      fprintf(fp, "\n");
-     fprintf(fp, "#define END_POOL_TOTAL_CYCLE %d\n", module_framework.cycle_block.end_pool_total_cyc);
+     fprintf(fp, "#define END_POOL_TOTAL_CYCLE %d\n", module_framework->cycle_block.end_pool_total_cyc);
      fprintf(fp, "\n");
      fprintf(fp, "#endif\n");
      fprintf(fp, "\n");

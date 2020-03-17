@@ -16,7 +16,9 @@ project (TF2_AUTO_CONFIG)
 include_directories(inc)
 set (TF2_AUTO_CONFIG_SRC src/tf2_auto_config.cpp src/tf2_auto_param.cpp src/cycles_computation.cpp src/fpganetworkinterface.cpp)
 
-set (CMAKE_C_FLAGS "-Wall")
+#set (CMAKE_BUILD_TYPE "Debug")                                     #debug option
+#set (CMAKE_CXX_FLAG_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+set (CMAKE_CXX_FLAG_RELEASE "$ENV{CXXFLAGS} -03 -Wall")
 
 add_executable (tf2_auto_config ${TF2_AUTO_CONFIG_SRC})
 
