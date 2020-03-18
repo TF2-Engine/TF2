@@ -18,11 +18,17 @@ int main(int argc, char **argv)
   std::string filename = argv[1];
   std::string netname = argv[2];
 
-  module_framework_data module_framework;
+  // module_framework_data module_framework;
+
+  module_framework_data* module_framework= (module_framework_data*)calloc(1,sizeof(module_framework_data));
   
-  module_framework = FrameParseStore(filename, netname);
+  // module_framework = FrameParseStore(filename, netname);
+
+  FrameParseStore(filename, netname, module_framework);
 
   ParamGeneration(module_framework, netname);
 
-  return 0;
+  free(module_framework);
+
+  return true;
 }

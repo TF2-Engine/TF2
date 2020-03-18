@@ -14,7 +14,7 @@ limitations under the License.
 #define __CYCLES_COMPUTATION_H__
 #include "tf2_auto_param.h"
 int tf2_auto_find_input_reader_cycles(int offset_subnet);
-int tf2_auto_find_feature_writer_cycles(module_framework_data module_framework, int c_index);
+int tf2_auto_find_feature_writer_cycles(module_framework_data* module_framework, int c_index);
 int tf2_auto_find_filter_reader_cnct_cycles(int c_index, int cnct);
 int tf2_auto_find_filter_reader_conv_cycles(int c_index);
 int tf2_auto_find_filter_reader_conv_total_cycles(int index_subnet, int offset_subnet);
@@ -24,8 +24,8 @@ int tf2_auto_find_conv_cycles(int c_index, int index_subnet);
 //int tf2_auto_find_pool_cnct_cycles(int c_index, int cnct);
 int tf2_auto_find_pool_conv_cycles(int c_index);
 int tf2_auto_find_pool_total_cycles(int index_subnet, int offset_subnet);
-int tf2_auto_find_conv_write_cache_cycles(module_framework_data module_framework, int c_index);
-int tf2_auto_find_conv_write_cache_total_cycles(module_framework_data module_framework);
-int tf2_auto_find_end_pool_total_cycles(module_framework_data module_framework);
-module_framework_data cycles_computation(module_framework_data module_framework);
+int tf2_auto_find_conv_write_cache_cycles(module_framework_data* module_framework, int c_index);
+int tf2_auto_find_conv_write_cache_total_cycles(module_framework_data* module_framework);
+int tf2_auto_find_end_pool_total_cycles(module_framework_data* module_framework);
+bool cycles_computation(module_framework_data* module_framework);
 #endif
