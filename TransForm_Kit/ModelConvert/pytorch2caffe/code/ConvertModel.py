@@ -18,6 +18,7 @@ from torch.autograd import Variable
 import os
 import caffe_pb2 as pb2
 from ConvertLayer_caffe import networkbuild
+from analysismodel import analysis_model
 
 def link_caffe(layers, name, bottom, top):
     layers.name = name
@@ -261,6 +262,7 @@ def ConvertModel_caffe(pytorch_net, InputShape, softmax=False):
     for out in outputs:
         DFS(out.grad_fn)
 
+    analysis_model_layers = analysis_model(caffe_net)
     """ Caffe input """
     text_net = pb2.NetParameter()
     if os.environ.get("T2C_DEBUG"):
@@ -269,7 +271,7 @@ def ConvertModel_caffe(pytorch_net, InputShape, softmax=False):
     """ Caffe layer parameters """
     binary_weights = pb2.NetParameter()
     binary_weights.CopyFrom(text_net)
-    for layer in caffe_net:
+    for layer in analysis_model_layers:
         binary_weights.layer.extend([layer])
 
         layer_proto = pb2.LayerParameter()

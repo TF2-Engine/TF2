@@ -365,7 +365,7 @@ class networkbuild():
         layer_bn.blobs.extend([
             self.as_blob(bnmodule.running_mean.cpu().numpy()),
             self.as_blob(bnmodule.running_var.cpu().numpy()),
-            #self.as_blob(np.array([1.]))
+            self.as_blob(np.array([1.]))
         ])
         #layer_bn.blobs.extend([
             #self.as_blob(bnmodule.weight.data.cpu().numpy()),
