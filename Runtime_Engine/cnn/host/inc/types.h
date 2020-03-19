@@ -115,6 +115,7 @@ typedef struct {
   bool conv_start;
   bool conv_done[W_VECTOR];
   bool pe_output_relu;
+  bool depthwise;
 
   // filter related signal
   int filter_read_addr;

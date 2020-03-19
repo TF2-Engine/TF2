@@ -39,11 +39,12 @@ inline Mreal MUL(real feature, real filter) {
   return data;
 }
 
-STATIC Mreal DotProduct(DotVector feature_values, DotVector filter_values) {
+STATIC Mreal DotProduct(DotVector feature_values, DotVector filter_values, int n_inc, bool depthwise) {
   int dot_accum = 0; // change from long int to int
   #pragma unroll
-  for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-    dot_accum += MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
+  for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
+    dot_accum += depthwise && c_inc != n_inc ? 0 : MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
+  }
   
   return dot_accum;
 }
@@ -103,6 +104,7 @@ void PeFunction(int n_inc) {
     char filter_read_fw_vec = cont.filter_read_fw_vec;
     int  filter_write_addr = cont.filter_write_addr; 
     int  filter_n = pe_filter.n_inc;
+    bool depthwise = cont.depthwise;
     
     // make sure unnecessary bits are masked off
     filter_n &= BIT_MASK(CLOG2(N_VECTOR));
@@ -148,7 +150,7 @@ void PeFunction(int n_inc) {
       for (int ow_inc = 0; ow_inc < OW_VECTOR; ow_inc++) {
         #pragma unroll
         for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
-          dot_sum_fw_vec[ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter.v[fw_inc]);
+          dot_sum_fw_vec[ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter.v[fw_inc], n_inc, depthwise);
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
@@ -160,7 +162,7 @@ void PeFunction(int n_inc) {
     } else {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec]);
+        dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec], n_inc, depthwise);
 #ifdef PRINT_PE_INPUT
         if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
           for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)

@@ -237,6 +237,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_cont.conv_start = sequencer_output.conv_start;
         pe_cont.conv_done[0] = sequencer_output.conv_done[0];
         pe_cont.pe_output_relu = kReluEnable[sequencer_output.layer];// && sequencer_output.layer != (NUM_LAYER - 1); // Only For Debug!!!
+        pe_cont.depthwise = kDepthWise[layer];
 
         // add filter data
         FilterReaderOutput filter_data = FilterReaderOutputZero;

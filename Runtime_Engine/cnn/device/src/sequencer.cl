@@ -240,7 +240,7 @@ TASK kernel void sequencer(int frame_num) {
     sequencer_output.conv_start = COUNTER_FIRST(c_vec) && COUNTER_FIRST(fh_vec) && COUNTER_FIRST(fw_vec);
 
     sequencer_output.layer = (uchar)(layer);
-    sequencer_output.c_vec = (ushort)(c_vec);
+    sequencer_output.c_vec = kDepthWise[layer] ? (ushort)(n_vec) : (ushort)(c_vec);
 
     // filter reading address
     sequencer_output.filter_read_page = filter_read_page;
