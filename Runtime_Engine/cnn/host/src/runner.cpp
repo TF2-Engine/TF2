@@ -155,7 +155,7 @@ void Runner::Run() {
 
   InputConvert(network.input_raw, network.input, num_images);
 
-  float trans = 1 << (-network.q[0]);
+  float trans = network.q[0] > 0 ? (1.0f / ( 1 << network.q[0])) : (1 << (-network.q[0]));
   for (int i = 0; i < input_device_size; i++) {
     float tmp = network.input[i] * trans;
     int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);
