@@ -1,5 +1,7 @@
 # Inspur Deep Learning Inference Accelerator TF2
 
+## TF2 Partners
+
 ![partners.png](./imgs/partners.png)
 
 ## TF2
@@ -75,42 +77,6 @@ The Filter Loader reads model data from the DDR to the chip. The Feature Loader 
 | SqueezeNet                | 1485            |
 | GoogLeNet                 | 306             |
 | FaceNet(MTCNN+SqueezeNet) | 1020            |
-
-
-
-## RoadMap
-
-#### 2019-Q2
-
-Transform kit: Model comression and 8-bit quantization algorithm based on Pytorch.
-
-Runtime Engine: CNN accelerator architecture based on OpenCL that uses SAC caculations.
-
-Models: ResNet50, GoogLeNet, etc., can be tested directly based on the Inpur F10A board.
-
-#### 2019-Q3
-
-Transform Kit: Random pruning and channel pruning algorithm for CNN, automated model conversion tool.
-
-Runtime Engine: An automatic model analysis tool and new CNN accelerator architecture for MAC caculations.
-
-#### 2019-Q4
-
-Transform Kit: More structural pruning algorithms and 4-bit quantization algorithm for CNN.
-
-Runtime Engine: A general-purpose computing architecture for sparse models.
-
-#### 2020-Q1
-
-Transform kit: Any bit quantization algorithm for CNN networks.
-
-Runtime Engine: Accelerator architecture that supports TransFormer computing.
-
-#### 2020-Q2
-
-Transform Kit: AutoML based pruning and quantization algorithm, NLP network optimization algorithm.
-
-Runtime Engine: Support the NLP universal model and update the computing architecture continuously.
 
 ## Releases and Contributing
 
