@@ -1,6 +1,6 @@
 # Inspur Deep Learning Inference Accelerator TF2
 
-## TF2 Partners
+## TF2 Community
 
 ![partners.png](./imgs/partners.png)
 
