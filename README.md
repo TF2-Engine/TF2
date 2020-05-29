@@ -4,6 +4,7 @@
 
 ![partners.png](./imgs/partners.png)
 
+## [Reconfigurable AI Computing Program 可重构AI计算发展计划 页面入口](./Reconfigurable_AI_Computing_Program.md) 
 ## TF2
 
 TF2 is a deep learning inference accelerator based on FPGA computing platform, developed by Inspur AI & HPC. A wide range of general purpose deep neural networks can be supported. Models from popular deep learning frameworks such as Pytorch, TensorFLow, and Caffe can be loaded into TF2 easily by toolkits we supplied. The pretrained deep learning model can be compiled into FPGA without any code level FPGA development work, which can be an agile solution for AI inference applications on FPGA. See the link https://1drv.ms/b/s!Am9Mk04MA_K1bpXjzmHS8U04PSI?e=LaSgjb for our paper:
