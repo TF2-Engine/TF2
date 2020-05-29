@@ -1,6 +1,6 @@
 # Reconfigurable AI Computing Program 可重构AI计算发展计划
-  Any university obtaining innovative results in utilizing TF2 on AI research can be offered a new and free FPGA Acceleration Card as long as it is committed that the code will be uploaded to TF2 Github repository. Additionally, any company which takes part in this program can get a special discount on FPGA Acceleration Card. 
-  参与高校将TF2应用于AI科研或应用并取得创新成果，并承诺将优化后代码反馈回TF2开源社区，即可获赠最新FPGA加速卡。同时，参与该计划的商业用户也可获得较大程度的FPGA加速卡购买优惠。
+    Any university obtaining innovative results in utilizing TF2 on AI research can be offered a new and free FPGA Acceleration Card as long as it is committed that the code will be uploaded to TF2 Github repository. Additionally, any company which takes part in this program can get a special discount on FPGA Acceleration Card.
+    参与高校将TF2应用于AI科研或应用并取得创新成果，并承诺将优化后代码反馈回TF2开源社区，即可获赠最新FPGA加速卡。同时，参与该计划的商业用户也可获得较大程度的FPGA加速卡购买优惠。
 ### [Apply here! 申请入口](https://www.inspur.com/lcjtww/2510687/index.html)
 ### Application Field 应用场景：
 Utilize TF2 for academic or industrial purposes.
