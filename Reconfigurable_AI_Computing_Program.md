@@ -13,18 +13,25 @@ Utilize TF2 for academic or industrial purposes.
   
   须为深度学习相关领域，包括但不限于：
   - FPGA implementation on inference of CNN, LSTM, RNN, Transformer, MLP, etc. 
-  - CNN、LSTM、RNN、Transformer、MLP等神经网络推理的FPGA实现
-  - Optimization for Deep Learning Computing: Model compression, model pruning, low/mixed precision computing, etc. 
-  - 深度学习优化算法，如模型压缩、裁剪、低精度/混合精度计算等
-  - Prepossessing/Post-processing algorithm 
-  - 应用场景中的预处理、后处理等算法
+
+  CNN、LSTM、RNN、Transformer、MLP等神经网络推理的FPGA实现
+  - Optimization for Deep Learning Computing: Model compression, model pruning, low/mixed precision computing, etc.
+  
+  深度学习优化算法，如模型压缩、裁剪、低精度/混合精度计算等
+  - Prepossessing/Post-processing algorithm
+  
+  应用场景中的预处理、后处理等算法
 ### Restrictions 代码要求：
-  - FPGA inference: The computing efficiency should be more than 70% of the hardware maximum limit. 
-  - FPGA推理实现：计算效率须达到硬件峰值的70%以上
-  - Optimization: It should have better performance than open source algorithms. 
-  - 优化算法：须优于目前已开源的算法
-  - Prepossessing/Post-processing: It should have better performance than open source algorithms. 
-  - 预处理/后处理：须优于目前已开源的算法
+  - FPGA inference: The computing efficiency should be more than 70% of the hardware maximum limit.
+  
+  FPGA推理实现：计算效率须达到硬件峰值的70%以上
+  - Optimization: It should have better performance than open source algorithms.
+  
+  优化算法：须优于目前已开源的算法
+  - Prepossessing/Post-processing: It should have better performance than open source algorithms.
+  
+  预处理/后处理：须优于目前已开源的算法
 ### Time Limit 反馈时限：
-  - The code should be uploaded within one year after application. 
-  - 申请者须在一年以内反馈代码
+  - The code should be uploaded within one year after application.
+  
+  申请者须在一年以内反馈代码
