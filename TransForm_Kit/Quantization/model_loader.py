@@ -14,7 +14,9 @@
 # ==============================================================================
 
 import torch
-from models.ResNet50.ResNet50 import ResNet
+import torch.nn as nn
+import torch.nn.parallel
+from models.ResNet50 import ResNet50
 from models.SqueezeNet import SqueezeNet
 from models.GoogLeNet import GoogLeNet
 from models.SSD import SSD
@@ -26,13 +28,15 @@ def load_model(net_name):
     if net_name == 'googlenet':
         net = GoogLeNet.GoogLeNet()
     if net_name == 'resnet50':
-        net = ResNet.resnet50()   
+        net = ResNet50.resnet50()
+        net = torch.nn.DataParallel(net).cuda()
     if net_name == 'ssd':
         net = SSD.build_ssd('test', 300, 21)
-    pars_path = 'weights/' + net_name + '.pkl'
+    pars_path = 'weights/' + net_name + '.pth.tar'
     feature_path = 'features/' + net_name
     net.eval()
-    net.load_state_dict(torch.load(pars_path, map_location='cpu'))
+    checkpoint = torch.load(pars_path)
+    net.load_state_dict(checkpoint['state_dict'])
     layer_name, Features = structure_hook(net,net_name)
     return net, layer_name, Features, feature_path
 

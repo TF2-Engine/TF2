@@ -21,7 +21,7 @@ from torch.autograd import Variable
 from collections import OrderedDict
 import torch.utils.data as data
 import numpy as np
-from models.SSD.data import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform, MEANS
+from data.SSD import VOC_ROOT, VOCAnnotationTransform, VOCDetection, BaseTransform, MEANS
 import os
 class ResNet50PreProcess(object):
     def __call__(self,image):
@@ -84,9 +84,14 @@ class SqueezeNetPreProcess(object):
 
 def load_data(net_name):
     if net_name == 'resnet50':
-        data_path = 'data'
-        transform = transforms.Compose([ResNet50PreProcess()]) 
-        val = datasets.ImageFolder(os.path.join(data_path,'val'),transform)#val
+        data_path = '/data/yutong/imagenet'
+        transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406],[0.229, 0.224, 0.225])
+        ]) 
+        val = datasets.ImageFolder(os.path.join(data_path,'val'),transform)
         ValLoader = data.DataLoader(val,batch_size=1,shuffle=True)
         return ValLoader
     if net_name == 'googlenet':

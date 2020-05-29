@@ -81,11 +81,11 @@ bool NetWork::InitNetwork() {
 
   q = (char *)alignedMalloc(sizeof(char) * NUM_Q_LAYERS * MAX_OUT_CHANNEL);
   Quantization(q, input_raw_images, q_file);
-
+  
   INFO("Loading convolutional layer params...\n");
   //LoadModel(model_file, filter_raw, bias,alpha,beta, q);
   LoadModel(model_file, filter_raw, bias_bn, q);
-
+  
   const int filter_device_size = NUM_CONVOLUTIONS * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
   filter = (real*)alignedMalloc(sizeof(real) * filter_device_size);
   if (filter == NULL) ERROR("Cannot allocate enough space for filter.\n");

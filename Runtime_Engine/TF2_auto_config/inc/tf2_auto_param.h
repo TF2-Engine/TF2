@@ -176,7 +176,7 @@ typedef struct {
 //   std::vector<int> id_siblings;
 // } id_conv_block;
 
-struct module_framework_data{ //module is subnet
+typedef struct { //module is subnet
 //   // output back to data without quantitification
 //   float* output_without_q;
 //   // output size
@@ -190,11 +190,13 @@ struct module_framework_data{ //module is subnet
     //subnet_frame subnet_framework;
     std::vector<conv_info_block> conv_blocks;
     c_block cycle_block;
-};
+} module_framework_data;
 
-extern std::vector<std::vector<int> >framework;
 
-module_framework_data FrameParseStore(std::string filename, std::string netname);
-bool ParamGeneration(module_framework_data module_framework, std::string netname);
+// extern std::vector<std::vector<int> >framework;
+
+// module_framework_data FrameParseStore(std::string filename, std::string netname);
+void FrameParseStore(std::string filename, std::string netname, module_framework_data* module_framework);
+bool ParamGeneration(module_framework_data* module_framework, std::string netname);
 
 #endif

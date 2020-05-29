@@ -19,6 +19,7 @@ import struct
 import math
 from net_structure import structure_hook
 from model_loader import load_model
+from config import resnet50_layer_name_q
 import sys, os
 
 def QuantizeLinear(x):
@@ -78,63 +79,79 @@ def QuantizeChannel(style, x):
                 scale_list.append(scale)
         return (scale_list)
 
-    
-
 if __name__ == "__main__":
     
-    batch_size = 1
-    # set up your network and quantization style, the network arg. format should be: 'googlenet', 'resnet50', 'squeezenet', 'ssd' ...
-    # the quantization style should be -- shift, simple or winograd
+    """set up your network and quantization style, the network arg. format should be: 'googlenet', 'resnet50', 'squeezenet', 'ssd' ...
+    the quantization style should be -- shift, simple or winograd.
+    PART1: generate q files for each layer
+    PART2: generate a combined q file for the whole network"""
+
     style = sys.argv[1]
     net_name = sys.argv[2]
+
     q_path = 'channel_q/' + net_name
+    combined_q_path = q_path + '/' + net_name + '_q'
+    if os.path.exists(combined_q_path):
+        os.remove(combined_q_path)
+    if not os.path.exists(q_path): 
+        os.makedirs(q_path)
+
+    if net_name == 'resnet50':
+        LayerNameBinQ = resnet50_layer_name_q
+   
+    print('Start quantization:')
+    print(' ');
     model, layer_name, Features, feature_path = load_model(net_name)
-    layer_num = len(layer_name)
-    print('Start quantization: ')
-    print('Total layers is: ',end='')
-    print(layer_num)
-    for m in range(layer_num):
-        print('layer: ',end='')
-        print(m)
-        feature_shape = Features[m].shape
+    
+    combined_layer_num = len(LayerNameBinQ) 
+    print('Total layers is: ',combined_layer_num)
+    
+    for m in range(combined_layer_num):
+        n = layer_name.index(LayerNameBinQ[m])
+        feature_shape = Features[n].shape
+        print('layer: ',m,' ',LayerNameBinQ[m],' ',feature_shape)
         dim = len(feature_shape)
         if dim == 1:
-            with open(feature_path + '/' + layer_name[m] + '.bin',"rb") as bin_reader:
+            with open(feature_path + '/' + LayerNameBinQ[m] + '.bin', "rb") as bin_reader:
                 for i in range(feature_shape[0]):
-                        data = bin_reader.read(4)
-                        data_float = struct.unpack("f",data)[0]
-                        Features[m][i] = data_float
+                    data = bin_reader.read(4)
+                    data_float = struct.unpack("f",data)[0]
+                    Features[n][i] = data_float
         if dim == 2:
-            with open(feature_path + '/' + layer_name[m] + '.bin',"rb") as bin_reader:
+            with open(feature_path + '/' + LayerNameBinQ[m] + '.bin', "rb") as bin_reader:
                 for i in range(feature_shape[0]):
                     for j in range(feature_shape[1]):
                         data = bin_reader.read(4)
                         data_float = struct.unpack("f",data)[0]
-                        Features[m][i][j] = data_float
+                        Features[n][i][j] = data_float
         if dim == 3:
-            with open(feature_path + '/' + layer_name[m] + '.bin',"rb") as bin_reader:
+            with open(feature_path + '/' + LayerNameBinQ[m] + '.bin', "rb") as bin_reader:
                 for i in range(feature_shape[0]):
                     for j in range(feature_shape[1]):
                         for k in range(feature_shape[2]):
                             data = bin_reader.read(4)
                             data_float = struct.unpack("f",data)[0]
-                            Features[m][i][j][k] = data_float
+                            Features[n][i][j][k] = data_float
         if dim == 4:
-            with open(feature_path + '/' + layer_name[m] + '.bin',"rb") as bin_reader:
+            with open(feature_path + '/' + LayerNameBinQ[m] + '.bin', "rb") as bin_reader:
                 for i in range(feature_shape[0]):
                     for j in range(feature_shape[1]):
                         for k in range(feature_shape[2]):
                             for l in range(feature_shape[3]):
                                 data = bin_reader.read(4)
                                 data_float = struct.unpack("f",data)[0]
-                                Features[m][i][j][k][l] = data_float
-        power = QuantizeChannel(style, Features[m])
-        if not os.path.exists(q_path):
-            os.makedirs(q_path)
-        with open(q_path + '/' + layer_name[m] + '.txt','w') as data:
+                                Features[n][i][j][k][l] = data_float
+        
+        power = QuantizeChannel(style, Features[n])
+        with open(q_path + '/' + LayerNameBinQ[m],'w') as data:
             for item in power:
                 item = int(item)
                 item = str(item)
                 item = item + ' '
                 data.write(item)
-
+        with open(q_path + '/' + net_name + '_q','a+') as data:
+            for item in power:
+                item = int(item)
+                item = str(item)
+                data.write(item)
+                data.write('\n')
