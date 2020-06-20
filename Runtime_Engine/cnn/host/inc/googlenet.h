@@ -37,20 +37,20 @@ limitations under the License.
 //#define PRINT_FEATURE_CYCLE
 //#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
-//#define PRINT_PE_INPUT
-//#define PRINT_PE_OUTPUT
+#define PRINT_PE_INPUT
+#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
 //#define PRINT_FILTER
 //#define PRINT_INPUT
 //#define PRINT_OUTPUT
-//#define FIRST_LAYER_DEBUG
+#define FIRST_LAYER_DEBUG
 
 //
 // Configuration Parameters
 //
 
-#define NUM_LAYER 67
+#define NUM_LAYER 1
 #define NUM_CONVOLUTIONS 67
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1 + 9) // 1 is for input data Quantization value, 9 is for concatenate layer, their qs are stored seperately.
 
@@ -1325,7 +1325,7 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 */
 
 CONSTANT int feature_writer_cycles[NUM_CONVOLUTIONS] = {
-1792, //7168,
+28672,//7168,//1792, //7168,
 1792,
 1344,
 448 ,
@@ -1395,7 +1395,7 @@ CONSTANT int feature_writer_cycles[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int filter_reader_conv_cycles[NUM_CONVOLUTIONS] = {
-384   ,
+1344,//384   ,
 256   ,
 2304  ,
 768   ,
@@ -1465,7 +1465,7 @@ CONSTANT int filter_reader_conv_cycles[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int conv_cycles[NUM_CONVOLUTIONS] = {
-61824,
+865536,//61824,
 7168 ,
 96768,
 5376 ,
@@ -1535,7 +1535,7 @@ CONSTANT int conv_cycles[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
-10488,
+41952,//10488,
 2088 ,
 8352 ,
 600  ,
@@ -1609,14 +1609,14 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 #define CONV_CYCLE(i) conv_cycles[i]
 #define POOL_CYCLE(i) pool_cycles[i]
 
-#define CONV_TOTAL_CYCLE 674010 // 61824 
-#define INPUT_READER_CYCLE 3876 
-#define FILTER_PRELOAD_CYCLE 96 
-#define FILTER_READER_CONV_TOTAL_CYCLE 275952 // 384
-#define CONV_TOTAL_WRITE_CACHE 38164 // 10304
-#define POOL_TOTAL_CYCLE 60389 // 10488 
-#define FEATURE_WRITER_TOTAL_CYCLE 24192 // 1792 //7168 
-#define END_POOL_TOTAL_CYCLE 448 // 0
+#define CONV_TOTAL_CYCLE 865536//674010 // 61824 
+#define INPUT_READER_CYCLE 13566//3876 
+#define FILTER_PRELOAD_CYCLE 84//96 
+#define FILTER_READER_CONV_TOTAL_CYCLE 1344//275952 // 384
+#define CONV_TOTAL_WRITE_CACHE 41216//38164 // 10304
+#define POOL_TOTAL_CYCLE 41952//60389 // 10488 
+#define FEATURE_WRITER_TOTAL_CYCLE 28672//7168//24192 // 1792 //7168 
+#define END_POOL_TOTAL_CYCLE 0//448 // 0
 
 
 #endif

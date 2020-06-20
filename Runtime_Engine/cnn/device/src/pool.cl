@@ -35,8 +35,8 @@ TASK kernel void pool(int frame_num) {
 
   int layer = 0;
   
-  ReluChannelVector edge_buffer[EDGE_W][EDGE_W_BUFFER_SIZE]; 
-  ReluChannelVector line_buffer[EDGE_H][W_VECTOR][EDGE_H_BUFFER_SIZE]; 
+  ReluChannelVector edge_buffer[EDGE_W][EDGE_W_BUFFER_SIZE] = {{0}}; 
+  ReluChannelVector line_buffer[EDGE_H][W_VECTOR][EDGE_H_BUFFER_SIZE] = {{0}}; 
   
   int edge_h_wvec_addr = 0;
   int edge_w_nnvec_addr = 0;
@@ -97,7 +97,7 @@ TASK kernel void pool(int frame_num) {
       new_layer = false;
     }
 
-    ReluChannelVector w_buffer[EDGE_W + W_VECTOR];
+    ReluChannelVector w_buffer[EDGE_W + W_VECTOR] = {{0}};
 
     // read data from relu channel
     int N_START = kNStart[layer];
@@ -166,7 +166,7 @@ TASK kernel void pool(int frame_num) {
 
     bool compute_pool = kPoolEnable[layer];
     
-    ReluChannelVector h_buffer[EDGE_H + 1][W_VECTOR];
+    ReluChannelVector h_buffer[EDGE_H + 1][W_VECTOR] = {{0}};
 
     // perform width-pooling
     #pragma unroll
@@ -192,7 +192,7 @@ TASK kernel void pool(int frame_num) {
           pool_out = pool_in[0];
         }
 
-        mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        //mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         
         h_buffer[EDGE_H][w_inc].v[n_inc] = pool_out;
       }

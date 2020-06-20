@@ -42,8 +42,8 @@ void PeFunction(int n_inc) {
   Mreal result[W_VECTOR] = {0};
 
 #if (defined PRINT_PE_INPUT) || (defined PRINT_PE_OUTPUT)
-  int debug_cycle = FILTER_PRELOAD_CYCLE + FindConvLayerCycles(NUM_LAYER - 1);
-  int debug_range = 100000;
+  int debug_cycle = FILTER_PRELOAD_CYCLE;// + 2 * CEIL(112, OW_VECTOR) * CEIL(27, C_VECTOR) * 3 * CEIL(3, FW_VECTOR);
+  int debug_range = 10000;
 #endif
 
   #pragma ivdep
@@ -142,35 +142,35 @@ void PeFunction(int n_inc) {
       fea_dat.s1 = input_data.v[w_inc].v[1];
       fea_dat.s2 = input_data.v[w_inc].v[2];
       fea_dat.s3 = input_data.v[w_inc].v[3];
-      fea_dat.s4 = input_data.v[w_inc].v[4];
-      fea_dat.s5 = input_data.v[w_inc].v[5];
-      fea_dat.s6 = input_data.v[w_inc].v[6];
-      fea_dat.s7 = input_data.v[w_inc].v[7];
-      fea_dat.s8 = input_data.v[w_inc].v[8];
-      fea_dat.s9 = input_data.v[w_inc].v[9];
-      fea_dat.sa = input_data.v[w_inc].v[10];
-      fea_dat.sb = input_data.v[w_inc].v[11];
-      fea_dat.sc = input_data.v[w_inc].v[12];
-      fea_dat.sd = input_data.v[w_inc].v[13];
-      fea_dat.se = input_data.v[w_inc].v[14];
-      fea_dat.sf = input_data.v[w_inc].v[15];
+      fea_dat.s4 = 0;//input_data.v[w_inc].v[4];
+      fea_dat.s5 = 0;//input_data.v[w_inc].v[5];
+      fea_dat.s6 = 0;//input_data.v[w_inc].v[6];
+      fea_dat.s7 = 0;//input_data.v[w_inc].v[7];
+      fea_dat.s8 = 0;//input_data.v[w_inc].v[8];
+      fea_dat.s9 = 0;//input_data.v[w_inc].v[9];
+      fea_dat.sa = 0;//input_data.v[w_inc].v[10];
+      fea_dat.sb = 0;//input_data.v[w_inc].v[11];
+      fea_dat.sc = 0;//input_data.v[w_inc].v[12];
+      fea_dat.sd = 0;//input_data.v[w_inc].v[13];
+      fea_dat.se = 0;//input_data.v[w_inc].v[14];
+      fea_dat.sf = 0;//input_data.v[w_inc].v[15];
       
       fil_dat.s0 = filter.v[w_inc].v[0];
       fil_dat.s1 = filter.v[w_inc].v[1];
       fil_dat.s2 = filter.v[w_inc].v[2];
       fil_dat.s3 = filter.v[w_inc].v[3];
-      fil_dat.s4 = filter.v[w_inc].v[4];
-      fil_dat.s5 = filter.v[w_inc].v[5];
-      fil_dat.s6 = filter.v[w_inc].v[6];
-      fil_dat.s7 = filter.v[w_inc].v[7];
-      fil_dat.s8 = filter.v[w_inc].v[8];
-      fil_dat.s9 = filter.v[w_inc].v[9];
-      fil_dat.sa = filter.v[w_inc].v[10];
-      fil_dat.sb = filter.v[w_inc].v[11];
-      fil_dat.sc = filter.v[w_inc].v[12];
-      fil_dat.sd = filter.v[w_inc].v[13];
-      fil_dat.se = filter.v[w_inc].v[14];
-      fil_dat.sf = filter.v[w_inc].v[15];
+      fil_dat.s4 = 0;//filter.v[w_inc].v[4];
+      fil_dat.s5 = 0;//filter.v[w_inc].v[5];
+      fil_dat.s6 = 0;//filter.v[w_inc].v[6];
+      fil_dat.s7 = 0;//filter.v[w_inc].v[7];
+      fil_dat.s8 = 0;//filter.v[w_inc].v[8];
+      fil_dat.s9 = 0;//filter.v[w_inc].v[9];
+      fil_dat.sa = 0;//filter.v[w_inc].v[10];
+      fil_dat.sb = 0;//filter.v[w_inc].v[11];
+      fil_dat.sc = 0;//filter.v[w_inc].v[12];
+      fil_dat.sd = 0;//filter.v[w_inc].v[13];
+      fil_dat.se = 0;//filter.v[w_inc].v[14];
+      fil_dat.sf = 0;//filter.v[w_inc].v[15];
       
       dot_sum_fw_vec[w_inc] = DotProduct(fea_dat, fil_dat);
     }
@@ -230,8 +230,8 @@ void PeFunction(int n_inc) {
           //printf("relu - cycle=%d/%d n_inc=%d w_inc=%d bn_scale_inflat=%d\n", cycle, cycle_end, n_inc, w_inc, bn_scale_inflat);
 #endif
 
-#ifdef PRINT_OUTPUT
-        if (cnt++ < 200) printf("relu - cycle=%d/%d n_inc=%d w_inc=%d bn_data_real=%d\n", cycle, cycle_end, n_inc, w_inc, bn_data_real);
+#ifdef PRINT_PE_OUTPUT
+        if(cycle >= debug_cycle && cycle < debug_cycle + debug_range && n_inc == 0) printf("pe output - cycle=%d/%d n_inc=%d w_inc=%d bn_data_real=%d\n", cycle, cycle_end, n_inc, w_inc, bn_data_real);
 #endif
 
         pe_output.data.v[w_inc] = bn_data_real;
