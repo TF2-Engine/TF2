@@ -37,8 +37,8 @@ limitations under the License.
 //#define PRINT_FEATURE_CYCLE
 //#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
-#define PRINT_PE_INPUT
-#define PRINT_PE_OUTPUT
+//#define PRINT_PE_INPUT
+//#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
 //#define PRINT_FILTER
