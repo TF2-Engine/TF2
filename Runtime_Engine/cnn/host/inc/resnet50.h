@@ -31,7 +31,7 @@ limitations under the License.
 #define STATIC_CYCLE
 //#define PRINT_N 1
 //#define PRINT_CYCLE
-#define PRINT_SEQUENCER_INDEX
+//#define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
 //#define PRINT_PE_OUTPUT
@@ -1319,27 +1319,27 @@ CONSTANT int kConcatLayer[NUM_CONVOLUTIONS] = {
 };
 
 CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = { 
-  5000, 
-  5000, 
-  5000, 5000, 5000,
-  5000, 5000, 5000, 
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000, 
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
-  5000, 5000, 5000,
+  0, 
+  0, 
+  0, 0, 0,
+  0, 0, 0, 
+  0, 0, 0,
+  0,
+  0, 0, 0, 
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
+  0,
+  0, 0, 0,
+  0, 0, 0,
+  0, 0, 0,
   0
 };
 

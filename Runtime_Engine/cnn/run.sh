@@ -11,5 +11,6 @@
 #env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/fc1000.bin 1
 #./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/fc1000.bin 1
 env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/fc1000.bin 1
+#./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/fc1000.bin 1
 #env CL_CONTEXT_EMULATOR_DEVICE_ALTERA=1 ./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/pool1.bin 1
 #./bin/host ../host/model/resnet50/param.bin ../host/model/resnet50_Q ../host/model/resnet50/data.bin ../host/model/resnet50/fc1000.bin 1
