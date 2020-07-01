@@ -101,7 +101,7 @@ limitations under the License.
 #define MAX_FILTER_SIZE (CEIL(MAX_FILTER_SIZE_TEMP, NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR)))
 
 #define MAX_BIAS_SIZE NEXT_DIVISIBLE(2048, N_VECTOR)
-
+/*
 // used by pool.cl
 #define EDGE_H (POOL_WINDOW_MAX - 1)
 #define EDGE_W (POOL_WINDOW_MAX - 1)
@@ -109,7 +109,7 @@ limitations under the License.
 #define NNVEC_ITER (CEIL(N_VECTOR, NARROW_N_VECTOR))
 #define EDGE_H_BUFFER_SIZE (WVEC_ITER * NNVEC_ITER)
 #define EDGE_W_BUFFER_SIZE (NNVEC_ITER)
-
+*/
 #define DDR_BLOCK_SIZE DDR_PAGE_SIZE0
 #define D0 0
 #define D1 0
