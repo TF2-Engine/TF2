@@ -34,9 +34,16 @@ TASK kernel void pool(int frame_num) {
   INIT_COUNTER(nn_vec);
 
   int layer = 0;
-  
+ 
+  enum {EDGE_H = (POOL_WINDOW_MAX - 1)};
+  enum {EDGE_W = (POOL_WINDOW_MAX - 1)};
+  enum {WVEC_ITER = CEIL(kOwEndWithOffsetMax, OW_VECTOR)};
+  enum {NNVEC_ITER = CEIL(N_VECTOR, NARROW_N_VECTOR)};
+  enum {EDGE_H_BUFFER_SIZE = WVEC_ITER * NNVEC_ITER};
+  enum {EDGE_W_BUFFER_SIZE = NNVEC_ITER};
+
   ReluChannelVector edge_buffer[EDGE_W][EDGE_W_BUFFER_SIZE]; 
-  ReluChannelVector line_buffer[EDGE_H][W_VECTOR][EDGE_H_BUFFER_SIZE]; 
+  ReluChannelVector line_buffer[EDGE_H_BUFFER_SIZE][NEXT_POWER_OF_2(EDGE_H)][NEXT_POWER_OF_2(W_VECTOR)]; 
   
   int edge_h_wvec_addr = 0;
   int edge_w_nnvec_addr = 0;
@@ -48,7 +55,7 @@ TASK kernel void pool(int frame_num) {
   printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
 #endif
 
-  #pragma ivdep  
+  //#pragma ivdep  
   do {
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
@@ -192,7 +199,7 @@ TASK kernel void pool(int frame_num) {
           pool_out = pool_in[0];
         }
 
-        mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        //mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
         
         h_buffer[EDGE_H][w_inc].v[n_inc] = pool_out;
       }
@@ -209,7 +216,8 @@ TASK kernel void pool(int frame_num) {
         if (COUNTER_FIRST(oh)) {
           h_buffer[edge_h][w_inc] = ReluChannelVectorZero;
         } else {
-          h_buffer[edge_h][w_inc] = line_buffer[edge_h][w_inc][edge_h_addr];
+          h_buffer[edge_h][w_inc] = line_buffer[edge_h_addr][edge_h][w_inc];
+          //if (layer == NUM_LAYER - 1) printf("cycle=%d/%d oh=%d ow=%d edge_h=%d w_inc=%d h_buffer=%d\n", cycle, cycle_end, oh, ow, edge_h, w_inc, h_buffer[edge_h][w_inc].v[0]);
         }
       }
     }
@@ -220,7 +228,8 @@ TASK kernel void pool(int frame_num) {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
         if (FH != 1 && w_inc >= OW_VECTOR) continue;
-        line_buffer[edge_h][w_inc][edge_h_addr] = h_buffer[1 + edge_h][w_inc];
+        line_buffer[edge_h_addr][edge_h][w_inc] = h_buffer[1 + edge_h][w_inc];
+        //if (layer == NUM_LAYER - 1) printf("cycle=%d/%d oh=%d ow=%d edge_h=%d w_inc=%d addr1=%d addr2=%d addr3=%d line_buffer=%d\n", cycle, cycle_end, oh, ow, edge_h, w_inc, edge_h_wvec_addr, edge_w_nnvec_addr, edge_h_addr, line_buffer[edge_h][w_inc][edge_h_addr].v[0]);
       }
     }
 

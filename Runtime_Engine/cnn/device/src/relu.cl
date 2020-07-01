@@ -49,7 +49,7 @@ TASK kernel void relu(int frame_num) {
       pe_output[n_inc] = read_channel_intel(pe_output_channel[n_inc]);
     }
 	  
-    bool not_1x1_filter = pe_output[0].not_1x1_filter;
+    //bool not_1x1_filter = pe_output[0].not_1x1_filter;
     
     ReluOutput relu_output;
     
@@ -57,7 +57,7 @@ TASK kernel void relu(int frame_num) {
     for(int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        if ( not_1x1_filter && w_inc >= OW_VECTOR ) continue;
+        //if ( not_1x1_filter && w_inc >= OW_VECTOR ) continue;
         relu_output.data[n_inc].v[w_inc] = ( !pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0 ) ? pe_output[n_inc].data.v[w_inc] : 0;
       }
     }
