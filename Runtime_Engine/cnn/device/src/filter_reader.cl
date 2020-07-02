@@ -105,15 +105,15 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     int n = n_vec * N_VECTOR + n_inc;
     bool n_valid = n < N;
     
-    int FW1_VECTOR = FH == 1 ? 1 : FW_VECTOR;
+    //int FW1_VECTOR = FH == 1 ? 1 : FW_VECTOR;
     
     int filter_addr_offset =
             layer * MAX_FILTER_SIZE * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) + // conv_filter_offset
-            n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-            c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-            fh_vec * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-            fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-            n_inc * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR);
+            n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+            c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+            fh_vec * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+            fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+            n_inc * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR);
             
     #pragma unroll
     for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
@@ -126,7 +126,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
       #pragma unroll
       for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
         if (FH == 1 && fw_inc >= 1) continue;
-        filter_wng_in[fw_inc][0] = valid ? gl_filter[filter_addr_offset + fw_inc * C_VECTOR + c_inc] : 0;
+        filter_wng_in[fw_inc][0] = valid ? gl_filter[filter_addr_offset + c_inc * FW_VECTOR + fw_inc ] : 0;
 #ifdef PRINT_FILTER
         if(layer == NUM_LAYER - 1) printf( "FILTER_BEFORE_WGD layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n=%d fw_inc=%d c_inc=%d addr=%d frame_cycle=%d filter_data=%d filter_wng_in=%d\n", layer, n_vec, c_vec, fh_vec, fw_vec, n, fw_inc, c_inc, filter_addr_offset + fw_inc * C_VECTOR + c_inc, frame_cycle, gl_filter[filter_addr_offset + fw_inc * C_VECTOR + c_inc], filter_wng_in[fw_inc][0] );
 #endif

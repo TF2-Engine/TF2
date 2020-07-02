@@ -254,7 +254,7 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
     int C_VEC = CEIL(C, C_VECTOR);
     int N_VEC = CEIL(N, N_VECTOR);
     
-    int FW1_VECTOR = FW == 1 ? 1 : FW_VECTOR;
+    //int FW1_VECTOR = FW == 1 ? 1 : FW_VECTOR;
 
     for (int n_vec = 0; n_vec < N_VEC; n_vec++) {
       for (int c_vec = 0; c_vec < C_VEC; c_vec++) {
@@ -265,7 +265,7 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
               // Following is for the storage of FW_VECTOR*C_VECTOR data in filter_buf;
               real filter_buf[FW_VECTOR][C_VECTOR] = {{0}};//FW_VECTOR*C_VECTOR 
               // for(int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) { 
-              for (int fw_inc = 0; fw_inc < FW1_VECTOR; fw_inc++) {
+              for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
                 for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
                   int n = n_vec * N_VECTOR + n_inc;
                   int c = c_vec * C_VECTOR + c_inc;
@@ -276,13 +276,13 @@ void FilterConvert(real *filter, real *filter_raw, real *filter_real) {
  
                   unsigned long long int addr =
                       conv_filter_offset +
-                      n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-                      c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-                      fh * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-                      fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-                      n_inc * NEXT_POWER_OF_2(FW1_VECTOR * C_VECTOR) +
-                      fw_inc * C_VECTOR +
-                      c_inc;
+                      n_vec * C_VEC * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      c_vec * FH * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      fh * FW_VEC * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      fw_vec * N_VECTOR * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      n_inc * NEXT_POWER_OF_2(FW_VECTOR * C_VECTOR) +
+                      c_inc * FW_VECTOR +
+                      fw_inc ;
 
                   if (not_out_of_bounds) {
                     filter_real[addr] = filter_raw[filter_raw_addr];
