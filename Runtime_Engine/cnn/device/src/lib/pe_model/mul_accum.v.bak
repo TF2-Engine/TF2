@@ -1,0 +1,344 @@
+/* Copyright 2019 Inspur Corporation. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
+
+module mul_add(
+	input clock,
+	input resetn,
+	input ivalid,
+	input iready,
+	output ovalid,
+	output oready,
+	
+	input [127:0]feature_values,
+	input [127:0]filter_values,
+	output [31:0]dot_accum);
+  
+  reg signed [31:0]adder0[7:0];
+  reg signed [31:0]adder1[3:0];
+  reg signed [31:0]adder2[1:0];
+  reg signed [31:0]adder3;
+  
+  reg signed [31:0]data[0:15];
+  
+  wire [7:0]feature0;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[0] <= 32'd0;
+    end else begin
+      data[0] <= filter_values[6] ? 0 :
+               filter_values[7] ? ((~feature_values[7:0] + 1) << filter_values[4:0]):
+               (feature_values[7:0] << filter_values[4:0]);
+    end
+  end
+  
+  wire [7:0]feature1;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[1] <= 32'd0;
+    end else begin
+      data[1] <= filter_values[14] ? 0 :
+               filter_values[15] ? ((~feature_values[15:8] + 1) << filter_values[12:8]):
+               (feature_values[15:8] << filter_values[12:8]);
+    end
+  end
+  
+  wire [7:0]feature2;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[2] <= 32'd0;
+    end else begin
+      data[2] <= filter_values[22] ? 0 :
+               filter_values[23] ? ((~feature_values[23:16] + 1) << filter_values[20:16]):
+               (feature_values[23:16]<< filter_values[20:16]);
+    end
+  end
+  
+  wire [7:0]feature3;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[3] <= 32'd0;
+    end else begin
+      data[3] <= filter_values[30] ? 0 :
+               filter_values[31] ? ((~feature_values[31:24] + 1) << filter_values[28:24]):
+               (feature_values[31:24]<< filter_values[28:24]);
+    end
+  end
+  
+  wire [7:0]feature4;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[4] <= 32'd0;
+    end else begin
+      data[4] <= filter_values[38] ? 0 :
+               filter_values[39] ? ((~feature_values[39:32] + 1) << filter_values[36:32]):
+               (feature_values[39:32]<< filter_values[36:32]);
+    end
+  end
+  
+  wire [7:0]feature5;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[5] <= 32'd0;
+    end else begin
+      data[5] <= filter_values[46] ? 0 :
+               filter_values[47] ? ((~feature_values[47:40] + 1) << filter_values[44:40]):
+               (feature_values[47:40]<< filter_values[44:40]);
+    end
+  end
+  
+  wire [7:0]feature6;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[6] <= 32'd0;
+    end else begin
+      data[6] <= filter_values[54] ? 0 :
+               filter_values[55] ? ((~feature_values[55:48] + 1) << filter_values[52:48]):
+               (feature_values[55:48]<< filter_values[52:48]);
+    end
+  end
+  
+  wire [7:0]feature7;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[7] <= 32'd0;
+    end else begin
+      data[7] <= filter_values[62] ? 0 :
+               filter_values[63] ? ((~feature_values[63:56] + 1) << filter_values[60:56]):
+               (feature_values[63:56]<< filter_values[60:56]);
+    end
+  end
+  
+  wire [7:0]feature8;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[8] <= 32'd0;
+    end else begin
+      data[8] <= filter_values[70] ? 0 :
+               filter_values[71] ? ((~feature_values[71:64] + 1) << filter_values[68:64]):
+               (feature_values[71:64]<< filter_values[68:64]);
+    end
+  end
+  
+  wire [7:0]feature9;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[9] <= 32'd0;
+    end else begin
+      data[9] <= filter_values[78] ? 0 :
+               filter_values[79] ? ((~feature_values[79:72] + 1) << filter_values[76:72]):
+               (feature_values[79:72]<< filter_values[76:72]);
+    end
+  end
+  
+  wire [7:0]feature10;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[10] <= 32'd0;
+    end else begin
+      data[10] <= filter_values[86] ? 0 :
+               filter_values[87] ? ((~feature_values[87:80] + 1) << filter_values[84:80]):
+               (feature_values[87:80]<< filter_values[84:80]);
+    end
+  end
+  
+  wire [7:0]feature11;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[11] <= 32'd0;
+    end else begin
+      data[11] <= filter_values[94] ? 0 :
+               filter_values[95] ? ((~feature_values[95:88] + 1) << filter_values[92:88]):
+               (feature_values[95:88]<< filter_values[92:88]);
+    end
+  end
+  
+  wire [7:0]feature12;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[12] <= 32'd0;
+    end else begin
+      data[12] <= filter_values[102] ? 0 :
+               filter_values[103] ? ((~feature_values[103:96] + 1) << filter_values[100:96]):
+               (feature_values[103:96]<< filter_values[100:96]);
+    end
+  end
+  
+  wire [7:0]feature13;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[13] <= 32'd0;
+    end else begin
+      data[13] <= filter_values[110] ? 0 :
+               filter_values[111] ? ((~feature_values[111:104] + 1) << filter_values[108:104]):
+               (feature_values[111:104]<< filter_values[108:104]);
+    end
+  end
+  
+  wire [7:0]feature14;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[14] <= 32'd0;
+    end else begin
+      data[14] <= filter_values[118] ? 0 :
+               filter_values[119] ? ((~feature_values[119:112] + 1) << filter_values[116:112]):
+               (feature_values[119:112]<< filter_values[116:112]);
+    end
+  end
+  
+  wire [7:0]feature15;
+  always@(posedge clock) begin
+    if(!resetn)begin
+      data[15] <= 32'd0;
+    end else begin
+      data[15] <= filter_values[126] ? 0 :
+               filter_values[127] ? ((~feature_values[127:120] + 1) << filter_values[124:120]):
+               (feature_values[127:104]<< filter_values[124:120]);
+    end
+  end
+  
+  // 16 adder level 0
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[0] <= 32'd0;
+    end else begin
+      adder0[0] <= data[0] + data[1];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[1] <= 32'd0;
+    end else begin
+      adder0[1] <= data[2] + data[3];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[2] <= 32'd0;
+    end else begin
+      adder0[2] <= data[4] + data[5];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[3] <= 32'd0;
+    end else begin
+      adder0[3] <= data[6] + data[7];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[4] <= 32'd0;
+    end else begin
+      adder0[4] <= data[8] + data[9];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[5] <= 32'd0;
+    end else begin
+      adder0[5] <= data[10] + data[11];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[6] <= 32'd0;
+    end else begin
+      adder0[6] <= data[12] + data[13];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder0[7] <= 32'd0;
+    end else begin
+      adder0[7] <= data[14] + data[15];
+    end
+  end
+  
+  // 16 adder level 1  
+
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder1[0] <= 32'd0;
+    end else begin
+      adder1[0] <= adder0[0] + adder0[1];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder1[1] <= 32'd0;
+    end else begin
+      adder1[1] <= adder0[2] + adder0[3];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder1[2] <= 32'd0;
+    end else begin
+      adder1[2] <= adder0[4] + adder0[5];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder1[3] <= 32'd0;
+    end else begin
+      adder1[3] <= adder0[6] + adder0[7];
+    end
+  end
+  
+  // 16 adder level 2
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder2[0] <= 32'd0;
+    end else begin
+      adder2[0] <= adder1[0] + adder1[1];
+    end
+  end
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder2[1] <= 32'd0;
+    end else begin
+      adder2[1] <= adder1[2] + adder1[3];
+    end
+  end
+  
+  // 16 adder level 3
+  
+  always@(posedge clock) begin
+    if(!resetn)begin
+      adder3 <= 32'd0;
+    end else begin
+      adder3 <= adder2[0] + adder2[1];
+    end
+  end  
+  
+	assign dot_accum = adder3;
+	assign ovalid = 1'b1;
+	assign oready = 1'b1;
+	
+endmodule

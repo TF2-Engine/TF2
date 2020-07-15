@@ -24,29 +24,7 @@ limitations under the License.
 // 1. Performs convolution operations in a shifting manner.
 // 2. Sends data in daisy-chains through convolution kernels
 
-inline Mreal MUL(real feature, real filter) {
-  if (BIT_IS_SET(filter, 6)) {
-    return 0;
-  }
- 
-  if (BIT_IS_SET(filter, 7)) {
-    feature = -feature;
-  }
-
-  filter = 0x1f & filter;
-  Mreal data = feature << filter;
- 
-  return data;
-}
-
-STATIC Mreal DotProduct(DotVector feature_values, DotVector filter_values) {
-  int dot_accum = 0; // change from long int to int
-  #pragma unroll
-  for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-    dot_accum += MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
-  
-  return dot_accum;
-}
+int DotProduct(char16 feature_values, char16 filter_values);
 
 // this function is the prototype code for each pe kernels in N_VECTOR pe arrays
 void PeFunction(int n_inc) {
@@ -150,7 +128,44 @@ void PeFunction(int n_inc) {
       for (int ow_inc = 0; ow_inc < OW_VECTOR; ow_inc++) {
         #pragma unroll
         for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
-          dot_sum_fw_vec[ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter.v[fw_inc]);
+          char16 fea_dat;
+          char16 fil_dat;
+
+          fea_dat.s0 = input_data.v[ow_inc + fw_inc].v[0];
+          fea_dat.s1 = input_data.v[ow_inc + fw_inc].v[1];
+          fea_dat.s2 = input_data.v[ow_inc + fw_inc].v[2];
+          fea_dat.s3 = input_data.v[ow_inc + fw_inc].v[3];
+          fea_dat.s4 = input_data.v[ow_inc + fw_inc].v[4];
+          fea_dat.s5 = input_data.v[ow_inc + fw_inc].v[5];
+          fea_dat.s6 = input_data.v[ow_inc + fw_inc].v[6];
+          fea_dat.s7 = input_data.v[ow_inc + fw_inc].v[7];
+          fea_dat.s8 = input_data.v[ow_inc + fw_inc].v[8];
+          fea_dat.s9 = input_data.v[ow_inc + fw_inc].v[9];
+          fea_dat.sa = input_data.v[ow_inc + fw_inc].v[10];
+          fea_dat.sb = input_data.v[ow_inc + fw_inc].v[11];
+          fea_dat.sc = input_data.v[ow_inc + fw_inc].v[12];
+          fea_dat.sd = input_data.v[ow_inc + fw_inc].v[13];
+          fea_dat.se = input_data.v[ow_inc + fw_inc].v[14];
+          fea_dat.sf = input_data.v[ow_inc + fw_inc].v[15];
+          
+          fil_dat.s0 = filter.v[fw_inc].v[0];
+          fil_dat.s1 = filter.v[fw_inc].v[1];
+          fil_dat.s2 = filter.v[fw_inc].v[2];
+          fil_dat.s3 = filter.v[fw_inc].v[3];
+          fil_dat.s4 = filter.v[fw_inc].v[4];
+          fil_dat.s5 = filter.v[fw_inc].v[5];
+          fil_dat.s6 = filter.v[fw_inc].v[6];
+          fil_dat.s7 = filter.v[fw_inc].v[7];
+          fil_dat.s8 = filter.v[fw_inc].v[8];
+          fil_dat.s9 = filter.v[fw_inc].v[9];
+          fil_dat.sa = filter.v[fw_inc].v[10];
+          fil_dat.sb = filter.v[fw_inc].v[11];
+          fil_dat.sc = filter.v[fw_inc].v[12];
+          fil_dat.sd = filter.v[fw_inc].v[13];
+          fil_dat.se = filter.v[fw_inc].v[14];
+          fil_dat.sf = filter.v[fw_inc].v[15];
+          
+          dot_sum_fw_vec[ow_inc] += DotProduct(fea_dat, fil_dat);
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
@@ -162,7 +177,44 @@ void PeFunction(int n_inc) {
     } else {
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec]);
+        char16 fea_dat;
+        char16 fil_dat;
+
+        fea_dat.s0 = input_data.v[w_inc].v[0];
+        fea_dat.s1 = input_data.v[w_inc].v[1];
+        fea_dat.s2 = input_data.v[w_inc].v[2];
+        fea_dat.s3 = input_data.v[w_inc].v[3];
+        fea_dat.s4 = input_data.v[w_inc].v[4];
+        fea_dat.s5 = input_data.v[w_inc].v[5];
+        fea_dat.s6 = input_data.v[w_inc].v[6];
+        fea_dat.s7 = input_data.v[w_inc].v[7];
+        fea_dat.s8 = input_data.v[w_inc].v[8];
+        fea_dat.s9 = input_data.v[w_inc].v[9];
+        fea_dat.sa = input_data.v[w_inc].v[10];
+        fea_dat.sb = input_data.v[w_inc].v[11];
+        fea_dat.sc = input_data.v[w_inc].v[12];
+        fea_dat.sd = input_data.v[w_inc].v[13];
+        fea_dat.se = input_data.v[w_inc].v[14];
+        fea_dat.sf = input_data.v[w_inc].v[15];
+        
+        fil_dat.s0 = filter.v[filter_read_fw_vec].v[0];
+        fil_dat.s1 = filter.v[filter_read_fw_vec].v[1];
+        fil_dat.s2 = filter.v[filter_read_fw_vec].v[2];
+        fil_dat.s3 = filter.v[filter_read_fw_vec].v[3];
+        fil_dat.s4 = filter.v[filter_read_fw_vec].v[4];
+        fil_dat.s5 = filter.v[filter_read_fw_vec].v[5];
+        fil_dat.s6 = filter.v[filter_read_fw_vec].v[6];
+        fil_dat.s7 = filter.v[filter_read_fw_vec].v[7];
+        fil_dat.s8 = filter.v[filter_read_fw_vec].v[8];
+        fil_dat.s9 = filter.v[filter_read_fw_vec].v[9];
+        fil_dat.sa = filter.v[filter_read_fw_vec].v[10];
+        fil_dat.sb = filter.v[filter_read_fw_vec].v[11];
+        fil_dat.sc = filter.v[filter_read_fw_vec].v[12];
+        fil_dat.sd = filter.v[filter_read_fw_vec].v[13];
+        fil_dat.se = filter.v[filter_read_fw_vec].v[14];
+        fil_dat.sf = filter.v[filter_read_fw_vec].v[15];
+        
+        dot_sum_fw_vec[w_inc] = DotProduct(fea_dat, fil_dat);
 #ifdef PRINT_PE_INPUT
         if (n == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
           for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
