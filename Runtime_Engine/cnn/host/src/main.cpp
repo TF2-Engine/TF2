@@ -43,17 +43,43 @@ int main(int argc, char **argv) {
     return -1;
   }
 
+  // For yandi network, the output result should save to file.
+  NetworkType network_type = getNetwork();
+  FILE * fp = NULL;
+  if (network_type == kYandi) {
+    fp = fopen("./yandi.bin", "wb");
+    if (fp == NULL) {
+      INFO("Open yandi.bin failed.\n");
+      return -1;
+    }
+  }
+
   Runner runner(platform, network);
   runner.Init();
   runner.Run();
 
-  // verification
+    // verification
   for (int i = 0; i < num_images; i++) {
-    Verify(i, verify_file_name, network.q, network.output);
-    Evaluation(i, network.q, network.output, network.top_labels);
+    switch (network_type) {
+      case kResnet50:
+      case kGooglenet:
+           Verify(i, verify_file_name, network.q, network.output);
+           Evaluation(i, network.q, network.output, network.top_labels);
+           break;
+
+      case kYandi:
+           SigmoidOutput(i, network.q, network.output, fp);
+	   break;
+
+      default:
+          break;
+    }
   }
 
   // CleanUp
+  if (fp) {
+    fclose(fp);
+  }
   network.CleanUp();
   platform.CleanUp();
 

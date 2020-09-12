@@ -148,11 +148,19 @@ void Runner::Run() {
  
   const int feature_ddr_size = OUTPUT_OFFSET + num_images * OUTPUT_OFFSET;
   float *input_raw_images = (float*)malloc(sizeof(float) * INPUT_IMAGE_C * INPUT_IMAGE_H * INPUT_IMAGE_W * 2);
- 
+
+  FILE *fp;
+  if ((fp = fopen(image_file, "rb"))==NULL){
+    printf("load input image : %s Error\n",image_file);
+    exit(1);
+  }
+  INFO("LoadInputImage image_name=%s\n", image_file);
+
   for (int i = 0; i < num_images; i++) {
-    LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+    LoadInputImage(network.input_raw + i * C * HXW, input_raw_images, 0, fp);
   }
 
+  fclose(fp);
   InputConvert(network.input_raw, network.input, num_images);
 
   float trans = 1.0f / ( 1 << network.q[0]);

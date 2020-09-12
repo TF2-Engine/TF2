@@ -1,4 +1,4 @@
-/* Copyright 2019 Inspur Corporation. All Rights Reserved.
+/* Copyright 2089 Inspur Corporation. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,20 +24,26 @@ limitations under the License.
 
 #define IMAGE_BATCH_SIZE 1
 
-// the vector size of output channels
-#define N_VECTOR 16
+// the vector size of filter width
+#define FW_VECTOR 3
 
 // the vector size of input channels
 #define C_VECTOR 8
 
-// the vector size of output feature map width
-#define OW_VECTOR 5
-
-// the vector size of filter width
-#define FW_VECTOR 3
-
 // the vector size of output channels for relu, pool, etc.
 #define NARROW_N_VECTOR 8
+
+#if defined YANDI
+// the vector size of output channels
+#define N_VECTOR 8
+
+// the vector size of output feature map width
+#define OW_VECTOR 6
+
+#else
+#define N_VECTOR 16
+#define OW_VECTOR 5
+#endif
 
 // the vector size of input feature map / image width
 #define W_VECTOR (FW_VECTOR + OW_VECTOR - 1)

@@ -30,6 +30,8 @@ limitations under the License.
 #include "resnet50.h"
 #elif defined RESNET50_PRUNED
 #include "resnet50_pruned.h"
+#elif defined YANDI
+#include "yandi.h"
 #else
 #include "googlenet.h"
 #endif

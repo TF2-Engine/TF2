@@ -23,8 +23,21 @@ typedef struct {
   float feature;
 } StatItem;
 
+typedef enum {
+  kResnet50 = 0,
+  kGooglenet= 1,
+  kYandi = 2,
+  kNil = 3
+} NetworkType;
+
 void Verify(int n, char *file_name, char *q, real *output);
 void Evaluation(int n, char *q, real* output, int* top_labels);
 void LoadLabel(int Num,int *labels);
+
+// Doing sigmoid operation and write output to fp.
+void SigmoidOutput(int n, char *q, real* output, FILE * fp);
+
+// Reyurn network type.
+NetworkType getNetwork();
 
 #endif

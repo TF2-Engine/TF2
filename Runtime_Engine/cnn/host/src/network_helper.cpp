@@ -219,3 +219,55 @@ void LoadLabel(int Num,int *labels) {
 
   fclose(fp);
 }
+
+void SigmoidOutput(int n, char *q, real* output, FILE *fp) {
+  int output_channel = kOutputChannels[NUM_LAYER - 1];
+  int width = kOutputWidth[NUM_LAYER - 1];
+  int height = kOutputHeight[NUM_LAYER - 1];
+
+  int size = output_channel * width * height;
+
+  int H = height;
+  int W = width;
+  int ddr_write_offset = kDDRWriteBase[NUM_LAYER - 1] * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR);
+  int output_offset = OUTPUT_OFFSET + n * OUTPUT_OFFSET;
+
+  for (int n = 0; n < output_channel; n++) {
+    for (int h_index = 0; h_index < height; h_index++) {
+      for (int w_index = 0; w_index < width; w_index++) {
+        int n_vec = n / NARROW_N_VECTOR;
+        int h_vec = h_index;
+        int w_vec = w_index / W_VECTOR;
+        int ww = w_index - w_vec * W_VECTOR;
+        int nn = n - n_vec * NARROW_N_VECTOR;
+        int addr_out =
+                    ddr_write_offset + output_offset +
+                    n_vec * H * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    h_vec * CEIL(W, W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    w_vec * NEXT_POWER_OF_2(W_VECTOR * NARROW_N_VECTOR) +
+                    ww * NARROW_N_VECTOR +
+                    nn;
+
+        int current_q = q[NUM_LAYER * MAX_OUT_CHANNEL + n];
+        float trans = 1 << (-current_q); //take care of shortcut
+        float feature = output[addr_out] / trans;
+        // Sigmoid.
+        feature = 1 / (1 + exp(-feature));
+        fwrite(&feature, sizeof(float), 1, fp);
+      }
+    }
+  }
+  return;
+}
+
+NetworkType getNetwork() {
+#if defined RESNET50
+  return kResnet50;
+#elif defined GOOGLENET
+  return kGooglenet;
+#elif defined YANDI
+  return kYandi;
+#else
+  return kNil;
+#endif
+}

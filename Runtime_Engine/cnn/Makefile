@@ -7,6 +7,10 @@ ifneq ($(RESNET50),)
 CPPFLAGS += -DRESNET50
 endif
 
+ifneq ($(YANDI),)
+CPPFLAGS += -DYANDI
+endif
+
 ifneq ($(RESNET50_PRUNED),)
 CPPFLAGS += -DRESNET50_PRUNED
 endif

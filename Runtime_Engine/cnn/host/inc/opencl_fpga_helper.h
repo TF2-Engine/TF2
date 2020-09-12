@@ -23,6 +23,8 @@ limitations under the License.
 #define COMPILED_BINARY "resnet50/cnn"
 #elif defined RESNET50_PRUNED
 #define COMPILED_BINARY "resnet50_pruned/cnn"
+#elif defined YANDI
+#define COMPILED_BINARY "yandi/cnn"
 #else
 #define COMPILED_BINARY "googlenet/cnn"
 #endif
