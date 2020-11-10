@@ -18,7 +18,7 @@ limitations under the License.
 #define OPENCL
 #endif
 
-#include "../../host/inc/cnn.h"
+#include "../../shared/inc/cnn.h"
 
 // Functions:
 // 1. Sets the pace of retriever kernel.
@@ -105,9 +105,9 @@ TASK kernel void sequencer(int frame_num) {
     int H = kInputHeight[layer];
 
     int N_VEC = kNvecEnd[layer]; 
-	
+    
     int WOW_VECTOR = FH != 1 ? OW_VECTOR : W_VECTOR;
-	
+    
     int WOW_VEC = CEIL(OW, WOW_VECTOR);
     int C_VEC = kCvecEnd[layer];
     int FW_VEC = kFWvecEnd[layer];
@@ -178,7 +178,7 @@ TASK kernel void sequencer(int frame_num) {
 
       feature_read_w_vec_from_ow_vec += WOW_VECTOR / W_VECTOR;
       feature_read_w_inc_from_ow_vec += WOW_VECTOR % W_VECTOR;
-	  
+      
       filter_read_addr = 0;
       filter_read_fw_vec = 0;
     }
@@ -276,7 +276,7 @@ TASK kernel void sequencer(int frame_num) {
       for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
         if (FH == 1 && fw_inc >= 1) continue;
 
-	      int fw = fw_vec * FW1_VECTOR + fw_inc;
+          int fw = fw_vec * FW1_VECTOR + fw_inc;
         int w_inc_cursor = w_inc + fw_inc;
 
         // current indices in input feature map
@@ -286,7 +286,7 @@ TASK kernel void sequencer(int frame_num) {
         // if indices are outside the boundaries of the image, send pad data
         bool padding = (w < 0 || w >= W || h < 0 || h >= H);
 
-	      int feature_read_w_vec_from_w_fw_inc = feature_read_w_vec_from_fw_vec;
+          int feature_read_w_vec_from_w_fw_inc = feature_read_w_vec_from_fw_vec;
         int feature_read_w_inc_from_w_fw_inc = (feature_read_w_inc_from_fw_vec + w_inc_cursor);
         if (feature_read_w_inc_from_w_fw_inc >= W_VECTOR) {
           feature_read_w_inc_from_w_fw_inc -= W_VECTOR;

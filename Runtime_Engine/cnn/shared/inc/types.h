@@ -5,7 +5,7 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -41,7 +41,7 @@ typedef struct {
   Mreal alpha;
   Mreal beta;
 } BiasBnParam;
-CONSTANT BiasBnParam BiasBnZero = {0};
+CONSTANT BiasBnParam BiasBnZero = {};
 
 // the rest of the types and functions defined here are intended to be used only in OpenCL code
 #ifdef OPENCL
@@ -50,15 +50,15 @@ typedef struct {
   real v[C_VECTOR];
 } DotVector;
 
-typedef struct { 
+typedef struct {
   real v[W_VECTOR];
 } OutputWidthVector;
-CONSTANT OutputWidthVector OutputWidthVectorZero = {{{0}}};
+CONSTANT OutputWidthVector OutputWidthVectorZero = {};
 
 typedef struct {
   uchar layer;
   ushort c_vec;
-  
+
   bool padding[W_VECTOR + FW_VECTOR];
   short h;
   short feature_read_w_vec_header;
@@ -72,7 +72,7 @@ typedef struct {
   char filter_read_fw_vec;
   bool filter_read_page;
   bool filter_loading_conv_idle;
-  
+
   //bool kCacheWriteEnable;
   //bool write_ddr_enalbe;
 } SequencerOutput;
@@ -89,7 +89,7 @@ typedef struct {
 typedef struct {
   DotVector data[W_VECTOR];
 } InputReaderOutput;
-CONSTANT InputReaderOutput InputReaderOutputZero = {{{{{0}}}}};
+CONSTANT InputReaderOutput InputReaderOutputZero = {};
 
 typedef struct {
   OutputWidthVector data;
@@ -100,7 +100,7 @@ typedef struct {
 typedef struct {
   real v[NARROW_N_VECTOR];
 } ReluChannelVector;
-CONSTANT ReluChannelVector ReluChannelVectorZero = {{{0}}};
+CONSTANT ReluChannelVector ReluChannelVectorZero = {};
 
 typedef struct {
   DotFilterVector filter_data;
@@ -108,7 +108,7 @@ typedef struct {
   int cache_addr;
   int n_inc;
 } FilterReaderOutput;
-CONSTANT FilterReaderOutput FilterReaderOutputZero = {{{{{{0}}}}}};
+CONSTANT FilterReaderOutput FilterReaderOutputZero = {};
 
 typedef struct {
   bool is_QVECTOR;
@@ -122,13 +122,13 @@ typedef struct {
   char filter_read_fw_vec;
   bool filter_bias_read_page;
 } PeControlSignal;
-CONSTANT PeControlSignal PeControlSignalZero = {{0}};
+CONSTANT PeControlSignal PeControlSignalZero = {};
 
 typedef struct {
   DotFeatureVector input_data;
   bool input_data_valid;
 } PeInputData;
-CONSTANT PeInputData PeInputDataZero = {{{{{{0}}}}}};
+CONSTANT PeInputData PeInputDataZero = {};
 
 typedef struct {
   DotFilterVector filter_data;
@@ -136,22 +136,23 @@ typedef struct {
   int n_inc;
   bool data_valid;
 } PeInputFilter;
-CONSTANT PeInputFilter PeInputFilterZero = {{{{{{0}}}}}};
+CONSTANT PeInputFilter PeInputFilterZero = {};
 
 typedef struct {
   OutputWidthVector data[NARROW_N_VECTOR];
 } ReluOutput;
-CONSTANT ReluOutput ReluOutputZero = {{{{{0}}}}};
+CONSTANT ReluOutput ReluOutputZero = {};
 
 typedef struct {
-  OutputWidthVector data[NARROW_N_VECTOR]; 
+  OutputWidthVector data[NARROW_N_VECTOR];
 } PoolOutput;
 
 typedef struct {
   int cache_write_addr;
   real write_data[NEXT_POWER_OF_2(W_VECTOR)][NEXT_POWER_OF_2(C_VECTOR)];
 } PoolTailOutput;
-CONSTANT PoolTailOutput PoolTailOutputZero = {{{{0}}}};
+
+CONSTANT PoolTailOutput PoolTailOutputZero = {};
 
 // input data read from DDR
 channel InputReaderOutput input_reader_output_channel __attribute__((depth(1)));
@@ -163,19 +164,16 @@ channel FilterReaderOutput filter_reader_output_channel __attribute__((depth(16)
 channel SequencerOutput sequencer_output_channel __attribute__((depth(16)));
 
 // input data, filter data, and control information sent to convolution kernels
-channel PeInputData pe_input_data_channel_first __attribute__((depth(16)));
-channel PeInputData pe_input_data_channel[N_VECTOR] __attribute__((depth(0)));
+channel PeInputData pe_input_data_channel __attribute__((depth(0)));
 
-channel PeInputFilter pe_input_filter_channel_first __attribute__((depth(16)));
-//channel PeInputFilter pe_input_filter_channel[N_VECTOR]    __attribute__((depth(8)));
-channel PeInputFilter pe_input_filter_channel[N_VECTOR] __attribute__((depth(0)));
+//channel PeInputFilter pe_input_filter_channel    __attribute__((depth(8)));
+channel PeInputFilter pe_input_filter_channel __attribute__((depth(0)));
 
-channel PeControlSignal pe_control_channel_first __attribute__((depth(16)));
-channel PeControlSignal pe_control_channel[N_VECTOR] __attribute__((depth(0)));
+channel PeControlSignal pe_control_channel __attribute__((depth(0)));
 
 // PE output data sent from PE kernels
 channel PeOutput pe_output_channel[N_VECTOR] __attribute__((depth( 16 )));
-channel PeOutput pe_drain_output_channel[N_VECTOR] __attribute__((depth( 1 )));
+//channel PeOutput pe_drain_output_channel[N_VECTOR] __attribute__((depth( 1 )));
 
 // the output of relu
 channel ReluOutput relu_output_channel __attribute__((depth(1)));

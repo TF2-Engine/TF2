@@ -18,7 +18,7 @@ limitations under the License.
 #define OPENCL
 #endif
 
-#include "../../host/inc/cnn.h"
+#include "../../shared/inc/cnn.h"
 
 // Functions: 
 // 1. Reads feature cache, sends input feature data (or input data for the input layer) and filter weights to pe kernels.
@@ -277,9 +277,9 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         pe_filter.filter_data = filter_data.filter_data;
         pe_filter.bias_bn_data = filter_data.bias_bn_data;
 
-        write_channel_intel(pe_control_channel_first,     pe_cont);
-        write_channel_intel(pe_input_filter_channel_first, pe_filter);
-        write_channel_intel(pe_input_data_channel_first,   pe_in);
+        write_channel_intel(pe_control_channel,     pe_cont);
+        write_channel_intel(pe_input_filter_channel, pe_filter);
+        write_channel_intel(pe_input_data_channel,   pe_in);
       }
 
       if (input_reading == false && sequencer_idle == false && sequencer_output.filter_loading_conv_idle == 

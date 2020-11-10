@@ -51,7 +51,7 @@ struct KernelInfo {
 };
 
 // cnn includes
-#include "cnn.h"
+#include "../../shared/inc/cnn.h"
 
 #include "model_loader.h"
 #include "input_loader.h"

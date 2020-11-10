@@ -5,7 +5,7 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,7 +28,7 @@ limitations under the License.
 #define N_VECTOR 16
 
 // the vector size of input channels
-#define C_VECTOR 8
+#define C_VECTOR 16
 
 // the vector size of output feature map width
 #define OW_VECTOR 5
@@ -37,7 +37,7 @@ limitations under the License.
 #define FW_VECTOR 3
 
 // the vector size of output channels for relu, pool, etc.
-#define NARROW_N_VECTOR 8
+#define NARROW_N_VECTOR 16
 
 // the vector size of input feature map / image width
 #define W_VECTOR (FW_VECTOR + OW_VECTOR - 1)
@@ -53,5 +53,8 @@ limitations under the License.
 #ifndef DISABLE_INFINITE_LOOPS
 #define ENABLE_INFINITE_LOOPS
 #endif
+
+#include "defines.h"
+#include "types.h"
 
 #endif // __ARCHS_H__

@@ -5,7 +5,7 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,25 +13,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef __CNN_H__
-#define __CNN_H__
+#ifndef __MODEL_H__
+#define __MODEL_H__
 
 //------------------------------------------------------------------------------------//
-// cnn.h                                                                              //
-// Scope: Used by device code                                                         //
-// Function: Device code top level header file.                                       //
+// model.h                                                                            //
+// Scope: Shared by host and device                                                   //
+// Function: Network model description                                                //
 //------------------------------------------------------------------------------------//
-
-#include "archs.h"
-#include "defines.h"
-#include "types.h"
 
 #if defined RESNET50
-#include "resnet50.h"
+#include "../../shared/inc/resnet50.h"
 #elif defined RESNET50_PRUNED
-#include "resnet50_pruned.h"
+#include "../../shared/inc/resnet50_pruned.h"
 #else
-#include "googlenet.h"
+#include "../../shared/inc/googlenet.h"
 #endif
 
-#endif // __CNN_H__
+#endif // __MODEL_H__

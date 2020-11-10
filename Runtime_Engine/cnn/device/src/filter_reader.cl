@@ -18,7 +18,7 @@ limitations under the License.
 #define OPENCL
 #endif
 
-#include "../../host/inc/cnn.h"
+#include "../../shared/inc/cnn.h"
 
 // Functions:
 // Reads filter data from DDR and sends it to retriever kernel.
@@ -97,10 +97,10 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     if (COUNTER_FIRST(n_inc) && COUNTER_FIRST(fw_vec) && COUNTER_FIRST(fh_vec) && COUNTER_FIRST(c_vec)) {
       write_cache_addr = 0;
     }
-	
+    
     //
     // read filter data from DDR
-    //	
+    //  
     FilterReaderOutput filter_reader_output;
     
     int n = n_vec * N_VECTOR + n_inc;
@@ -125,6 +125,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
 
         real filter_data = valid ? gl_filter[filter_addr] : 0;
         filter_reader_output.filter_data.v[fw_inc].v[c_inc] = filter_data;
+        //if (layer == NUM_LAYER - 1) printf("Filter cycle=%d/%d layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n_inc=%d\n addr=%d filter=%d\n", frame_cycle, frame_cycle_end, layer, n_vec, c_vec, fh_vec, fw_vec, n_inc, filter_addr, filter_data);
       }
     }
 
