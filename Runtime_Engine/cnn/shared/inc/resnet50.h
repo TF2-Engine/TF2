@@ -29,12 +29,12 @@ limitations under the License.
 //#define CONCAT_LAYER_DEBUG
 
 //#define STATIC_CYCLE
-//#define PRINT_N 0
+#define PRINT_N 0
 //#define PRINT_CYCLE
 #define PRINT_SEQUENCER_INDEX
 //#define PRINT_IPOOL_INPUT
 //#define PRINT_PE_INPUT
-//#define PRINT_PE_OUTPUT
+#define PRINT_PE_OUTPUT
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
 //#define PRINT_POOL_TAIL_OUTPUT

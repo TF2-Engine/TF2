@@ -138,13 +138,14 @@ void InputConvert(float *input_raw, float *input, int num_images)
                                             wvec * C_VECTOR +
                                             c;
 
-             int linear_c = cvec * C_VECTOR + c;
-             int linear_w = ww * W_VECTOR + wvec;
+              int linear_c = cvec * C_VECTOR + c;
+              int linear_w = ww * W_VECTOR + wvec;
 
-             bool not_out_of_bounds = (linear_c < C && linear_w < W);
-             unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
+              bool not_out_of_bounds = (linear_c < C && linear_w < W);
+              unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
 
-             input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
+              input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
+              //printf("input[%d]=%f\n", addr, input[addr]);
             }
           }
         }

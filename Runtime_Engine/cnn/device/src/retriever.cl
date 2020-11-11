@@ -220,6 +220,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
         #pragma unroll
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
           pe_input_data.v[w_inc].v[c_inc] = feature_ordered_buffer[w_inc].v[c_inc];
+          //printf("cycle=%d/%d c_inc=%d w_inc=%d pe_input_data=%d\n", frame_cycle, cycle_end, c_inc, w_inc, pe_input_data.v[w_inc].v[c_inc]);
         }
       }
 
