@@ -117,14 +117,14 @@ AUTORUN TASK kernel void pe_kernel( void ) {
     //
     // read filter and bias data for the current input data
     //
-    DotVector filter[N_VECTOR][FW_VECTOR];
+    DotFilterVector filter[N_VECTOR];
 
     BiasBnParam bias_bn[N_VECTOR];
     #pragma unroll
     for (int n_inc = 0; n_inc < N_VECTOR; n_inc++) {
       #pragma unroll
       for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
-        filter[n_inc][fw_inc] = filter_cache[filter_read_addr][n_inc][fw_inc];
+        filter[n_inc].v[fw_inc] = filter_cache[filter_read_addr][n_inc][fw_inc];
       }
       bias_bn[n_inc] = bias_bn_cache[filter_bias_read_page][n_inc];
     }
@@ -141,11 +141,11 @@ AUTORUN TASK kernel void pe_kernel( void ) {
         for (int ow_inc = 0; ow_inc < OW_VECTOR; ow_inc++) {
           #pragma unroll
           for (int fw_inc = 0; fw_inc < FW_VECTOR; fw_inc++) {
-            dot_sum_fw_vec[n_inc][ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter[n_inc][fw_inc]);
+            dot_sum_fw_vec[n_inc][ow_inc] += DotProduct( input_data.v[ow_inc+fw_inc], filter[n_inc].v[fw_inc]);
 #ifdef PRINT_PE_INPUT
             if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
               for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
-                printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\n", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter[n_inc][fw_inc].v[c_inc], cycle);
+                printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\n", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter[n_inc].v[fw_inc].v[c_inc], cycle);
             }
 #endif
         }
@@ -155,11 +155,11 @@ AUTORUN TASK kernel void pe_kernel( void ) {
       for (int n_inc = 0; n_inc < N_VECTOR; n_inc++) {
         #pragma unroll
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-          dot_sum_fw_vec[n_inc][w_inc] = DotProduct(input_data.v[w_inc], filter[n_inc][filter_read_fw_vec]);
+          dot_sum_fw_vec[n_inc][w_inc] = DotProduct(input_data.v[w_inc], filter[n_inc].v[filter_read_fw_vec]);
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-              printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\n", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter[n_inc][filter_read_fw_vec].v[c_inc], cycle);
+              printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\n", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter[n_inc].v[filter_read_fw_vec].v[c_inc], cycle);
           }
 #endif
         }
