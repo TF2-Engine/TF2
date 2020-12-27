@@ -43,7 +43,7 @@ limitations under the License.
 // Configuration Parameters
 //
 
-#define NUM_LAYER 54
+#define NUM_LAYER 2
 #define NUM_CONVOLUTIONS 54
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
@@ -1606,14 +1606,14 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 #define CONV_CYCLE(i) conv_cycles[i]
 #define POOL_CYCLE(i) pool_cycles[i]
 
-#define CONV_TOTAL_CYCLE 2108304 
+#define CONV_TOTAL_CYCLE 90496//2108304 
 #define INPUT_READER_CYCLE 3876 
 #define FILTER_PRELOAD_CYCLE 96
-#define FILTER_READER_CONV_TOTAL_CYCLE 543696 
-#define CONV_TOTAL_WRITE_CACHE 117439 
-#define POOL_TOTAL_CYCLE 153325 
-#define FEATURE_WRITER_TOTAL_CYCLE 93919 
-#define END_POOL_TOTAL_CYCLE 896
+#define FILTER_READER_CONV_TOTAL_CYCLE 896//543696 
+#define CONV_TOTAL_WRITE_CACHE 17472//117439 
+#define POOL_TOTAL_CYCLE 18840//153325 
+#define FEATURE_WRITER_TOTAL_CYCLE 8960//93919 
+#define END_POOL_TOTAL_CYCLE 0//896
 
 #endif
 
