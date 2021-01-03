@@ -3,12 +3,24 @@
 # See http://www.altera.com/literature/hb/opencl-sdk/aocl_getting_started.pdf 
 # for more information on installing and configuring the Intel(R) FPGA SDK for OpenCL(TM).
 
+ifneq ($(IMAGENET),)
+CPPFLAGS += -DIMAGENET
+endif
+
 ifneq ($(RESNET50),)
 CPPFLAGS += -DRESNET50
 endif
 
 ifneq ($(RESNET50_PRUNED),)
 CPPFLAGS += -DRESNET50_PRUNED
+endif
+
+ifneq ($(GOOGLENET),)
+CPPFLAGS += -DGOOGLENET
+endif
+
+ifneq ($(SQUEEZENET),)
+CPPFLAGS += -DSQUEEZENET
 endif
 
 ifeq ($(VERBOSE),1)
@@ -31,7 +43,8 @@ AOCL_LINK_CONFIG := $(shell aocl link-config)
 
 # Compilation flags
 ifeq ($(DEBUG),1)
-CXXFLAGS += -g
+CXXFLAGS += -g -O0
+LINKFLAGS += -debug
 else
 CXXFLAGS += -O2
 endif
@@ -50,14 +63,19 @@ LIB_DIRS :=
 # Files
 INCS := $(wildcard)
 SRCS := $(wildcard host/src/*.cpp ../common/src/AOCLUtils/*.cpp)
-LIBS := rt pthread
+# LIBS := rt pthread
+INCLUDES += -I/usr/local/include/opencv
+LIBS := rt pthread opencv_core opencv_imgproc opencv_highgui opencv_ml opencv_imgcodecs
+LIBDIRS += -L/usr/local/lib
 
+INCLUDES += -I/home/intelFPGA_pro/19.1/hld/include/kernel_headers
+#INCLUDES += -I/usr/include
 # Make it all!
 all : $(TARGET_DIR)/$(TARGET)
 
 # Host executable target.
 $(TARGET_DIR)/$(TARGET) : Makefile $(SRCS) $(INCS) $(TARGET_DIR)
-	$(ECHO)$(CXX) $(CPPFLAGS) $(CXXFLAGS) -fPIC $(foreach D,$(INC_DIRS),-I$D) \
+	$(ECHO)$(CXX) $(CPPFLAGS) $(CXXFLAGS)  $(INCLUDES)-fPIC $(foreach D,$(INC_DIRS),-I$D) \
 			$(AOCL_COMPILE_CONFIG) $(SRCS) $(AOCL_LINK_CONFIG) \
 			$(foreach D,$(LIB_DIRS),-L$D) \
 			$(foreach L,$(LIBS),-l$L) \

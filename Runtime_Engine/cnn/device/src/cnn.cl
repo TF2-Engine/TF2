@@ -17,6 +17,8 @@ limitations under the License.
 
 #pragma OPENCL EXTENSION cl_intel_channels : enable
 
+//#pragma OPENCL EXTENSION cl_intel_arbitrary_precision_integers : enable
+
 #include "cycle.cl"
 
 #include "sequencer.cl"

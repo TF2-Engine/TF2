@@ -23,8 +23,14 @@ typedef struct {
   float feature;
 } StatItem;
 
-void Verify(int n, char *file_name, char *q, real *output);
-void Evaluation(int n, char *q, real* output, int* top_labels);
+// void Verify(int n, char *file_name, char *q, real *output);
+// void Evaluation(int n, char *q, real* output, int* top_labels);
+template<typename T>
+void Verify(int n, char *file_name, float (*scale)[2], T *output);
+template<typename T>
+void Evaluation(int n, float (*scale)[2], T *output, int* top_labels);
 void LoadLabel(int Num,int *labels);
+template<typename T, typename T1>
+void SimCNNLayer(int layerStart, T *filter_raw, BiasBnParam *bias_bn, T1 *input_raw, float (*scale)[2], T1 *sim_output);
 
 #endif

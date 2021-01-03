@@ -18,7 +18,9 @@ limitations under the License.
 
 #include "includes.h"
 
+void LoadInputJpeg(char *image_name, float *input_raw, float *raw_images, int iter);
 void LoadInputImage(char *image_file, float *input_raw, float *raw_images, int iter);
 void InputConvert(float *input_raw, float *input, int num_images);
+void OutputRConvert(real *output, float *output_pre, int num_images);
 
 #endif

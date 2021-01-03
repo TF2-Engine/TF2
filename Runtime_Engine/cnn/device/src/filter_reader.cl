@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // Reads filter data from DDR and sends it to retriever kernel.
 
@@ -54,7 +54,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
     int conv_start_cycle = 0;
     int layer_temp = 0;
     #pragma unroll
-    for(int i = 0; i < NUM_CONVOLUTIONS; i++) {
+    for(int i = DEVICE_START_LAYER; i < DEVICE_END_LAYER; i++) {
       if(new_layer && !kIpoolEnable[layer_temp]) continue;
       if(frame_cycle == conv_start_cycle) {
         layer_temp = i;
@@ -62,6 +62,7 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
       }
       conv_start_cycle += FILTER_READER_CONV_CYCLE(i);
 #ifdef PRINT_CYCLE
+      //if(layer_temp == NUM_LAYER - 1)
       printf("FILTER_READER_CONV_CYCLE(%d)=\t%d\n", i, FILTER_READER_CONV_CYCLE(i));
 #endif
     }
@@ -125,6 +126,10 @@ TASK kernel void filter_reader(int frame_num, global real* restrict gl_filter, g
 
         real filter_data = valid ? gl_filter[filter_addr] : 0;
         filter_reader_output.filter_data.v[fw_inc].v[c_inc] = filter_data;
+        //if (layer == NUM_LAYER - 1) printf("Filter cycle=%d/%d layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n_inc=%d\n addr=%d filter=%d\n", frame_cycle, frame_cycle_end, layer, n_vec, c_vec, fh_vec, fw_vec, n_inc, filter_addr, filter_data);
+        #ifdef PRINT_FILTER_READER_INPUT
+        if (layer == NUM_LAYER - 1) printf("Filter cycle=%d/%d layer=%d n_vec=%d c_vec=%d fh_vec=%d fw_vec=%d n_inc=%d\n addr=%d filter=%d\n", frame_cycle, frame_cycle_end, layer, n_vec, c_vec, fh_vec, fw_vec, n_inc, filter_addr, filter_data);
+        #endif
       }
     }
 

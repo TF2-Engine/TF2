@@ -19,33 +19,25 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // 1. Performs convolution operations in a shifting manner.
 // 2. Sends data in daisy-chains through convolution kernels
 
-inline Mreal MUL(real feature, real filter) {
-  if (BIT_IS_SET(filter, 6)) {
-    return 0;
-  }
- 
-  if (BIT_IS_SET(filter, 7)) {
-    feature = -feature;
-  }
-
-  filter = 0x1f & filter;
-  Mreal data = feature << filter;
- 
-  return data;
-}
+char MUL(char feature_val, char filter_val);
 
 STATIC Mreal DotProduct(DotVector feature_values, DotVector filter_values) {
-  int dot_accum = 0; // change from long int to int
+  int dot_accum1 = 0; // change from long int to int
+  #pragma unroll
+  for (int c_inc = 0; c_inc < C_VECTOR; c_inc = c_inc + 1)
+    dot_accum1 += MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
+    
+  int dot_accum2 = 0; // change from long int to int
   #pragma unroll
   for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-    dot_accum += MUL(feature_values.v[c_inc], filter_values.v[c_inc]);
+    dot_accum2 += feature_values.v[c_inc];
   
-  return dot_accum;
+  return (dot_accum1 << 1) + dot_accum2;
 }
 
 // this function is the prototype code for each pe kernels in N_VECTOR pe arrays
@@ -61,17 +53,15 @@ void PeFunction(int n_inc) {
   Mreal result[W_VECTOR]={0};
   int cycle_end = FILTER_PRELOAD_CYCLE + CONV_TOTAL_CYCLE;
 
-#ifdef PRINT_PE_INPUT
-  int debug_cycle = FILTER_PRELOAD_CYCLE + find_conv_layer_cycles(NUM_LAYER - 1);
-  int debug_range = 100000;
+#if (defined PRINT_PE_INPUT) || (defined PRINT_PE_OUTPUT)
+  int debug_cycle = FILTER_PRELOAD_CYCLE + FindConvLayerCycles(NUM_LAYER - 1);
+  int debug_range = 1000;
 #endif
 
   #pragma ivdep
   do {
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
     bool conv_done;
-
-    //printf("pe cycle=%d/%d\n", cycle, cycle_end);
 
     PeInputData pe_in;
     PeInputFilter pe_filter;
@@ -154,7 +144,7 @@ void PeFunction(int n_inc) {
 #ifdef PRINT_PE_INPUT
           if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
             for (int c_inc = 0; c_inc < C_VECTOR; c_inc++ )
-              printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\frame_index", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter.v[fw_inc].v[c_inc], cycle);
+              printf ("PE ow_vec=%d fw_vec=%d c_inc=%d input_data=%d filter=%d cycle=%d\n", ow_inc, fw_inc, c_inc, input_data.v[ow_inc+fw_inc].v[c_inc], filter.v[fw_inc].v[c_inc], cycle);
           }
 #endif
         }
@@ -164,9 +154,9 @@ void PeFunction(int n_inc) {
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
         dot_sum_fw_vec[w_inc] = DotProduct(input_data.v[w_inc], filter.v[filter_read_fw_vec]);
 #ifdef PRINT_PE_INPUT
-        if (n == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
+        if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) { 
           for (int c_inc = 0; c_inc < C_VECTOR; c_inc++)
-            printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\frame_index", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter.v[filter_read_fw_vec].v[c_inc], cycle);
+            printf("PE w_inc=%d c_inc=%d fsvec=%d input_data=%d filter=%d cycle=%d\n", w_inc, c_inc, filter_read_fw_vec, input_data.v[w_inc].v[c_inc], filter.v[filter_read_fw_vec].v[c_inc], cycle);
         }
 #endif
       }
@@ -188,16 +178,18 @@ void PeFunction(int n_inc) {
       PeOutput pe_output;
       #pragma unroll
       for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
-        //float bn_data = (result[w_inc] * alpha + beta) * TRANS_INFLAT;  
-        //int bn_alpha = (result[w_inc] * alpha) >> ALPHA_INFLAT;
-        long int bn_alpha_inflat = (long int)result[w_inc] * (long int)bias_bn.alpha;
-        int bn_alpha = bn_alpha_inflat >> ALPHA_INFLAT;
-        int bn_data = (((bn_alpha + bias_bn.beta) >> (INFLAT - 1)) + 1) >> 1;
+       // float f_features = result[w_inc] * bias_bn.scale[0];
+       // float f_bn_alpha = f_features * bias_bn.alpha;
+       // float f_bn_data = f_bn_alpha + bias_bn.beta;//wait to change
+       // float tmp = f_bn_data * bias_bn.scale[1];//bn_scale before relu
+        float tmp = result[w_inc] * bias_bn.alpha + bias_bn.beta;//bn_scale before relu
+        int bn_data = (int)(tmp > 0.f ? tmp + 0.5f : tmp - 0.5f);
         pe_output.data.v[w_inc] = bn_data > REALMAX ? REALMAX : bn_data < REALMIN ? REALMIN : bn_data;
+        // pe_output.data.v[w_inc] = bn_data;
         pe_output.pe_output_relu = cont.pe_output_relu;
 #ifdef PRINT_PE_OUTPUT
         if (n_inc == PRINT_N && cycle >= debug_cycle && cycle < debug_cycle + debug_range) 
-          printf("PE cycle=%d w_inc=%d result=%d bias_bn.alpha=%d bias_bn.beta=%d pe_output.data.v=%d\frame_index", cycle, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, pe_output.data.v[w_inc]);
+          printf("PE cycle=%d/%d w_inc=%d result=%d bias_bn.alpha=%f bias_bn.beta=%f scale_0=%f scale_1=%f bn_data_orl=%f bn_data=%d pe_output.data.v=%d\n", cycle, cycle_end, w_inc, result[w_inc], bias_bn.alpha, bias_bn.beta, bias_bn.scale[0], bias_bn.scale[1], f_bn_data * bias_bn.scale[1], bn_data, pe_output.data.v[w_inc]);
 #endif
       }
 

@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "includes.h"
+#include "demo.h"
 
 int main(int argc, char **argv) {
   if (argc != 6) {
@@ -22,13 +23,14 @@ int main(int argc, char **argv) {
   }
 
   char *model_file = argv[1];
-  char *q_file = argv[2];
+  // char *q_file = argv[2];
+  char *scale_file = argv[2];
   char *image_file = argv[3];
   char *verify_file_name = argv[4];
   int num_images = atoi(argv[5]);
 
   INFO("model_file = %s\n", model_file);
-  INFO("q_file = %s\n", q_file);
+  INFO("scale_file = %s\n", scale_file);
   INFO("image_file  = %s\n", image_file);
   INFO("verify_file_name = %s\n", verify_file_name);
   INFO("num_images = %d\n", num_images);
@@ -38,21 +40,84 @@ int main(int argc, char **argv) {
     return -1;
   }  
 
-  NetWork network;
-  if (!network.Init(platform, model_file, q_file, image_file, num_images)) {
+  Demo demo;
+  if (!demo.Init()) {
     return -1;
   }
 
+  NetWork network;
+  // if (!network.Init(platform, model_file, scale_file, image_file, num_images)) {
+  //   return -1;
+  // }
+#ifdef IMAGENET
+  if (!network.Init(platform, model_file, scale_file, image_file, 1)) {
+    return -1;
+  }
+#else
+  if (!network.Init(platform, model_file, scale_file, image_file, num_images)) {
+    return -1;
+  }
+#endif
+
   Runner runner(platform, network);
   runner.Init();
-  runner.Run();
+
+  #ifdef IMAGENET
+  for(int test_index=0; test_index < num_images; test_index++) {
+    //std::string line_addr_img = "../imagenet_test_images/" + demo.imagenet_labels[test_index].jpg_image_name;
+    // std::string line_addr_img = "../valimages/" + demo.imagenet_labels[test_index].jpg_image_name;
+    std::string line_addr_img = "/home/image_test_dataset_tf2_valimages/" + demo.imagenet_labels[test_index].jpg_image_name;
+    std::ifstream fin_img_addr;
+    fin_img_addr.open(const_cast<char*>(line_addr_img.c_str()));
+
+    if(fin_img_addr) {
+      char* image_file = const_cast<char*>(line_addr_img.c_str());
+
+      runner.Run(image_file);
+
+      demo.Softmax(runner.num_images - 1, network.scale, network.sim_out);
+      // Evaluation(runner.num_images - 1, network.q, network.output, network.top_labels); 
+
+      runner.end_time = getCurrentTimestamp();
+      const double total_time = runner.end_time - runner.start_time;
+
+      demo.Result(runner.total_sequencer, runner.num_images, total_time);
+
+      fin_img_addr.close();
+
+      demo.Evaluation(test_index);
+
+      demo.top1 +=demo.top1score;
+      demo.top5 +=demo.top5score;
+
+      printf("index is %d, imagenet_orl_label is %d, top1score is %d, top5score is %d, top1 is %d, top5 is %d\n", test_index, demo.imagenet_labels[test_index].label_index, demo.top1score, demo.top5score, demo.top1, demo.top5);
+    }
+  }
+
+  float accuracy_top1 = (1.0 * demo.top1) / num_images;
+  float accuracy_top5 = (1.0 * demo.top5) / num_images;
+
+  printf("top1 accuracy is %.3f\n", accuracy_top1);
+  printf("top5 accuracy is %.3f\n", accuracy_top5);
+  
+  demo.CleanUp();
+#else
+  runner.Run(image_file);
 
   // verification
   for (int i = 0; i < num_images; i++) {
-    Verify(i, verify_file_name, network.q, network.output);
-    Evaluation(i, network.q, network.output, network.top_labels);
+    #if((!defined(CHECK_H_SIMULATION_START_OUTPUT))&&(!defined(FBIT_SIMULATION_END_OUTPUT)))
+      Verify(i, verify_file_name, network.scale, network.output);
+      Evaluation(i, network.scale, network.output, network.top_labels);
+    #elif defined(FBIT_SIMULATION_END_OUTPUT)
+      Verify(i, verify_file_name, network.scale, network.sim_out);
+      Evaluation(i, network.scale, network.sim_out, network.top_labels);
+    #elif defined(CHECK_H_SIMULATION_START_OUTPUT)
+      Verify(i, verify_file_name, network.scale, network.input_real);
+      Evaluation(i, network.scale, network.sim_out, network.top_labels);
+    #endif
   }
-
+#endif
   // CleanUp
   network.CleanUp();
   platform.CleanUp();

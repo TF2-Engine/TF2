@@ -66,7 +66,8 @@ TASK kernel void relu(int frame_num) {
         #pragma unroll
         for (int w_inc = 0; w_inc < W_VECTOR; w_inc++) {
           //printf("RELU cycle=%d/%d nn_vec=%d n_inc=%d w_inc=%d data=%d\n", cycle, cycle_end, nn_vec, n_inc, w_inc, pe_output[n_inc].data.v[w_inc]);
-          relu_output.data[n_inc].v[w_inc] = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
+          real relu_mid = (!pe_output[n_inc].pe_output_relu || pe_output[n_inc].data.v[w_inc] > 0) ? pe_output[n_inc].data.v[w_inc] : 0;
+          relu_output.data[n_inc].v[w_inc] = pe_output[n_inc].pe_output_relu ? (relu_mid > REALFBITMAX ? REALFBITMAX : relu_mid < REALFBITMIN ? REALFBITMIN : relu_mid) : relu_mid;
         }
       }
       write_channel_intel(relu_output_channel, relu_output);

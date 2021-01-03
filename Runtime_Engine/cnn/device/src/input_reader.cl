@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // Loads the entire input image of the first layer from DDR   
 
@@ -33,12 +33,12 @@ kernel void input_reader(int frame_num, global volatile const real* restrict inp
   int cycle_end = INPUT_READER_CYCLE;
   
   do {
-    int C = kInputChannels[0];
-    int H = kInputHeight[0];
-    int W = kInputWidth[0];
+    int C = kInputChannels[DEVICE_START_LAYER];
+    int H = kInputHeight[DEVICE_START_LAYER];
+    int W = kInputWidth[DEVICE_START_LAYER];
 
-    int C_VEC = CEIL(kInputChannels[0], C_VECTOR);
-    int END_WW = CEIL(kInputWidth[0], W_VECTOR);
+    int C_VEC = CEIL(kInputChannels[DEVICE_START_LAYER], C_VECTOR);
+    int END_WW = CEIL(kInputWidth[DEVICE_START_LAYER], W_VECTOR);
     
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
@@ -58,9 +58,9 @@ kernel void input_reader(int frame_num, global volatile const real* restrict inp
 
         // input_buffer data layout: input_buffer[C / C_VECTOR][H][W / W_VECTOR][W_VECTOR * C_VECTOR]
         unsigned long long int conv_input_addr =
-                    frame_index * C_VEC * H * CEIL(kInputWidth[0], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
-                    c_vec * H * CEIL(kInputWidth[0], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
-                    h * CEIL(kInputWidth[0], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                    frame_index * C_VEC * H * CEIL(kInputWidth[DEVICE_START_LAYER], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                    c_vec * H * CEIL(kInputWidth[DEVICE_START_LAYER], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
+                    h * CEIL(kInputWidth[DEVICE_START_LAYER], W_VECTOR) * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
                     w_vec * NEXT_POWER_OF_2(W_VECTOR * C_VECTOR) +
                     w_inc * C_VECTOR +
                     c_inc;
@@ -68,11 +68,17 @@ kernel void input_reader(int frame_num, global volatile const real* restrict inp
         // linear input channels
         int c = c_vec * C_VECTOR + c_inc;
 
-        bool valid = c >= 0 && c < kInputChannels[0] && w < kInputWidth[0];
+        bool valid = c >= 0 && c < kInputChannels[DEVICE_START_LAYER] && w < kInputWidth[DEVICE_START_LAYER];
 
-        // pad input data for quantization
+        // pad input data for quantizationgg
         real conv_input_data = valid ? input_buffer[conv_input_addr] : 0;
         input_reader_output.data[w_inc].v[c_inc] = conv_input_data;
+
+        #ifdef PRINT_INPUT_READER_INPUT
+        // printf("Input Reader data=%d\n", conv_input_data);
+        printf("Input Reader cycle=%d/%d valid=%d cvec=%d h=%d wvec=%d w_inc=%d c_inc=%d data=%d addr=%llu\n", cycle, cycle_end, valid, c_vec, h, w_vec, w_inc, c_inc, conv_input_data, conv_input_addr);
+        // printf("Input Reader cycle=%d/%d valid=%d cvec=%d h=%d wvec=%d w_inc=%d c_inc=%d addr=%llu data=%d\n", cycle, cycle_end, valid, c_vec, h, w_vec, w_inc, c_inc, conv_input_addr, input_reader_output.data[w_inc].v[c_inc]);
+        #endif
       }
     }
     write_channel_intel(input_reader_output_channel, input_reader_output);

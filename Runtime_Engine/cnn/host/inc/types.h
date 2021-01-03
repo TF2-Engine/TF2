@@ -16,6 +16,10 @@ limitations under the License.
 #ifndef __CNN_TYPES_H__
 #define __CNN_TYPES_H__
 
+//#pragma OPENCL EXTENSION cl_intel_arbitrary_precision_integers : enable
+
+// #include "ihc_apint.h"
+// #include "includes.h"
 //------------------------------------------------------------------------------------//
 // types.h                                                                            //
 // Scope: Used by device code                                                         //
@@ -28,18 +32,41 @@ typedef int INT;
 typedef char real;
 typedef int Mreal;
 typedef short Sreal;
+
+//only supported by version 19.1 or later one
+// typedef (ap_int<4> int4_t) int4;
+// typedef (ap_int<8> int8_t) int8;
+// typedef (ap_int<8> int8_t) int16;
+
+// #define ap_int<4> int4_t
+
+// typedef real int8;
+// typedef Sreal int16;
+// typedef char int8;
+// typedef short int16;
+
+
+
+#define REALFBITMAX 15
+#define REALFBITMIN 0
+// #define REALMAX 127
+// #define REALMIN -128
 #define REALMAX 127
 #define REALMIN -128
-#define ALPHA_INFLAT 20
-#define INFLAT 15
-#define LOWER  (INFLAT - 1)
-#define TRANS_INFLAT (1.0/(1<<INFLAT))
+
+#define ALPHA_INFLAT 20 //wait to change
+#define INFLAT 15 //wait to change
+// #define LOWER  (INFLAT - 1)
+// #define TRANS_INFLAT (1.0/(1<<INFLAT))
 
 // -------------------------------------------------------------------------- //
 typedef struct {
   Mreal bias;
-  Mreal alpha;
-  Mreal beta;
+  // Mreal alpha;
+  // Mreal beta;
+  float alpha;
+  float beta;
+  float scale[2];
 } BiasBnParam;
 CONSTANT BiasBnParam BiasBnZero = {0};
 

@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // 1. Sets the pace of retriever kernel.
 // 2. Computes the filter reading address in pe kernel.
@@ -80,7 +80,7 @@ TASK kernel void sequencer(int frame_num) {
     int conv_start_cycle = 0;
     int layer_temp = 0;
     #pragma unroll
-    for (int i = 0; i < NUM_CONVOLUTIONS; i++) {
+    for (int i = DEVICE_START_LAYER; i < DEVICE_END_LAYER; i++) {
       if (new_layer) continue;
       if (frame_cycle == conv_start_cycle) {
         layer_temp = i;
@@ -88,6 +88,7 @@ TASK kernel void sequencer(int frame_num) {
       }
       conv_start_cycle += CONV_CYCLE(i);
 #ifdef PRINT_CYCLE
+      //if(layer_temp == NUM_LAYER - 1)
       printf("CONV_CYCLE(%d)=\t%d\n", i, CONV_CYCLE(i));
 #endif
     }
@@ -334,4 +335,7 @@ TASK kernel void sequencer(int frame_num) {
 
     INCREASE_COUNTER(cycle);
   } while (!COUNTER_DONE(cycle));
+#ifdef PRINT_OUT_INFO
+ printf("SEQUENCER sequencer out\n");
+#endif
 }

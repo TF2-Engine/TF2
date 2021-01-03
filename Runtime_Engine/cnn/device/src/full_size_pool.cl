@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // Performs the full size average pool operation which often locates near the end of a deep neural network.
 // TODO: Support the condition NARROW_N_VECTOR != N_VECTOR
@@ -52,7 +52,7 @@ TASK kernel void full_size_pool(int frame_num) {
     int layer_temp = 0;
     
     #pragma unroll
-    for (int i = 0; i < NUM_CONVOLUTIONS; i++) {
+    for (int i = DEVICE_START_LAYER; i < DEVICE_END_LAYER; i++) {
       if (new_layer) continue;
       if (frame_cycle == end_pool_start_cycle && kEndPoolEnable[i]) {
         layer_temp = i;
@@ -127,8 +127,9 @@ TASK kernel void full_size_pool(int frame_num) {
           //Mreal Mtemp = temp > 0 ? (temp + 0.5) : (temp - 0.5);
           //Mreal Mtemp = (((result[nn_vec][n_inc] * 669) >> 14) + 1) >> 1;
           Mreal Mtemp = (((temp_result[n_inc] * 669) >> 14) + 1) >> 1;
-          end_pool_output.write_data[0][n_inc] = Mtemp > REALMAX ? REALMAX : Mtemp < REALMIN ? REALMIN : Mtemp;
+          end_pool_output.write_data[0][n_inc] = Mtemp > REALFBITMAX ? REALFBITMAX : Mtemp < REALFBITMIN ? REALFBITMIN : Mtemp;
           int cache_write_offset = kCacheWriteBase[layer];
+          // int cache_write_offset = kCacheWriteBase[layer - DEVICE_START_LAYER];
           int concat_offset = kNStart[layer] / NARROW_N_VECTOR * P * CEIL(OW, W_VECTOR);
           end_pool_output.cache_write_addr = cache_write_offset + concat_offset + (n_vec * NN_VEC + nn_vec) * P * CEIL(OW, W_VECTOR);
           temp_result[n_inc] = 0;

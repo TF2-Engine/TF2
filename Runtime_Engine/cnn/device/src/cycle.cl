@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // Computes the final cycles needed by serveral kernels when the STATIC_CYCLE macro is undefined.
 // Warning: This file will be deprecated in future version.
@@ -28,7 +28,7 @@ limitations under the License.
 //
 // computes how many cycles it takes to preload the first filter
 int FindFilterPreloadCycles() {
-  return kFilterLoadSize[0] * N_VECTOR * FILTER_DDR_READ_STEP1;
+  return kFilterLoadSize[DEVICE_START_LAYER] * N_VECTOR * FILTER_DDR_READ_STEP1;
 }
 
 // computes how many cycles it takes to process a OW_VECTOR / W_VECTOR sequencer_output pixels
@@ -90,7 +90,7 @@ int FindConvCycles(int layer) {
 int FindConvTotalCycles() {
   int total_cycles = 0;
   #pragma unroll  
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     total_cycles += FindConvCycles(layer);
   }
   
@@ -116,7 +116,7 @@ int FindPeCycles(int layer) {
 int FindPeTotalCycles() {
   int total_cycles = 0;
   #pragma unroll  
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     total_cycles += FindPeCycles(layer);
   }
   return total_cycles;
@@ -126,7 +126,7 @@ int FindPeTotalCycles() {
 int FindConvLayerCycles(int total_layer) {
   int total_cycles = 0;
   #pragma unroll  
-  for (int layer = 0; layer < total_layer; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < total_layer; layer++) {
     total_cycles += FindConvCycles(layer);
   }
   return total_cycles;
@@ -148,7 +148,7 @@ int FindConvWriteCache(int layer) {
 int FindConvTotalWriteCache() {
   int cycles = 0;
   #pragma unroll 
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     cycles += kIpoolEnable[layer] ? 0 : FindConvWriteCache( layer );
   }
   
@@ -167,7 +167,7 @@ int FindPoolCycles(int layer) {
   int WOW_VECTOR = FW != 1 ? OW_VECTOR : W_VECTOR;
   
   int W_VEC = CEIL(OW, WOW_VECTOR);
-
+   
   return N_VEC * OH * W_VEC * NN_VEC;
 }
 
@@ -175,7 +175,7 @@ int FindPoolTotalCycles() {
   int total_cycles = 0;
   
   #pragma unroll 
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     total_cycles += FindPoolCycles(layer);
   }
   
@@ -199,7 +199,7 @@ int FindFeatureWriterTotalCycles() {
   int total_cycles = 0;
   
   #pragma unroll 
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     total_cycles += FindFeatureWriterCycles(layer);
   }
   
@@ -209,7 +209,7 @@ int FindFeatureWriterTotalCycles() {
 int FindEndPoolTotalCycles() {
   int total_cycles = 0;
   #pragma unroll 
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     if (kEndPoolEnable[layer])
       total_cycles += FindFeatureWriterCycles(layer);
   }
@@ -232,7 +232,7 @@ int FindFilterReaderConvTotalCycles() {
   int total_cycles = 0;
   
   #pragma unroll 
-  for (int layer = 0; layer < NUM_LAYER; layer++) {
+  for (int layer = DEVICE_START_LAYER; layer < NUM_LAYER; layer++) {
     total_cycles += FindFilterReaderConvCycles(layer);
   }
   
@@ -240,9 +240,9 @@ int FindFilterReaderConvTotalCycles() {
 }
 
 int FindInputReaderCycles() {
-  int C = kInputChannels[0];
-  int H = kInputHeight[0];
-  int W = kInputWidth[0];
+  int C = kInputChannels[DEVICE_START_LAYER];
+  int H = kInputHeight[DEVICE_START_LAYER];
+  int W = kInputWidth[DEVICE_START_LAYER];
   
   return CEIL(C, C_VECTOR) * H * CEIL(W, W_VECTOR);
 }

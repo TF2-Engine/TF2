@@ -27,29 +27,100 @@ limitations under the License.
 //
 
 //#define CONCAT_LAYER_DEBUG
+//#define RES_BN_DEBUG
 
 #define STATIC_CYCLE
-//#define PRINT_N 1
 //#define PRINT_CYCLE
 //#define PRINT_SEQUENCER_INDEX
-//#define PRINT_IPOOL_INPUT
+// #define PRINT_IPOOL_INPUT
+
+// Debug PE
 //#define PRINT_PE_INPUT
-//#define PRINT_PE_OUTPUT
+// #define PRINT_PE_OUTPUT
+//#define PRINT_N 0
+
 //#define PRINT_POOL_INPUT
 //#define PRINT_POOL_OUTPUT
+//#define PRINT_POOL_TAIL_OUTPUT
+//#define CHECK_H_SIMULATION_START_OUTPUT
+#define FBIT_SIMULATION_END_OUTPUT
+#define FBIT_MASK
+
+// #define PRINT_SIM_PE_OUTPUT
+// #define PRINT_SIM_RELU_OUTPUT
+// #define PRINT_SIM_POOL_MAX_OUTPUT
+// #define PRINT_SIM_OUTPUT
+// #define PRINT_SIM_PE_CONV_OUTPUT
+// #define PRINT_SIM_PE_CONV_SCALE_OUTPUT
+//#define PRINT_LAYER 2
+
+// #define PRINT_NVEC_START_GROUP 0
+// #define PRINT_PE_START_H 0
+// #define PRINT_PE_START_A_W 0 //includes pad actually
+// #define PRINT_CYCLE
+//#define PRINT_SEQUENCER_INDEX
+// #define PRINT_IPOOL_INPUT
+// #define PRINT_PE_INPUT
+// #define PRINT_PE_OUTPUT
+// #define PRINT_POOL_INPUT
+// #define PRINT_POOL_OUTPUT
+// #define PRINT_RETRIEVER
+// #define PRINT_H_BIAS_INPUT
+// #define PRINT_H_BN_INPUT
+
+// Debug FQUANTIZATION
+// #define PRINT_H_FSCALE_INPUT
+
+// Debug FILTER
+// #define PRINT_H_FILTER_REAL
+// #define PRINT_H_FILTER_INPUT
+// #define PRINT_FILTER_READER_INPUT
+
+// Debug INPUT
+// #define PRINT_INPUT_READER_INPUT
+// #define PRINT_H_INPUT_IMG_RAW
+// #define PRINT_H_INPUT_RAW
+// #define PRINT_H_INPUT_IMAGE
+// #define PRINT_H_INPUT_CONVERT
+// #define PRINT_H_INPUT_REAL
+// #define PRINT_ENTER_INFO
+// #define PRINT_OUT_INFO
+// #define PRINT_POOL_TAIL_INPUT
+// #define PRINT_POOL_TAIL_OUTPUT
+// #define PRINT_FEATURE_WRITER_R_CHANNEL_COUNT
+//#define PRINT_POOL_TAIL_W_CHANNEL_COUNT
+// #define FEATURE_WRITER_PRINT_INPUT_ENABLE
+// #define FEATURE_WRITER_PRINT_RESULT_ENABLE
+// #define FEATURE_WRITER_PRINT_CYCLE_ENABLE
+
+// #define PRINT_H_OUTPUT_CONVERT
+
+// #define PRINT_FULL_SIZE_POOL
 
 //
 // Configuration Parameters
 //
-
-#define NUM_LAYER 54
-#define NUM_CONVOLUTIONS 54
+#define DEVICE_START_LAYER 1
+#define DEVICE_END_LAYER 54 //for ipool insertion
+// #define NUM_LAYER 54
+// #define NUM_LAYER 3
+#define NUM_LAYER 54 //change last layer to independent pool to output pool5 for resenet50
+#define NUM_CONVOLUTIONS (54 + 1) //for ipool insertion
 #define NUM_Q_LAYERS (NUM_CONVOLUTIONS + 1) // 1 is for input data Quantization value.
 
 #define INPUT_IMAGE_C 3
 #define INPUT_IMAGE_H 224
 #define INPUT_IMAGE_W 224
+#define INPUT_IMAGE_PAD 3
+#define INPUT_IMAGE_STRIDE 2
 #define FIRST_FILTER_SIZE 7
+
+// #define INPUT_LL_C 2048
+// #define INPUT_LL_H 1
+// #define INPUT_LL_W 1
+// #define INPUT_LL_PAD 0
+// #define INPUT_LL_STRIDE 1
+// #define LAST_FILTER_SIZE 1
 
 #define MAX_OUT_CHANNEL 2048
 #define MAX_POOL_OUTPUT_WVEC CEIL(56, W_VECTOR)
@@ -139,7 +210,8 @@ CONSTANT int kCacheReadBase[NUM_CONVOLUTIONS] = {
   C1, C2, C1, // res5a 
   C2, C1, C2, // res5b
   C1, C2, C1, // res5c 
-  C2          // FC1000
+  C2,          //(Ipool) 
+  C1          // FC1000
 };
 
 CONSTANT int kCacheWriteBase[NUM_CONVOLUTIONS] = {
@@ -164,7 +236,8 @@ CONSTANT int kCacheWriteBase[NUM_CONVOLUTIONS] = {
   C2, C1, C2, // res5a 
   C1, C2, C1, // res5b
   C2, C1, C2, // res5c 
-  C1          // FC1000
+  C1,          //(Ipool)
+  C2          // FC1000
 };
 
 // This is for residual addition in pool_tail rather than preload for feature writer.
@@ -190,7 +263,8 @@ CONSTANT int kDDRReadBase[NUM_CONVOLUTIONS] = {
   D0, D0, D1, // res5a 
   D0, D0, D2, // res5b
   D0, D0, D1, // res5c 
-  D0          // FC1000
+  D0,          //(Ipool)
+  D0          //FC1000
 };
 
 CONSTANT int kDDRWriteBase[NUM_CONVOLUTIONS] = {
@@ -215,7 +289,8 @@ CONSTANT int kDDRWriteBase[NUM_CONVOLUTIONS] = {
   D0, D0, D2, // res5a 
   D0, D0, D1, // res5b
   D0, D0, D2, // res5c 
-  D0          // FC1000
+  D0,         //(Ipool)
+  D0          //FC1000
 };
 
 CONSTANT bool kCacheWriteEnable[NUM_CONVOLUTIONS] = {
@@ -240,6 +315,7 @@ CONSTANT bool kCacheWriteEnable[NUM_CONVOLUTIONS] = {
   1, 1, 1, // res5a 
   1, 1, 1, // res5b
   1, 1, 0, // res5c 
+  1,       // (Ipool)
   0        // FC1000
 };
 
@@ -265,6 +341,7 @@ CONSTANT bool kDDRWriteEnable[NUM_CONVOLUTIONS] = {
   0, 0, 1, // res5a 
   0, 0, 1, // res5b
   0, 0, 1, // res5c 
+  0,       // (Ipool)
   0        // FC1000
 };
 
@@ -290,7 +367,8 @@ CONSTANT bool kEndPoolEnable[NUM_CONVOLUTIONS] = {
   0, 0, 0, // res5a 
   0, 0, 0, // res5b
   0, 0, 1, // res5c 
-  0        // FC1000
+  0,       // (Ipool)
+  0        // orl FC1000(Ipool)
 };
 
 CONSTANT bool kAdditionEnable[NUM_CONVOLUTIONS] = {
@@ -315,8 +393,36 @@ CONSTANT bool kAdditionEnable[NUM_CONVOLUTIONS] = {
   0, 0, 1, // res5a 
   0, 0, 1, // res5b
   0, 0, 1, // res5c 
+  0,       // (Ipool)
   0        // FC1000
 };
+
+CONSTANT int kResPreLayer[NUM_CONVOLUTIONS] = {
+  0,       // conv1
+  0,       // res2a_branch1
+  0, 0, 1, // res2a 
+  0, 0, 4, // res2b 
+  0, 0, 7, // res2c 
+  0,       // res3a_branch1
+  0, 0, 11, // res3a 
+  0, 0, 14, // res3b 
+  0, 0, 17, // res3c 
+  0, 0, 20, // res3d
+  0,       // res4a_branch1
+  0, 0, 24, // res4a 
+  0, 0, 27, // res4b 
+  0, 0, 30, // res4c 
+  0, 0, 33, // res4d 
+  0, 0, 36, // res4e 
+  0, 0, 39, // res4f
+  0,       // res5a_branch1
+  0, 0, 43, // res5a 
+  0, 0, 46, // res5b
+  0, 0, 49, // res5c 
+  0,        // (Ipool)
+  0        // FC1000
+};
+
 
 CONSTANT bool kAdditionReluEnable[NUM_CONVOLUTIONS] = {
   0,       // conv1
@@ -340,6 +446,7 @@ CONSTANT bool kAdditionReluEnable[NUM_CONVOLUTIONS] = {
   0, 0, 1, // res5a 
   0, 0, 1, // res5b
   0, 0, 1, // res5c 
+  0,       // (Ipool)
   0        // FC1000
 };
 
@@ -365,6 +472,7 @@ CONSTANT bool kReluEnable[NUM_CONVOLUTIONS] = {
   true, true, false, // res5a 
   true, true, false, // res5b
   true, true, false, // res5c 
+  false,             // (Ipool)
   false             // fc1000
 };
 
@@ -390,7 +498,8 @@ CONSTANT int kFilterSize[NUM_CONVOLUTIONS] = {
   1, 3, 1,
   1, 3, 1, 
   1, 3, 1,
-  1, // fc1000
+  1, // (Ipool)
+  1 // fc1000
 };
 CONSTANT int kFilterSizeMax = 3;
 
@@ -417,6 +526,7 @@ CONSTANT int kPadWidth[NUM_CONVOLUTIONS] = {
   0, 1, 0,
   0, 1, 0, 
   0, 1, 0,
+  0,  // (Ipool)
   0  // fc1000
 };
 
@@ -443,6 +553,7 @@ CONSTANT int kPadHeight[NUM_CONVOLUTIONS] = {
   0, 1, 0,
   0, 1, 0, 
   0, 1, 0,
+  0,  //(Ipool)
   0  // fc1000
 };
 
@@ -454,21 +565,22 @@ CONSTANT int kInputWidth[NUM_CONVOLUTIONS] = {
   56, 56, 56, 
   56, 56, 56,
   56,  
-  56, 28, 28, 
+  56, 56, 28, 
   28, 28, 28, 
   28, 28, 28, 
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,
   7,  7,  7,
+  1,   // (Ipool)
   1   // fc1000
 };
 CONSTANT int kInputWidthMax = 114;
@@ -480,21 +592,22 @@ CONSTANT int kInputHeight[NUM_CONVOLUTIONS] = {
   56, 56, 56, 
   56, 56, 56,
   56,  
-  56, 28, 28, 
+  56, 56, 28, 
   28, 28, 28, 
   28, 28, 28, 
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,
   7,  7,  7,
+  1,   // (Ipool)
   1   // fc1000
 };
 CONSTANT int kInputHeightMax = 114;
@@ -507,21 +620,22 @@ CONSTANT int kOutputWidth[NUM_CONVOLUTIONS] = {
   56, 56, 56,
   56, 56, 56,
   56,
-  56, 28, 28,
+  56, 56, 28,
   28, 28, 28, 
   28, 28, 28,
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,  
   7,  7,  7,
+  1,   // (Ipool)
   1   // fc1000
 };
 
@@ -534,21 +648,22 @@ CONSTANT int kOutputHeight[NUM_CONVOLUTIONS] = {
   56, 56, 56,
   56, 56, 56,
   56,
-  56, 28, 28,
+  56, 56, 28,
   28, 28, 28, 
   28, 28, 28,
   28, 28, 28,
   28,
-  28, 14, 14,
+  28, 28, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14, 
   14, 14, 14,
   14, 14, 14,
   14,
-  14, 7,  7,
+  14, 14,  7,
   7,  7,  7,  
   7,  7,  7,
+  1,   // (Ipool)
   1   // fc1000
 };
 
@@ -576,7 +691,8 @@ CONSTANT int kInputChannels[NUM_CONVOLUTIONS] = {
   1024, 512,    512,// res5a
   2048, 512,    512,// res5b
   2048, 512,    512,// res5c
-  2048  // fc1000
+  1,  //(Ipool)
+  2048  // orl fc1000(Ipool)
 };
 
 // how much filter data (number of float_vec_t reads) we need to prefetch at each stage of convolution
@@ -635,6 +751,7 @@ CONSTANT int kFilterLoadSize[NUM_CONVOLUTIONS] = {
   CEIL(2048, C_VECTOR * FW_VECTOR), // res5c
   CEIL(512, C_VECTOR) * 3 * CEIL(3, FW_VECTOR), 
   CEIL(512, C_VECTOR * FW_VECTOR), 
+  0,  //(Ipool)
   CEIL(2048, C_VECTOR * FW_VECTOR)  // fc1000
 };
 
@@ -660,6 +777,7 @@ CONSTANT int kOutputChannels[NUM_CONVOLUTIONS] = {
   512, 512, 2048, // res5a
   512, 512, 2048, // res5b
   512, 512, 2048, // res5c
+  2048, //(Ipool)
   1000   // fc1000
 };
 CONSTANT int kOutputChannelsMax = 2048;
@@ -671,21 +789,22 @@ CONSTANT int kWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), 
   CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), CEIL(56, W_VECTOR),
   CEIL(56, W_VECTOR),  
-  CEIL(56, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), 
+  CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), CEIL(28, W_VECTOR), 
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), 
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), 
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR),
-  CEIL(28, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
+  CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR),
-  CEIL(14, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
+  CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
+  CEIL(1, W_VECTOR),  // (Ipool)
   CEIL(1, W_VECTOR)  // fc1000
 };
 CONSTANT int kWvecEndMax = CEIL(114, W_VECTOR);
@@ -697,21 +816,22 @@ CONSTANT int kConvStride[NUM_CONVOLUTIONS] = {
   1, 1, 1, // res2b 
   1, 1, 1, // res2c 
   2,       // res3a_branch1
-  2, 1, 1, // res3a 
+  1, 2, 1, // res3a 
   1, 1, 1, // res3b 
   1, 1, 1, // res3c 
   1, 1, 1, // res3d
   2,       // res4a_branch1
-  2, 1, 1, // res4a 
+  1, 2, 1, // res4a 
   1, 1, 1, // res4b 
   1, 1, 1, // res4c 
   1, 1, 1, // res4d 
   1, 1, 1, // res4e 
   1, 1, 1, // res4f
   2,       // res5a_branch1
-  2, 1, 1, // res5a 
+  1, 2, 1, // res5a 
   1, 1, 1, // res5b
   1, 1, 1, // res5c 
+  1,        // (Ipool)
   1        // FC1000
 };
 
@@ -741,6 +861,7 @@ CONSTANT bool kIpoolEnable[NUM_CONVOLUTIONS] = {
   false, false, false, // res5a 
   false, false, false, // res5b
   false, false, false, // res5c 
+  true,             // orl fc1000(Ipool)
   false             // fc1000
 };
 
@@ -766,11 +887,12 @@ CONSTANT bool kPoolEnable[NUM_CONVOLUTIONS] = {
   false, false, false, // res5a 
   false, false, false, // res5b
   false, false, false, // res5c 
+  false,             // (Ipool)
   false             // fc1000
 };
 
 CONSTANT bool kBiasEnable[NUM_CONVOLUTIONS] = {
-	true,
+	false,
 	false,
 	false,false,false,
 	false,false,false,
@@ -791,6 +913,7 @@ CONSTANT bool kBiasEnable[NUM_CONVOLUTIONS] = {
 	false,false,false,
 	false,false,false,
 	false,false,false,
+  false,// (Ipool)
 	true
 };
 
@@ -817,6 +940,7 @@ CONSTANT int kPoolWindow[NUM_CONVOLUTIONS] = {
   3, 3, 3,
   3, 3, 3, 
   3, 3, 3,
+  1,  // (Ipool)
   3  // fc1000
 };
 
@@ -844,6 +968,7 @@ CONSTANT int kPoolType[NUM_CONVOLUTIONS] = {
   0, 0, 0,
   0, 0, 0, 
   0, 0, 0,
+  0,  // (Ipool)
   0  // fc1000
 };
 
@@ -869,6 +994,7 @@ CONSTANT bool kPoolStride2[NUM_CONVOLUTIONS] = {
   false, false, false, // res5a 
   false, false, false, // res5b
   false, false, false, // res5c 
+  false,             // Ipool
   false             // fc1000
 };
 
@@ -879,21 +1005,22 @@ CONSTANT int kPoolOutputWidth[NUM_CONVOLUTIONS] = {
   56, 56, 56,
   56, 56, 56,// res2c
   28,
-  28, 28, 28,
+  56, 28, 28,
   28, 28, 28,
   28, 28, 28,
   28, 28, 28,// res3d
   14,
-  14, 14, 14,
+  28, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,// res4f
   7,
-  7, 7, 7,
+  14, 7, 7,
   7, 7, 7,
   7, 7, 7, // res5c
+  1,   // Ipool
   1   // fc1000
 };
 CONSTANT int kPoolOutputWidthMax = 56;
@@ -905,21 +1032,22 @@ CONSTANT int kPoolOutputHeight[NUM_CONVOLUTIONS] = {
   56, 56, 56,
   56, 56, 56,// res2c
   28,
-  28, 28, 28,
+  56, 28, 28,
   28, 28, 28,
   28, 28, 28,
   28, 28, 28,// res3d
   14,
-  14, 14, 14,
+  28, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,
   14, 14, 14,// res4f
   7,
-  7, 7, 7,
+  14, 7, 7,
   7, 7, 7,
   7, 7, 7, // res5c
+  1,   // Ipool
   1   // fc1000
 };
 CONSTANT int kPoolOutputHeightMax = 56;
@@ -931,21 +1059,22 @@ CONSTANT int kPoolOutputWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), 
   CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), CEIL(56, W_VECTOR), // res2c
   CEIL(28, W_VECTOR), 
-  CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
+  CEIL(56, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR),
   CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), CEIL(28, W_VECTOR), // res3d
   CEIL(14, W_VECTOR), 
-  CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
+  CEIL(28, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR),
   CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), CEIL(14, W_VECTOR), // res4f
   CEIL(7,  W_VECTOR), 
-  CEIL(7, W_VECTOR),  CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
+  CEIL(14, W_VECTOR),  CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7,  W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR),
   CEIL(7,  W_VECTOR), CEIL(7, W_VECTOR), CEIL(7, W_VECTOR), // res5c
+  CEIL(1, W_VECTOR), // Ipool
   CEIL(1, W_VECTOR) // fc1000
 };
 
@@ -957,22 +1086,23 @@ CONSTANT int kOhEndWithOffset[NUM_CONVOLUTIONS] = {
   56 + POOL_OFFSET_P, 56 + POOL_OFFSET_P, 56 + POOL_OFFSET_P,
   56 + POOL_OFFSET_P, 56 + POOL_OFFSET_P, 56 + POOL_OFFSET_P, 
   28 + POOL_OFFSET_P,
-  28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P,
+  56 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P,
   28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 
   28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P,
   28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 28 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P,
-  14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
+  28 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
   14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P, 14 + POOL_OFFSET_P,
    7 + POOL_OFFSET_P,
-   7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
+  14 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
    7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  
    7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,  7 + POOL_OFFSET_P,
-   1 + POOL_OFFSET_P
+   1 + POOL_OFFSET_P,// Ipool
+   1 + POOL_OFFSET_P,// fc1000
 };
 CONSTANT int kOhEndWithOffsetMax = 112 + POOL_OFFSET_P;
 
@@ -984,22 +1114,23 @@ CONSTANT int kOwEndWithOffset[NUM_CONVOLUTIONS] = {
   56 + POOL_OFFSET_Q, 56 + POOL_OFFSET_Q, 56 + POOL_OFFSET_Q,
   56 + POOL_OFFSET_Q, 56 + POOL_OFFSET_Q, 56 + POOL_OFFSET_Q, 
   56 + POOL_OFFSET_Q,
-  56 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q,
+  56 + POOL_OFFSET_Q, 56 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q,
   28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 
   28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q,
   28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 
   28 + POOL_OFFSET_Q,
-  28 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
+  28 + POOL_OFFSET_Q, 28 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,
   14 + POOL_OFFSET_Q,
-  14 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
+  14 + POOL_OFFSET_Q, 14 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
    7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  
    7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,  7 + POOL_OFFSET_Q,
-   1 + POOL_OFFSET_Q
+   1 + POOL_OFFSET_Q,// Ipool
+   1 + POOL_OFFSET_Q // fc1000
 };
 CONSTANT int kOwEndWithOffsetMax = 112 + POOL_OFFSET_Q;
 
@@ -1025,6 +1156,8 @@ CONSTANT int kFWvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR),
   CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR),
   CEIL(1, FW_VECTOR), CEIL(3, FW_VECTOR), CEIL(1, FW_VECTOR),
+  // 0,  // Ipool
+  CEIL(1, FW_VECTOR), // Ipool
   CEIL(1, FW_VECTOR)  // fc1000
 };
 CONSTANT int kFWvecEndMax = CEIL(3, FW_VECTOR);
@@ -1051,6 +1184,7 @@ CONSTANT int kCvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(1024, C_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR),
   CEIL(2048, C_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR), 
   CEIL(2048, C_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR),
+  CEIL(1, C_VECTOR),  // Ipool
   CEIL(2048, C_VECTOR)  // fc1000
 };
 CONSTANT int kCvecEndMax = CEIL(2048, C_VECTOR);
@@ -1077,6 +1211,7 @@ CONSTANT int kFilterCvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(1024, C_VECTOR * FW_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR * FW_VECTOR),
   CEIL(2048, C_VECTOR * FW_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR * FW_VECTOR),
   CEIL(2048, C_VECTOR * FW_VECTOR), CEIL(512, C_VECTOR), CEIL(512, C_VECTOR * FW_VECTOR),
+  CEIL(1, C_VECTOR * FW_VECTOR),  // Ipool
   CEIL(2048, C_VECTOR * FW_VECTOR)  // fc1000
 };
 CONSTANT int kFilterCvecEndMax = CEIL(2048, C_VECTOR * FW_VECTOR);
@@ -1106,6 +1241,7 @@ CONSTANT int kNvecEnd[NUM_CONVOLUTIONS] = {
   CEIL(512, N_VECTOR), CEIL(512, N_VECTOR), CEIL(2048, N_VECTOR),
   CEIL(512, N_VECTOR), CEIL(512, N_VECTOR), CEIL(2048, N_VECTOR),
   CEIL(512, N_VECTOR), CEIL(512, N_VECTOR), CEIL(2048, N_VECTOR),
+  CEIL(2048, N_VECTOR),  // Ipool
   CEIL(1000, N_VECTOR)  // fc1000
 };
 CONSTANT int kNvecEndMax = CEIL(2048, N_VECTOR);
@@ -1132,6 +1268,7 @@ CONSTANT int kNEndWithOffset[NUM_CONVOLUTIONS] = {
   512, 512, 2048, // res5a
   512, 512, 2048, // res5b
   512, 512, 2048, // res5c
+  2048, // Ipool
   1000   // fc1000
 };
 CONSTANT int kNEndWithOffsetMax = 2048;
@@ -1158,6 +1295,7 @@ CONSTANT int kNStart[NUM_CONVOLUTIONS] = {
   0, 0, 0,
   0, 0, 0, 
   0, 0, 0,
+  0, //Ipool
   0  // fc1000
 };
 
@@ -1183,31 +1321,33 @@ CONSTANT int kNEnd[NUM_CONVOLUTIONS] = {
   512, 512, 2048, // res5a
   512, 512, 2048, // res5b
   512, 512, 2048, // res5c
+  2048, // Ipool
   1000   // fc1000
 };
 
 CONSTANT int kPoolPad[NUM_CONVOLUTIONS] = {
+  1,
+	0,
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0,
+	0,
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0,
+	0, 0, 0,
+	0, 
+	0, 0,	0,
+	0, 0, 0,
+	0, 0,	0,
+	0, 0,	0,
+	0, 0,	0,
+	0, 0,	0,
+	0, 
+  0, 0, 0,
+	0, 0, 0,
+  0, 0, 0,
   0,
-	0,
-	0, 0, 0,
-	0, 0, 0,
-	0, 0, 0,
-	0,
-	0, 0, 0,
-	0, 0, 0,
-	0, 0, 0,
-	0, 0, 0,
-	0, 
-	0, 0,	0,
-	0, 0, 0,
-	0, 0,	0,
-	0, 0,	0,
-	0, 0,	0,
-	0, 0,	0,
-	0, 
-  0, 0, 0,
-	0, 0, 0,
-  0, 0, 0,
 	0
 };
 
@@ -1233,6 +1373,7 @@ CONSTANT bool kBnEnable[NUM_CONVOLUTIONS] =  {
 	1, 1, 1,
   1, 1, 1,
 	1, 1, 1,
+  0, //Ipool
   0
 };
 
@@ -1242,6 +1383,32 @@ CONSTANT bool kBnEnable[NUM_CONVOLUTIONS] =  {
 //
 // only for host code
 //
+
+CONSTANT int kLoadLayer[NUM_CONVOLUTIONS]= {
+	0,
+	2 ,	3 ,	4 ,
+	1 ,
+  5 ,	6 ,	7 ,
+	8 ,	9 ,	10,
+	12,	13,	14,
+	11,
+	15,	16,	17,
+	18,	19,	20,
+	21,	22,	23,
+	25,	26,	27,
+	24,
+	28,	29,	30,
+	31,	32,	33,
+	34,	35,	36,
+	37,	38,	39,
+	40,	41,	42,
+	44,	45,	46,
+	43,
+	47,	48,	49,
+	50,	51,	52,
+	53,//Ipool
+  54
+};
 
 CONSTANT int kInputLayer[NUM_CONVOLUTIONS]= {
 	0,
@@ -1265,7 +1432,8 @@ CONSTANT int kInputLayer[NUM_CONVOLUTIONS]= {
 	43,	45,	46,
 	47,	48,	49,
 	50,	51,	52,
-	53
+	53, //Ipool
+  54
 };
 
 CONSTANT bool kBranchTail[NUM_CONVOLUTIONS] = {
@@ -1290,6 +1458,7 @@ CONSTANT bool kBranchTail[NUM_CONVOLUTIONS] = {
   0, 0, 0,
   0, 0, 0, 
   0, 0, 0,
+  0,  // Ipool
   0  // fc1000
 };
 
@@ -1315,6 +1484,7 @@ CONSTANT int kConcatLayer[NUM_CONVOLUTIONS] = {
   0, 0, 0,
   0, 0, 0, 
   0, 0, 0,
+  0, //Ipool
   0  // fc1000
 };
 
@@ -1340,6 +1510,7 @@ CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = {
   0, 0, 0,
   0, 0, 0,
   0, 0, 0,
+  0, //Ipool
   0
 };
 
@@ -1350,231 +1521,231 @@ CONSTANT int kSequencerIdleCycle[NUM_CONVOLUTIONS] = {
 #ifdef STATIC_CYCLE
 
 CONSTANT int feature_writer_cycles[NUM_CONVOLUTIONS] = {
-3584 ,
-14336,
-3584 ,
-3584 ,
-14336,
-3584 ,
-3584 ,
-14336,
-3584 ,
-3584 ,
-14336,
-7168 ,
-1792 ,
-1792 ,
-7168 ,
-1792 ,
-1792 ,
-7168 ,
-1792 ,
-1792 ,
-7168 ,
-1792 ,
-1792 ,
-7168 ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-896  ,
-896  ,
-3584 ,
-1792 ,
-448  ,
-448  ,
-1792 ,
-448  ,
-448  ,
-1792 ,
-448  ,
-448  ,
-1792 ,
-126
+0,
+7168,
+1792,
+1792,
+7168,
+1792,
+1792,
+7168,
+1792,
+1792,
+7168,
+3584,
+3584,
+896 ,
+3584,
+896 ,
+896 ,
+3584,
+896 ,
+896 ,
+3584,
+896 ,
+896 ,
+3584,
+1792,
+1792,
+448 ,
+1792,
+448 ,
+448 ,
+1792,
+448 ,
+448 ,
+1792,
+448 ,
+448 ,
+1792,
+448 ,
+448 ,
+1792,
+448 ,
+448 ,
+1792,
+896 ,
+896 ,
+224 ,
+896 ,
+224 ,
+224 ,
+896 ,
+224 ,
+224 ,
+896 ,
+128
 };
 
 CONSTANT int filter_reader_conv_cycles[NUM_CONVOLUTIONS] = {
+0,
+512   ,
+128   ,
 768   ,
+512   ,
+384   ,
 768   ,
-192   ,
+512   ,
+384   ,
+768   ,
+512   ,
+3072  ,
+768   ,
+3072  ,
 1536  ,
-768   ,
-704   ,
-1536  ,
-768   ,
-704   ,
-1536  ,
-768   ,
-5632  ,
 1408  ,
-6144  ,
 3072  ,
+1536  ,
+1408  ,
+3072  ,
+1536  ,
+1408  ,
+3072  ,
+1536  ,
+11264 ,
 2816  ,
+12288 ,
 6144  ,
-3072  ,
-2816  ,
-6144  ,
-3072  ,
-2816  ,
-6144  ,
-3072  ,
-22528 ,
 5632  ,
-24576 ,
+12288 ,
+6144  ,
+5632  ,
+12288 ,
+6144  ,
+5632  ,
+12288 ,
+6144  ,
+5632  ,
+12288 ,
+6144  ,
+5632  ,
+12288 ,
+6144  ,
+45056 ,
 11264 ,
-11008 ,
-24576 ,
-11264 ,
-11008 ,
-24576 ,
-11264 ,
-11008 ,
-24576 ,
-11264 ,
-11008 ,
-24576 ,
-11264 ,
-11008 ,
-24576 ,
-11264 ,
-88064 ,
+49152 ,
+22528 ,
 22016 ,
-98304 ,
-45056 ,
-44032 ,
-98304 ,
-45056 ,
-44032 ,
-98304 ,
-45056 ,
-86688
+49152 ,
+22528 ,
+22016 ,
+49152 ,
+22528 ,
+0
 };
 
 CONSTANT int conv_cycles[NUM_CONVOLUTIONS] = {
-123648,
-57344 ,
-14336 ,
-64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-229376,
-57344 ,
-64512 ,
-57344 ,
+0,
+28672 ,
+7168  ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+114688,
 57344 ,
 64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-229376,
-57344 ,
-64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+114688,
 57344 ,
 64512 ,
-57344 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+28672 ,
+32256 ,
+28672 ,
+114688,
 57344 ,
 64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-57344 ,
-64512 ,
-57344 ,
-229376,
-58624 ,
-97920 ,
-58272 ,
-58624 ,
-97920 ,
-58272 ,
-58624 ,
-97920 ,
-58272 ,
-85568
+29136 ,
+29312 ,
+48960 ,
+29136 ,
+29312 ,
+48960 ,
+28672 ,
+128
 };
 
 CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
-20976,
-16704,
+0,
+8352 ,
+2088 ,
+2784 ,
+8352 ,
+2088 ,
+2784 ,
+8352 ,
+2088 ,
+2784 ,
+8352 ,
+8640 ,
 4176 ,
-5568 ,
-16704,
-4176 ,
-5568 ,
-16704,
-4176 ,
-5568 ,
-16704,
-17280,
-4320 ,
 2880 ,
-9600 ,
+4800 ,
+1200 ,
+1440 ,
+4800 ,
+1200 ,
+1440 ,
+4800 ,
+1200 ,
+1440 ,
+4800 ,
+5120 ,
 2400 ,
-2880 ,
-9600 ,
-2400 ,
-2880 ,
-9600 ,
-2400 ,
-2880 ,
-9600 ,
-10240,
-2560 ,
-2048 ,
-6144 ,
 1536 ,
-2048 ,
-6144 ,
+3072 ,
+768  ,
+1024 ,
+3072 ,
+768  ,
+1024 ,
+3072 ,
+768  ,
+1024 ,
+3072 ,
+768  ,
+1024 ,
+3072 ,
+768  ,
+1024 ,
+3072 ,
+3456 ,
 1536 ,
-2048 ,
-6144 ,
-1536 ,
-2048 ,
-6144 ,
-1536 ,
-2048 ,
-6144 ,
-1536 ,
-2048 ,
-6144 ,
-6912 ,
-1728 ,
 1152 ,
-4608 ,
-1152 ,
-1152 ,
-4608 ,
-1152 ,
-1152 ,
-4608 ,
-378
+2304 ,
+576  ,
+576  ,
+2304 ,
+576  ,
+576  ,
+2304 ,
+384
 };
 
 #define FEATURE_WRITER_CYCLE(i) feature_writer_cycles[i]
@@ -1582,14 +1753,14 @@ CONSTANT int pool_cycles[NUM_CONVOLUTIONS] = {
 #define CONV_CYCLE(i) conv_cycles[i]
 #define POOL_CYCLE(i) pool_cycles[i]
 
-#define CONV_TOTAL_CYCLE 3885728 
-#define INPUT_READER_CYCLE 7752 
-#define FILTER_PRELOAD_CYCLE 192
-#define FILTER_READER_CONV_TOTAL_CYCLE 1075552 
-#define CONV_TOTAL_WRITE_CACHE 112063 
-#define POOL_TOTAL_CYCLE 293978 
-#define FEATURE_WRITER_TOTAL_CYCLE 178430 
-#define END_POOL_TOTAL_CYCLE 1792
+#define CONV_TOTAL_CYCLE 2003360
+#define INPUT_READER_CYCLE 1792
+#define FILTER_PRELOAD_CYCLE 32
+#define FILTER_READER_CONV_TOTAL_CYCLE 499968 
+#define CONV_TOTAL_WRITE_CACHE 107072 
+#define POOL_TOTAL_CYCLE 143032
+#define FEATURE_WRITER_TOTAL_CYCLE 92192 
+#define END_POOL_TOTAL_CYCLE 896
 
 #endif
 

@@ -21,7 +21,7 @@ Runner::Runner(OpenCLFPGA &platform, NetWork &network) {
 }
 
 void Runner::Init() {
-  this->image_file = network.image_file;
+  // this->image_file = network.image_file;
   this->num_images = network.num_images; 
 }
 
@@ -51,7 +51,8 @@ void Runner::ReleaseAllEvents() {
   }
 }
 
-void Runner::Run() {
+// void Runner::Run() {
+void Runner::Run(char *image_file) {
   cl_int status;
   
   //
@@ -134,6 +135,8 @@ void Runner::Run() {
   checkError(status,"feature_writer_kernel: Failed set arg %d.", arg_idx - 1);
   status = clSetKernelArg(feature_writer.kernel, arg_idx++, sizeof(cl_mem), (void*)&(network.feature_ddr));
   checkError(status,"feature_writer_kernel: Failed set arg %d.", arg_idx - 1);
+  status = clSetKernelArg(feature_writer.kernel, arg_idx++, sizeof(cl_mem), (void*)&(network.bias_bn_buffer));
+  checkError(status,"feature_writer: Failed set arg %d.", arg_idx - 1);
 
   // enqueue kernels
   EnqueueKernels(/* create_events */ false, /* enqueue_infinite_loop */ true);
@@ -150,18 +153,47 @@ void Runner::Run() {
   float *input_raw_images = (float*)malloc(sizeof(float) * INPUT_IMAGE_C * INPUT_IMAGE_H * INPUT_IMAGE_W * 2);
  
   for (int i = 0; i < num_images; i++) {
+    // LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#ifdef IMAGENET
+    LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#else
+    // LoadInputJpeg(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
     LoadInputImage(image_file, network.input_raw + i * C * HXW, input_raw_images, 0);
+#endif
+
+    //conv simluation in host
+    for (int sim_layer = 0; sim_layer < DEVICE_START_LAYER; sim_layer++){
+      SimCNNLayer<int8,float>(sim_layer, network.filter_raw, network.bias_bn, network.input_raw, network.scale, network.sim_out);
+      if(sim_layer < DEVICE_START_LAYER - 1){
+        memset(network.input_raw, 0, sizeof(float) * network.input_raw_size);
+        std::copy(network.sim_out,network.sim_out + network.input_raw_size, network.input_raw);
+        memset(network.sim_out, 0, sizeof(float) * network.input_raw_size);
+      }
+    }
+
   }
 
-  InputConvert(network.input_raw, network.input, num_images);
+  // InputConvert(network.input_raw, network.input, num_images);
+  InputConvert(network.sim_out, network.input, num_images);
 
-  float trans = 1.0f / ( 1 << network.q[0]);
+  // float trans = network.q[0] > 0 ? (1.0f / ( 1 << network.q[0])) : (1 << (-network.q[0]));
+  float trans = 32.0; //first layer scale value
   for (int i = 0; i < input_device_size; i++) {
+    #ifndef FBIT_MASK
     float tmp = network.input[i] * trans;
+    #else
+    float tmp = network.input[i];
+    #endif
     int tmp_int = (int)(tmp > 0 ? tmp + 0.5 : tmp - 0.5);
-    network.input_real[i] = tmp_int > REALMAX ? REALMAX : tmp_int < REALMIN ? REALMIN : tmp_int;
+    network.input_real[i] = tmp_int > REALFBITMAX ? REALFBITMAX : tmp_int < REALFBITMIN ? REALFBITMIN : tmp_int;
+    #ifdef PRINT_H_INPUT_REAL
+    printf("Input Real i=%d network.input[%d]=%f trans=%f tmp=%f input_real=%d\n", i, i, network.input[i], trans, tmp, network.input_real[i]);
+    #endif
   }
 
+  free(input_raw_images);
+
+ #ifndef CHECK_H_SIMULATION_START_OUTPUT
   status = clEnqueueWriteBuffer(platform.input_queue, network.input_buffer[0], CL_TRUE, 0, sizeof(real)* input_device_size, network.input_real, 0, NULL, NULL);
   checkError(status, "Failed clEnqueueWriteBuffer : input_queue");
   clFinish(platform.input_queue);
@@ -194,5 +226,22 @@ void Runner::Run() {
   clEnqueueReadBuffer(platform.output_queue, network.feature_ddr, CL_TRUE, 0, sizeof(real) * feature_ddr_size, network.output, 0, NULL, NULL);
   checkError(status,"Failed clEnqueueReadBuffer : output_queue");
   clFinish(platform.output_queue);
+
+  #ifdef FBIT_SIMULATION_END_OUTPUT
+  OutputRConvert(network.output, network.output_pre, num_images);
+
+  memset(network.sim_out, 0, sizeof(float) * network.input_raw_size);
+
+  for (int sim_layer = DEVICE_END_LAYER; sim_layer < NUM_CONVOLUTIONS; sim_layer++){
+      SimCNNLayer<int8,float>(sim_layer, network.filter_raw, network.bias_bn, network.output_pre, network.scale, network.sim_out);
+      if(sim_layer > DEVICE_END_LAYER){
+        memset(network.output_pre, 0, sizeof(float) * network.input_raw_size);
+        std::copy(network.sim_out,network.sim_out + network.input_raw_size, network.output_pre);
+        memset(network.sim_out, 0, sizeof(float) * network.input_raw_size);
+      }
+  }
+  #endif
+
+  #endif
 }
 

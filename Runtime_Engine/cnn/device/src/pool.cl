@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // 1. Performs pool operation.
 // 2. If there is no pool operation in current layer, the relu kernel output data pass by this kernel. 
@@ -34,14 +34,14 @@ TASK kernel void pool(int frame_num) {
   INIT_COUNTER(nn_vec);
 
   int layer = 0;
- 
+
   enum {EDGE_H = (POOL_WINDOW_MAX - 1)};
   enum {EDGE_W = (POOL_WINDOW_MAX - 1)};
   enum {WVEC_ITER = CEIL(kOwEndWithOffsetMax, OW_VECTOR)};
   enum {NNVEC_ITER = CEIL(N_VECTOR, NARROW_N_VECTOR)};
   enum {EDGE_H_BUFFER_SIZE = WVEC_ITER * NNVEC_ITER};
   enum {EDGE_W_BUFFER_SIZE = NNVEC_ITER};
-
+  
   ReluChannelVector edge_buffer[EDGE_W][EDGE_W_BUFFER_SIZE]; 
   ReluChannelVector line_buffer[EDGE_H_BUFFER_SIZE][NEXT_POWER_OF_2(EDGE_H)][NEXT_POWER_OF_2(W_VECTOR)]; 
   
@@ -50,30 +50,34 @@ TASK kernel void pool(int frame_num) {
 
   int cycle_end = POOL_TOTAL_CYCLE;
 
-#ifdef PRINT_CYCLE
+#ifdef PRINT_POOL_INPUT
   int ipool_channel_cnt = 0;
+#endif
+
+#ifdef PRINT_CYCLE
   printf("POOL_TOTAL_CYCLE=%d\n", POOL_TOTAL_CYCLE);
 #endif
 
-  //#pragma ivdep  
+  #pragma ivdep  
   do {
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
     SET_COUNTER(cycle, cycle_end, 0, cycle_end, 1);
-    
-    //printf("pool - cycle=%d/%d\n", cycle, cycle_end);
+   
+    //printf("pool cycle=%d/%d\n", cycle, cycle_end);
 
     bool new_layer = false;
     int start_cycle = 0;
     int layer_temp = 0;
     #pragma unroll
-    for (int i = 0; i < NUM_CONVOLUTIONS; i++) {
+    for (int i = DEVICE_START_LAYER; i < DEVICE_END_LAYER; i++) {
       if (new_layer) continue;
       if (cycle == start_cycle) {
         layer_temp = i;
         new_layer = true;
       }
       start_cycle += POOL_CYCLE(i);
-#ifdef PRINT_POOL_CYCLE
+#ifdef PRINT_CYCLE
+      //if(layer_temp == NUM_LAYER - 1)
       printf("POOL_CYCLE(%d)=\t%d\n", i, POOL_CYCLE(i));
 #endif
     }
@@ -104,6 +108,7 @@ TASK kernel void pool(int frame_num) {
       new_layer = false;
     }
 
+    	
     ReluChannelVector w_buffer[EDGE_W + W_VECTOR];
 
     // read data from relu channel
@@ -139,7 +144,7 @@ TASK kernel void pool(int frame_num) {
 #ifdef PRINT_POOL_INPUT
       if (kIpoolEnable[layer]) ipool_channel_cnt++;
 #endif
-    } else { 
+      } else { 
       #pragma unroll
       for (int n_inc = 0; n_inc < NARROW_N_VECTOR; n_inc++) {
         #pragma unroll
@@ -194,13 +199,11 @@ TASK kernel void pool(int frame_num) {
         // compute output value
         // If the pool window is not equal to 3, you need to modify the below code.
         if (compute_pool) {
-          pool_out = kPoolWindow[layer] == 3 ? max(max(pool_in[0], pool_in[1]), pool_in[2]) : max(pool_in[0], pool_in[1]);
+          pool_out = max(max(pool_in[0], pool_in[1]), pool_in[2]);
         } else {
           pool_out = pool_in[0];
         }
 
-        //mem_fence(CLK_GLOBAL_MEM_FENCE | CLK_CHANNEL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
-        
         h_buffer[EDGE_H][w_inc].v[n_inc] = pool_out;
       }
     }
@@ -217,7 +220,6 @@ TASK kernel void pool(int frame_num) {
           h_buffer[edge_h][w_inc] = ReluChannelVectorZero;
         } else {
           h_buffer[edge_h][w_inc] = line_buffer[edge_h_addr][edge_h][w_inc];
-          //if (layer == NUM_LAYER - 1) printf("cycle=%d/%d oh=%d ow=%d edge_h=%d w_inc=%d h_buffer=%d\n", cycle, cycle_end, oh, ow, edge_h, w_inc, h_buffer[edge_h][w_inc].v[0]);
         }
       }
     }
@@ -252,22 +254,20 @@ TASK kernel void pool(int frame_num) {
         }
 
         if (compute_pool) {
-          output_value = kPoolWindow[layer] == 3 ? max(max(pool_in[0], pool_in[1]), pool_in[2]) : max(pool_in[0], pool_in[1]);
+          output_value = max(max(pool_in[0], pool_in[1]), pool_in[2]);
         } else {
           output_value = pool_in[0]; 
         }
 
         pool_output.data[n_inc].v[w_inc] = output_value;
 #ifdef PRINT_POOL_OUTPUT
-        if (layer == NUM_LAYER - 1) printf("frame_index=%d oh=%d ow=%d k=%d w=%d data=%d\n", frame_index, oh, ow, k, w, output_value);
+        if (layer == NUM_LAYER - 1) printf("frame_index=%d oh=%d ow=%d n_inc=%d w_inc=%d data=%d\n", frame_index, oh, ow, n_inc, w_inc, output_value);
 #endif
       }
     }
     
     write_channel_intel(pool_output_channel, pool_output);
 
-    //printf("pool write channel.\n");
-    
     edge_w_nnvec_addr = (COUNTER_LAST(nn_vec) ? 0 : edge_w_nnvec_addr + 1) & BIT_MASK(CLOG2(NNVEC_ITER));
 
     if (COUNTER_LAST(nn_vec)) {
@@ -291,6 +291,9 @@ TASK kernel void pool(int frame_num) {
   while (1);
 #else
   while (!COUNTER_DONE(frame_index));
+#endif
+#ifdef PRINT_OUT_INFO
+ printf("POOL pool out\n");
 #endif
 }
 

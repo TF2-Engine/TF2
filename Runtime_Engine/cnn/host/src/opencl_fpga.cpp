@@ -66,7 +66,7 @@ bool OpenCLFPGA::Init() {
     sprintf(kernel_name,"%s%d", "pe_kernel_", i);
     create_kernel(kernel_name, /* has_infinite_loop */ enable_infinite_loops);
   }
-  
+
   for (int i = 0; i < N_VECTOR; i++) {
     char kernel_name[1024];
     sprintf(kernel_name,"%s%d", "pe_drain_", i);

@@ -28,7 +28,7 @@ limitations under the License.
 #define N_VECTOR 16
 
 // the vector size of input channels
-#define C_VECTOR 8
+#define C_VECTOR 16
 
 // the vector size of output feature map width
 #define OW_VECTOR 5
@@ -37,7 +37,7 @@ limitations under the License.
 #define FW_VECTOR 3
 
 // the vector size of output channels for relu, pool, etc.
-#define NARROW_N_VECTOR 8
+#define NARROW_N_VECTOR 16
 
 // the vector size of input feature map / image width
 #define W_VECTOR (FW_VECTOR + OW_VECTOR - 1)

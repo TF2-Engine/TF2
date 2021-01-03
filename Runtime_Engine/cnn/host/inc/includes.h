@@ -39,6 +39,8 @@ limitations under the License.
 #include "AOCLUtils/aocl_utils.h"
 #include "AOCLUtils/ACLHostUtils.h"
 
+#include "opencv2/opencv.hpp"
+
 #include "debug.h"
 
 struct KernelInfo {
@@ -49,6 +51,24 @@ struct KernelInfo {
   cl_event event;
   cl_kernel kernel;
 };
+
+// typedef struct {
+//   char :4;
+//   char value:4;
+// }int4;
+
+
+typedef union {
+  char char_value;
+  struct {
+  char :4;
+  char value:4;
+  };
+}int4;
+
+typedef union {
+  char char_value;
+}int8;
 
 // cnn includes
 #include "cnn.h"

@@ -30,6 +30,7 @@ public:
   cl_command_queue input_queue;
   cl_command_queue filter_queue;
   cl_command_queue bias_bn_queue;
+  cl_command_queue scale_queue;
   cl_command_queue wait_after_conv_queue;
   cl_command_queue output_queue;
 

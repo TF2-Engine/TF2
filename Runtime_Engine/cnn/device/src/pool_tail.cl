@@ -19,7 +19,7 @@ limitations under the License.
 #endif
 
 #include "../../host/inc/cnn.h"
-
+//#include "ihc_apint.h"
 // Functions:
 // Collects the pool kernel output data, and rearranges it to fit feature_writer kernel.
 
@@ -48,14 +48,14 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
     SET_COUNTER(frame_cycle, frame_cycle_end, 0, frame_cycle_end, 1);
     SET_COUNTER(frame_index, frame_num, 0, frame_num, 1);
    
-    //printf("POOL_TAIL cycle=%d/%d\n", frame_cycle, frame_cycle_end);
+    //printf("pool_tail cycle=%d/%d\n", frame_cycle, frame_cycle_end);
 
     bool new_layer = false;
 
     int conv_start_cycle = 0;
     int layer_temp = 0;
     #pragma unroll
-    for (int i = 0; i < NUM_CONVOLUTIONS; i++) {
+    for (int i = DEVICE_START_LAYER; i < DEVICE_END_LAYER; i++) {
       if (new_layer) continue;
       if (frame_cycle == conv_start_cycle) {
         layer_temp = i;
@@ -164,6 +164,9 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
           if (w_index_cache[w_cursor] == w_inc) {
             data = pool_output.data[n_inc].v[w_cursor];
             //data = data_cache[c_inc][w_cursor];
+#ifdef PRINT_POOL_TAIL_INPUT
+        if(layer == PRINT_LAYER - 1)  printf("Pool Tail Input cycle=%d/%d n_vec=%d h_vec=%d w_vec=%d w_inc=%d c_inc=%d w_cursor=%d pool_output_data=%d\n", frame_cycle, frame_cycle_end, n_vec, h_vec, w_vec, w_inc, c_inc, w_cursor, pool_output.data[c_inc].v[w_cursor]);
+#endif
             buffer_addr = buffer_index_cache[w_cursor];
           }
         }
@@ -223,5 +226,8 @@ TASK kernel void pool_tail(int frame_num, global volatile real* restrict feature
   while (1);
 #else
   while (!COUNTER_DONE(frame_index));
+#endif
+#ifdef PRINT_OUT_INFO
+ printf("POOL TAIL pool tail out\n");
 #endif
 }

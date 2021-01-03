@@ -42,27 +42,33 @@ public:
   float* input_raw = NULL;
   float* input = NULL;
   real* input_real=NULL;
-  //real* filter_raw = NULL;
+  int8* filter_raw = NULL;
   //real* filter = NULL;
   //real* filter_real = NULL;
   char* q = NULL;
-  //BiasBnParam *bias_bn = NULL;
+  BiasBnParam *bias_bn = NULL;
   real* output = NULL;
+  float* output_pre = NULL;
+  // Mreal* sim_out = NULL;
+  float* sim_out = NULL;
+  float(* scale)[2] = NULL;
   int top_labels[5];
+  unsigned long long int input_raw_size;
 
   cl_mem input_buffer[2];
   cl_mem feature_ddr;
 
   cl_mem filter_buffer;
   cl_mem bias_bn_buffer;
+  // cl_mem scale_buffer;
   cl_mem wait_after_conv_cycles;
 
 private:
   //float* input = NULL;
-  real* filter_raw = NULL;
+  // real* filter_raw = NULL;
   real* filter = NULL;
   real* filter_real = NULL;
-  BiasBnParam *bias_bn = NULL;
+  // BiasBnParam *bias_bn = NULL;
 };
 
 #endif

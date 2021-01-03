@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "includes.h"
 
-void Quantization(char *q, float *input, char* q_file);
+// void Quantization(char *q, float *input, char* q_file);
+void Quantization(float (*scale)[2], char* file_name);
 
 #endif
