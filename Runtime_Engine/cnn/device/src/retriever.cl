@@ -214,7 +214,7 @@ TASK kernel void retriever(int frame_num, global int* restrict sequencer_idle_cy
       }
 
       DotFeatureVector pe_input_data;
-      
+
       #pragma unroll
       for (int c_inc = 0; c_inc < C_VECTOR; c_inc++) {
         #pragma unroll

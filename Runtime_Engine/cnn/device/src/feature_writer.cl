@@ -148,7 +148,7 @@ TASK kernel void feature_writer(int frame_num, global volatile real* restrict fe
     int cache_write_offset = kCacheWriteBase[layer];
     int cache_write_addr = cache_write_offset + concat_offset + (n_vec * NN_VEC + nn_vec) * H * CEIL(W, W_VECTOR) + h_vec * CEIL(W, W_VECTOR) + w_vec;
     pool_tail_output.cache_write_addr = cache_write_addr;
-     
+
     if (kCacheWriteEnable[layer] && !kEndPoolEnable[layer]) {
       write_channel_intel(retriever_input_channel, pool_tail_output);
     }

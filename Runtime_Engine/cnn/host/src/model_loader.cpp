@@ -150,7 +150,6 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
     int H = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[layer];
     int W = layer == 0 ? FIRST_FILTER_SIZE : kFilterSize[layer];
     int N = kOutputChannels[layer];
-    	  
     if (!kIpoolEnable[layer]) { 
       for (int n = 0; n < N; n++) {
         for (int c = 0; c < C; c++) {
@@ -158,14 +157,25 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
             
           q_fixed = q[kInputLayer[layer] * MAX_OUT_CHANNEL + c];
           
-          int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n]; 
+          int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
           char expand = INFLAT + q_fixed - q_fixed_gap;
-          
           for (int h = 0; h < H; h++) {
             for (int w = 0; w < W; w++) {
               float filter_tems;
-              fread(&filter_tems, sizeof(float), 1, infile);
-              filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
+
+	      if (getNetwork() == kYandi) {
+		// For yandi network, conv layer23 is specifal.
+		// channel 0-23 has no filter data.
+	        if (layer == 23 && n < 24) {
+                  filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = 0x40; // Zero.
+	        } else {
+                  fread(&filter_tems, sizeof(float), 1, infile);
+                  filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
+	        }
+	      } else {
+                fread(&filter_tems, sizeof(float), 1, infile);
+                filter_raw[filter_addr_offset + n * C * H * W + c * H * W + h * W + w] = Get_real(filter_tems, expand);
+	      }
             }
           }
         }
@@ -178,8 +188,18 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
         int q_fixed_gap = q[q_offset + MAX_OUT_CHANNEL + n];
         float bias_trans_coe = 1 << (INFLAT - q_fixed_gap);
 	float bias_data;
-        fread( &bias_data, sizeof(float), 1, infile );
-	bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;    
+
+	if (getNetwork() == kYandi) {
+	  if (layer == 23 && n < 24) {
+	    bias_bn[bias_addr_offset + n].bias = 0;
+	  } else {
+            fread( &bias_data, sizeof(float), 1, infile );
+	    bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;
+	  }
+	} else {
+          fread( &bias_data, sizeof(float), 1, infile );
+	  bias_bn[bias_addr_offset + n].bias = bias_data * bias_trans_coe;
+	}
       }
     } else {
       for (int n = 0; n < N; n++) {
@@ -241,22 +261,21 @@ void LoadModel(char *filename, real *filter_raw, BiasBnParam *bias_bn, char *q) 
 
   fclose(infile);
   
-  // convert first layer kernel size to 3 
-  int Trans_size = 64 * 3 * 3 * 3 * 3 * 3;
-  real *first_layer_filter_trans = (real*)malloc(sizeof(real) * Trans_size);
-  memset(first_layer_filter_trans, 0, sizeof(real)*64*9*27);
-  for (int out_channel = 0; out_channel < kOutputChannels[0]; out_channel++) {
-    for (int input_channel = 0; input_channel < 3; input_channel++) {
-      filter_trans(filter_raw + input_channel * 49 + out_channel * 49 * 3, first_layer_filter_trans + 9 * 9 * 3 * out_channel + 3 * 3 * 3 * 3 * input_channel);
+// For googlenet or resnet50, convert first layer kernel size to 3
+  if (getNetwork() == kGooglenet || getNetwork() == kResnet50) {
+    int Trans_size = 64 * 3 * 3 * 3 * 3 * 3;
+    real *first_layer_filter_trans = (real*)malloc(sizeof(real) * Trans_size);
+    memset(first_layer_filter_trans, 0, sizeof(real)*64*9*27);
+    for (int out_channel = 0; out_channel < kOutputChannels[0]; out_channel++) {
+      for (int input_channel = 0; input_channel < 3; input_channel++) {
+        filter_trans(filter_raw + input_channel * 49 + out_channel * 49 * 3, first_layer_filter_trans + 9 * 9 * 3 * out_channel + 3 * 3 * 3 * 3 * input_channel);
+      }
     }
-  }
- 
-  for (int i = 0; i < Trans_size; i++)
-    filter_raw[i] = first_layer_filter_trans[i];
- 
-  free(first_layer_filter_trans);
+    for (int i = 0; i < Trans_size; i++)
+      filter_raw[i] = first_layer_filter_trans[i];
+    free(first_layer_filter_trans);
+    }
 }
-
 // filter_raw[NUM_CONVOLUTIONS][N][C][FH][FW]
 // to
 // filter[NUM_CONVOLUTIONS][MAX_FILTER_SIZE], i.e. filter_buffer[layer][n_vec][c_vec][fh_vec][fw_vec][n][fw_inc][c_inc]

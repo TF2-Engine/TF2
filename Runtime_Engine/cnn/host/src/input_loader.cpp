@@ -73,46 +73,39 @@ void feature_trans(float *Feas,float *finals_feas)
 }
 
 // load input raw image data:[C][H][W]
-void LoadInputImage(char *image_name, float *input_raw, float *raw_images, int iter) {
-  INFO("LoadInputImage image_name=%s\n", image_name);
-  unsigned char C = INPUT_IMAGE_C;
-  unsigned char H = INPUT_IMAGE_H;
-  unsigned char W = INPUT_IMAGE_W;
-
-  FILE *fp;
-  if ((fp = fopen(image_name, "rb"))==NULL){
-    printf("load input image : %s Error\n",image_name);
-    exit(1);
-  }
+void LoadInputImage(float *input_raw, float *raw_images, int iter, FILE *fp) {
+  unsigned int C = INPUT_IMAGE_C;
+  unsigned int H = INPUT_IMAGE_H;
+  unsigned int W = INPUT_IMAGE_W;
 
   for (int c = 0; c < C; c++) {
     for (int h = 0; h < H; h++) {
       for (int w = 0; w < W; w++) {
         int addr = c * H * W + h * W + w;
-        fread( &raw_images[addr], sizeof(float), 1, fp );
-      }
-    }
-  }
-  fclose(fp);
-
-  // The below code is just for Resnet50 and GoogLeNet and will remove later.  
-  unsigned char CC = 27;
-  unsigned char HH = 115;
-  unsigned char WW = 115;
-  float *new_input=(float*)malloc(sizeof(float) * CC * HH * WW + 1000);
-  for (int i = 0; i < 3; i++) {
-    feature_trans(raw_images + i * H * W, new_input + 9 * i * OUTPUT_HEIGHT * OUTPUT_WIDTH);
-  }
-
-  for (int i = 0; i < 27; i++) {
-    for (int j = 0; j < 114; j++) {
-      for (int k = 0; k < 114; k++) {
-        input_raw[i * 114 * 114 + j * 114 + k]=new_input[i * WW * HH + j * WW + k];
+        fread( &input_raw[addr], sizeof(float), 1, fp );
       }
     }
   }
 
-  free(new_input);
+  // The below code is just for Resnet50 and GoogLeNet and will remove later.
+  if (getNetwork() == kGooglenet || getNetwork() == kResnet50) {
+    unsigned char CC = 27;
+    unsigned char HH = 115;
+    unsigned char WW = 115;
+    float *new_input=(float*)malloc(sizeof(float) * CC * HH * WW + 1000);
+    for (int i = 0; i < 3; i++) {
+      feature_trans(input_raw + i * H * W, new_input + 9 * i * OUTPUT_HEIGHT * OUTPUT_WIDTH);
+    }
+    for (int i = 0; i < 27; i++) {
+      for (int j = 0; j < 114; j++) {
+        for (int k = 0; k < 114; k++) {
+          input_raw[i * 114 * 114 + j * 114 + k]=new_input[i * WW * HH + j * WW + k];
+          //printf("Input Raw i=%d j=%d k=%d input_raw=%f\n", i, j, k, input_raw[i * 114 * 114 + j * 114 + k]);
+        }
+      }
+    }
+    free(new_input);
+  }
 }
 
 // input_raw[C][H][W]
@@ -142,7 +135,7 @@ void InputConvert(float *input_raw, float *input, int num_images)
              int linear_w = ww * W_VECTOR + wvec;
 
              bool not_out_of_bounds = (linear_c < C && linear_w < W);
-             unsigned long long int input_raw_addr = (unsigned long long int) linear_c * H * W + h * W + linear_w;
+             unsigned long long int input_raw_addr = (unsigned long long int) n * C * H * W + linear_c * H * W + h * W + linear_w;
 
              input[addr] = not_out_of_bounds ? input_raw[input_raw_addr] : 0.0;
             }

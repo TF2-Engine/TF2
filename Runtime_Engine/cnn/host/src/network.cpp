@@ -27,14 +27,14 @@ bool NetWork::Init(OpenCLFPGA &platform, char *model_file, char* q_file, char *i
   this->num_images = num_images;
 
   if (!(InitNetwork())) {
-    return -1;
+    return false;
   }
 
   if (!(InitBuffer())) {
-    return -1;
+    return false;
   }
   
-  return 0;
+  return true;
 }
 
 bool NetWork::InitNetwork() {
@@ -95,6 +95,7 @@ bool NetWork::InitNetwork() {
   memset(filter_real, 64, sizeof(real) * filter_device_size);
 
   FilterConvert(filter, filter_raw, filter_real);
+  return true;
 }
 
 bool NetWork::InitBuffer() { 
@@ -103,6 +104,7 @@ bool NetWork::InitBuffer() {
   const int feature_ddr_size = OUTPUT_OFFSET + num_images * OUTPUT_OFFSET;
   output = (real*)alignedMalloc(sizeof(real) * feature_ddr_size );
   if (output == NULL) ERROR("Cannot allocate enough space for output\n");
+  memset(output, 0, sizeof(real) * feature_ddr_size);
 
   int C = kInputChannels[0];
   int H = kInputHeight[0];
@@ -146,7 +148,7 @@ bool NetWork::InitBuffer() {
   checkError(status,"Failed clEnqueueWriteBuffer : kSequencerIdleCycle");
   clFinish(platform.wait_after_conv_queue);  
   
-  return 0; 
+  return true;
 }
 
 void NetWork::CleanUp() {

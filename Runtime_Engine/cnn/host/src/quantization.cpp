@@ -37,6 +37,15 @@ void Quantization(char *q, float *input, char* file_name) {
     int conv_layer = layer == 0 ? 0 : layer - 1;
     
     int channel = layer == 0 ? 3 : kOutputChannels[conv_layer];
+
+    // For yandi network, in layer 24 yandi_q actually has 8 channel data,
+    // the other 24 channel data come from layer 12 and layer 18 for channel concatenation.
+    if (getNetwork() == kYandi) {
+      if (layer == 24) {
+        channel = 8;
+      }
+    }
+
     for (int c = 0; c < channel; c++) {
       int q_value = 0;
       if (kIpoolEnable[conv_layer]) {
@@ -52,4 +61,15 @@ void Quantization(char *q, float *input, char* file_name) {
     offset += MAX_OUT_CHANNEL;
   }
   fclose(fp);
+
+  // For yandi network, concate layer12,layer18 and layer24's Q datat o layer24.
+  if (getNetwork() == kYandi) {
+    for (int c = 0; c < 8; c++) {
+      q[24 * MAX_OUT_CHANNEL + 24 + c] = q[24 * MAX_OUT_CHANNEL + c];
+      q[24 * MAX_OUT_CHANNEL + 16 + c] = q[18 * MAX_OUT_CHANNEL + c];
+    }
+    for (int c = 0; c < 16; c++) {
+      q[24 * MAX_OUT_CHANNEL  + c] = q[12 * MAX_OUT_CHANNEL + c];
+    }
+  }
 }
